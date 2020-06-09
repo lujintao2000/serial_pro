@@ -3,6 +3,8 @@ package com.tuling.serialize;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.Map;
 
 import com.tuling.serialize.exception.InvalidDataFormatException;
 import org.apache.log4j.Logger;
@@ -48,33 +50,49 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 					Array.set(obj , i , this.readObject());
 				}
 
-			}else{
+			}else
+			{
 				try {
 					Class objectClass = Class.forName(className);
 					if(ReflectUtil.isBaseType(objectClass)){
 						obj = readValue(objectClass);
 					}else{
 						try {
-							//Constructor[] constructor = objectClass.getConstructors();
-
 							obj = objectClass.newInstance();
 							//将当前对象放入上下文中
 							context.put(obj);
-							Class currentType = objectClass;
-							while(true){
-								short fieldCount = this.readFieldCount();
-								//循环读取属性
-								for(int i = 0; i < fieldCount; i++){
-									this.readField(obj,currentType);
+							if(Collection.class.isAssignableFrom(objectClass)){
+								int size = this.readCollectionSize();
+								for(int i = 0; i < size; i++){
+									((Collection)obj).add(this.readObject());
 								}
-								this.in.mark(0);
-								if(!this.end()){
-									currentType = currentType.getSuperclass();
-								}else{
-									this.in.reset();
-									break;
+							}else if(Map.class.isAssignableFrom(objectClass)){
+								int size = this.readMapSize();
+								for(int i = 0; i < size; i++){
+									Object key = this.readObject();
+									Object value = this.readObject();
+									((Map)obj).put(key,value);
+								}
+							}else{
+								Class currentType = objectClass;
+								while(true){
+									short fieldCount = this.readFieldCount();
+									//循环读取属性
+									for(int i = 0; i < fieldCount; i++){
+										this.readField(obj,currentType);
+									}
+									this.in.mark(0);
+									if(!this.end()){
+										currentType = currentType.getSuperclass();
+									}else{
+										this.in.reset();
+										break;
+									}
 								}
 							}
+
+
+
 						} catch (InstantiationException e) {
 							LOGGER.error(e.getCause(), e);
 						} catch (IllegalAccessException e) {
@@ -84,6 +102,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 					LOGGER.error(className + "类不存在", e);
+					throw e;
 				}
 			}
 			context.leave();
@@ -151,6 +170,20 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected abstract int readArrayLength() throws IOException;
+
+	/**
+	 * 读取集合元素个数
+	 * @return
+	 * @throws IOException
+	 */
+	protected abstract int readCollectionSize() throws IOException;
+
+	/**
+	 * 读取Map元素个数
+	 * @return
+	 * @throws IOException
+	 */
+	protected abstract int readMapSize() throws IOException;
 
 	/**
 	 * 从流中当前位置读取指定类型的值

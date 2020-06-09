@@ -51,17 +51,30 @@ public class ObjectOutputStream {
 			context.enter();
 			context.put(obj);
 
-			//判断是否是数组类型
-			if(obj.getClass().isArray()){
-				//1.写入数组类型
+			//判断是否是数组类型或集合类型
+			if(obj.getClass().isArray() || obj instanceof Collection || obj instanceof Map){
+				//1.写入对象类型
 				this.writeClassName(obj.getClass().getTypeName());
-				//2.写入数组长度
-				int length = Array.getLength(obj);
+				//2.写入元素个数
+				int length = obj.getClass().isArray() ? Array.getLength(obj) : ((obj instanceof Collection) ? ((Collection)obj).size() : ((Map)obj).size());
 				this.out.write(NumberUtil.getByteArray(length));
 				//3. 循环写入数组中的元素
-				for(int i = 0; i < length; i++){
-					this.write(Array.get(obj, i));
+				if(obj.getClass().isArray()){
+					for(int i = 0; i < length; i++){
+						this.write(Array.get(obj, i));
+					}
+				}else if(obj instanceof Collection){
+					for(Object item : (Collection)obj){
+						this.write(item);
+					}
+				}else{
+					for(Object item : ((Map)obj).entrySet()){
+						Map.Entry entry = (Map.Entry)item;
+						this.write(entry.getKey());
+						this.write(entry.getValue());
+					}
 				}
+
 			}else{
 				//先写入该类类名及该类自定义的属性，然后写入父类名及父类定义的属性
 				Class targetClass = obj.getClass();

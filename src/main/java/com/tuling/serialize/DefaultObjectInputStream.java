@@ -62,46 +62,8 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		byte[] fieldByteArray = new byte[length];
 		this.in.read(fieldByteArray);
 		String fieldName = new String(fieldByteArray);
-		//Class objClass = obj.getClass();
 		try {
 			Field field = currentType.getDeclaredField(fieldName);
-//			Class type = field.getType();
-//			Object value = null;
-//			if(type == boolean.class || type == Boolean.class){
-//				value = this.readBoolean();
-//			}else if(type == char.class || type == Character.class){
-//				value = this.readCharacter();
-//			}else if(type == byte.class || type == Byte.class){
-//				value = this.readByte();
-//			}else if(type == short.class || type == Short.class){
-//				value = this.readShort();
-//			}else if(type == int.class || type == Integer.class){
-//				value = this.readInt();
-//			}else if(type == long.class || type == Long.class){
-//				value = this.readLong();
-//			}else if(type == float.class || type == Float.class){
-//				value = this.readFloat();
-//			}else if(type == double.class || type == Double.class){
-//				value = this.readDouble();
-//			}else if(type == String.class){
-//				value = this.readString();
-//			}else{
-//				value = this.readObject();
-////				if(type.isArray()){
-////					if(value != null){
-////						//获得数组的长度
-////						int size = ((Object[])value).length;
-////						Object[] array = (Object[])Array.newInstance(type.getComponentType(), size);
-////						if(size > 0){
-////							for(int i = 0; i < size; i++){
-////								array[i] = ((Object[])value)[i];
-////							}
-////						}
-////						value = array;
-////					}
-////				}
-//
-//			}
 			field.setAccessible(true);
 			try {
 				Class valueType = Class.forName(this.readClassName());
@@ -141,7 +103,28 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @return
 	 * @throws IOException
 	 */
+	@Override
 	protected int readArrayLength() throws IOException{
+		return this.readInt();
+	}
+
+	/**
+	 * 读取集合元素个数
+	 * @return
+	 * @throws IOException
+	 */
+	@Override
+	protected  int readCollectionSize() throws IOException{
+		return this.readInt();
+	}
+
+	/**
+	 * 读取Map元素个数
+	 * @return
+	 * @throws IOException
+	 */
+	@Override
+	protected  int readMapSize() throws IOException{
 		return this.readInt();
 	}
 

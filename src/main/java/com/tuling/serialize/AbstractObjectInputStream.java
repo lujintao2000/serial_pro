@@ -6,6 +6,7 @@ import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Map;
 
+import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
 import org.apache.log4j.Logger;
 import com.tuling.serialize.util.ReflectUtil;
@@ -27,7 +28,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		this.in = in;
 	}
 	
-	public Object readObject() throws IOException,ClassNotFoundException,InvalidDataFormatException {
+	public Object readObject() throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException {
 		Object obj = null;
 		
 		if(this.start()){
@@ -53,7 +54,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			}else
 			{
 				try {
-					Class objectClass = Class.forName(className);
+					Class objectClass = ReflectUtil.get(className);
 					if(ReflectUtil.isBaseType(objectClass)){
 						obj = readValue(objectClass);
 					}else{
@@ -64,7 +65,8 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 							if(Collection.class.isAssignableFrom(objectClass)){
 								int size = this.readCollectionSize();
 								for(int i = 0; i < size; i++){
-									((Collection)obj).add(this.readObject());
+									Object value = this.readObject();
+									((Collection)obj).add(value);
 								}
 							}else if(Map.class.isAssignableFrom(objectClass)){
 								int size = this.readMapSize();
@@ -95,12 +97,13 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 
 						} catch (InstantiationException e) {
 							LOGGER.error(e.getCause(), e);
+							throw new InvalidDataFormatException("创建对象失败:" + e.getMessage(), e);
 						} catch (IllegalAccessException e) {
 							LOGGER.error(e.getCause(), e);
+							throw new InvalidDataFormatException("访问对象成员受限:" + e.getMessage(), e);
 						}
 					}
 				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
 					LOGGER.error(className + "类不存在", e);
 					throw e;
 				}
@@ -140,6 +143,12 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected abstract boolean end() throws IOException;
+
+	/**
+	 * 判断当前要读取的值是否为空
+	 * @throws IOException
+	 */
+	protected abstract boolean isNull() throws IOException;
 	
 	/**
 	 * 读取属性总个数
@@ -154,7 +163,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException  
 	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
 	 */
-	protected abstract void readField(Object obj,Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException;
+	protected abstract void readField(Object obj,Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException;
 	
 	/**
 	 * 从指定输入流中读取当前要反序列化的对象的类名
@@ -190,5 +199,5 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param type  要读取数据的类型
 	 * @return
 	 */
-	protected abstract Object readValue(Class baseType) throws IOException,ClassNotFoundException,InvalidDataFormatException;
+	protected abstract Object readValue(Class baseType) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException;
 }

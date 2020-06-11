@@ -2,7 +2,7 @@ package com.tuling.domain;
 
 public  class Person extends  Animal{
 
-    protected Person(float height, float weight) {
+    protected Person(Float height, float weight) {
         super(height,weight);
     }
 
@@ -42,5 +42,8 @@ public  class Person extends  Animal{
 //        return name;
 //    }
 
-
+    @Override
+    public boolean equals(Object obj){
+        return super.equals(obj);
+    }
 }

@@ -3,12 +3,12 @@ package com.tuling.serialize;
 import com.tuling.domain.Company;
 import com.tuling.domain.User;
 import com.tuling.serialize.exception.InvalidDataFormatException;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.Map;
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * @author lujintao
@@ -16,74 +16,128 @@ import java.util.Map;
  */
 public class SerializeTest {
 
+    private void test(Object originalValue) throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(output);
+        out.write(originalValue);
+        out.close();
 
-    public static void main(String[] args){
-
+        ObjectInputStream in = new DefaultObjectInputStream(new ByteArrayInputStream(output.toByteArray()
+        ));
+        Object obj = null;
         try {
-            Hashtable hashtable = new Hashtable();
-            hashtable.put(null,"aa");
-
-
-           Class type = Class.forName("java.lang.String");
-            if(type.isArray()){
-                System.out.print("a");
-            }
-            ByteArrayOutputStream output = new ByteArrayOutputStream();
-            OutputStream output2 = new FileOutputStream("E:\\List.obj");
-            ObjectOutputStream out = new ObjectOutputStream(output);
-            try {
-//				User user = new User("xiaowang");
-//				user.setAge(20);
-//				user.setCompanys(null);
-				Map<String,Object> map = new HashMap();
-				map.put(null,null);
-				map.put("age",null);
-
-//				out.write(map);
-                LinkedList list = new LinkedList();
-                list.add("red");
-				list.add("yellow");
-				list.add("blue");
-                //Integer[]  list = new Integer[]{2,3,44};
-//				List<User> list = new ArrayList<>();
-////				User[] list = new User[]{new User("wangfei",20),new User("hong",30),null};
-//				list.add(new User("wangfei",20,180.0f, 76.0f));
-//				list.add(new User("feige",30, 172.0f, 68.3f));
-                User user = new User("wangfei",20,180.0f, 76.0f);
-                user.setCompany(new Company("优识云创"));
-//				list.add(null);
-//				Map map = new HashMap();
-//				map.put("name","fei");
-//				map.put("age",20);
-
-                out.write(map);
-                out.close();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
-            ObjectInputStream in = new DefaultObjectInputStream(new ByteArrayInputStream(output.toByteArray()
-            ));
-            try {
-                Object obj;
-                try {
-                    obj = in.readObject();
-                    System.out.println(obj);
-                    //System.out.println(((User)obj).getPersonName());
-                } catch (InvalidDataFormatException e) {
-                    e.printStackTrace();
-                }
-
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
+            obj = in.readObject();
+            System.out.println(obj);
+        } catch (InvalidDataFormatException e) {
             e.printStackTrace();
         }
+        if(originalValue.getClass().isArray()){
+            boolean flag = true;
+            int length = Array.getLength(originalValue);
+            if(obj != null && obj.getClass().isArray() && length == Array.getLength(obj)){
+               for(int i = 0; i < length; i++){
+                   if(!Array.get(originalValue,i).equals(Array.get(obj,i))){
+                       flag = false;
+                       break;
+                   }
+               }
+            }else{
+                flag = false;
+            }
+            Assert.assertEquals(flag, true);
+
+        }else if(originalValue instanceof  Collection){
+            boolean flag = false;
+            if(obj != null && obj instanceof  Collection && ((Collection)originalValue).size() == ((Collection)obj).size()){
+                List list = new ArrayList();
+                list.add((Collection)originalValue);
+                flag = ((Collection) obj).stream().noneMatch(x -> list.contains(x));
+
+            }
+            Assert.assertEquals(flag, true);
+
+        }else{
+            Assert.assertEquals(originalValue,obj);
+        }
+
     }
 
+    @Test
+    public void testAllBaseType() throws Exception{
+        test(1);
+        test(true);
+        test('A');
+        test((byte)10);
+        test((short)10);
+        test(1L);
+        test(1f);
+        test(1d);
+        test("world");
+    }
+
+    @Test
+    public void testDomain() throws Exception{
+        User user = new User("wangfei", 20, 180.f, 76.0f);
+
+//        user.setCompany(new Company("优识云创"));
+        test(user);
+        //test null
+        user.setAge(null);
+        test(user);
+    }
+
+    @Test
+    public void testArray() throws Exception{
+        String[] array = new String[]{"red","yellow","blue"};
+        test(array);
+        //test Object Array
+        test(getUsers().toArray(new User[0]));
+    }
+
+    @Test
+    public void testList()  throws Exception{
+        List<Integer> list = new ArrayList<>();
+        list.add(1);
+        list.add(3);
+        list.add(5);
+        list.add(null);
+        list.add(4);
+        test(list);
+        test(getUsers());
+
+    }
+
+    @Test
+    public void testSet()  throws Exception{
+        Set<String> set = new HashSet<>();
+        set.add("first");
+        set.add("second");
+        set.add("third");
+        test(set);
+        Set<User> users = new HashSet<>();
+        users.addAll(getUsers());
+        test(users);
+    }
+
+    @Test
+    public void testMap() throws Exception{
+        Map<String, Object> map = new HashMap();
+        map.put(null, null);
+        map.put("user", new User("wangfei", 20, 180.f, 76.0f));
+        test(map);
+    }
+
+    private static List<User> getUsers(){
+        List<User> users = new ArrayList<>();
+        User firstUser = new User("wangfei", 20, 180.f, 76.0f);
+        firstUser.setCompany(new Company("优识云创"));
+        User secondUser = new User("zhiguo", null, null, 72.03f);
+        secondUser.setCompany(new Company("奇米科技"));
+        User thirdUser = new User("huabing", 30, 172.f, 74.0f);
+        thirdUser.setCompany(new Company("微尘大业"));
+        users.add(firstUser);
+        users.add(secondUser);
+        users.add(thirdUser);
+        return users;
+    }
 }

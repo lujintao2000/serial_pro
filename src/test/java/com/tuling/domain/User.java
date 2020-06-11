@@ -5,24 +5,24 @@ import java.io.Serializable;
 public class User extends Person implements Serializable{
 
     private String name;
-    private int age;
+    private Integer age;
     private Company company = null;
 
 
     public User(){
-        super(170.0f,72.0f);
+        super(null, 0.0f);
     }
 
     public User(String name){
-        super(170.0f,72.0f);
+        super(null,0.0f);
         this.name =  name;
     }
 
-    public User(String name,int age){
+    public User(String name,Integer age){
         this(name,age,170.0f, 72.0f);
     }
 
-    public User(String name,int age,float height,float weight){
+    public User(String name,Integer age,Float height,float weight){
         super(height,weight);
         this.name = name;
         this.age = age;
@@ -36,11 +36,11 @@ public class User extends Person implements Serializable{
         this.name = name;
     }
 
-    public int getAge() {
+    public Integer getAge() {
         return age;
     }
 
-    public void setAge(int age) {
+    public void setAge(Integer age) {
         this.age = age;
     }
 
@@ -49,4 +49,21 @@ public class User extends Person implements Serializable{
         this.company.setUser(this);
     }
 
+    public Company getCompany(){
+        return this.company;
+    }
+
+    @Override
+    public boolean equals(Object obj){
+        if(obj != null && obj instanceof  User){
+            User another = (User)obj;
+            if(super.equals(obj)){
+                if((this.name == another.getName() || (this.name != null && this.name.equals(another.getName()))) && this.age == another.getAge()
+                        && (this.company == another.getCompany() || (this.company != null && another.getCompany() != null && this.company.getName().equals(another.getCompany().getName())) )){
+                   return  true;
+                }
+            }
+        }
+        return false;
+    }
 }

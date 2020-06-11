@@ -1,5 +1,6 @@
 package com.tuling.serialize;
 
+import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
 import java.io.IOException;
 
@@ -16,8 +17,9 @@ public interface ObjectInputStream {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
+	 * @throws InvalidAccessException  如果方法或字段不让访问或方法传递参数不对，抛出该异常
 	 */
-	public Object readObject() throws IOException,ClassNotFoundException,InvalidDataFormatException;
+	public Object readObject() throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException;
 	
 	/**
 	 * 关闭输入流

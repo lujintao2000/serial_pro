@@ -3,8 +3,11 @@ package com.tuling.serialize;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+
+import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
 import com.tuling.serialize.util.NumberUtil;
+import com.tuling.serialize.util.ReflectUtil;
 import org.apache.log4j.Logger;
 
 /**
@@ -57,7 +60,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @throws NoSuchFieldException 
 	 */
 	@Override
-	protected void readField(Object obj,Class currentType) throws IOException,ClassNotFoundException, InvalidDataFormatException {
+	protected void readField(Object obj,Class currentType) throws IOException,ClassNotFoundException, InvalidDataFormatException,InvalidAccessException {
 		int length = this.in.read();
 		byte[] fieldByteArray = new byte[length];
 		this.in.read(fieldByteArray);
@@ -66,17 +69,21 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 			Field field = currentType.getDeclaredField(fieldName);
 			field.setAccessible(true);
 			try {
-				Class valueType = Class.forName(this.readClassName());
+				Class valueType = ReflectUtil.get(this.readClassName());
 				field.set(obj, this.readValue(valueType));
 			} catch (IllegalArgumentException e) {
 				LOGGER.error(e.getCause() + "|field:" + fieldName, e);
+				throw new InvalidAccessException(e.getCause() + "|field:" + fieldName, e);
 			} catch (IllegalAccessException e) {
 				LOGGER.error(e.getCause() + "|field:" + fieldName, e);
+				throw new InvalidAccessException(e.getCause() + "|field:" + fieldName, e);
 			}
 		} catch (NoSuchFieldException e) {
 			LOGGER.error("没有该属性:" + fieldName, e);
+			throw new InvalidDataFormatException("没有该属性:" + fieldName, e);
 		} catch (SecurityException e) {
 			LOGGER.error(String.format("属性 %s 访问受限", fieldName), e);
+			throw new InvalidAccessException(String.format("属性 %s 访问受限", fieldName), e);
 		}
 	}
 
@@ -216,7 +223,10 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @param type  要读取数据的类型
 	 * @return
 	 */
-	protected Object readValue(Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException{
+	protected Object readValue(Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException{
+		if(isNull()){
+			return null;
+		}
 		Object value = null;
 		if(type == boolean.class || type == Boolean.class){
 			value = this.readBoolean();
@@ -250,4 +260,11 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		return value;
 	}
 
+	/**
+	 * 判断当前要读取的值是否为空
+	 * @throws IOException
+	 */
+	protected  boolean isNull() throws IOException{
+		return this.in.read() == ObjectOutputStream.NULL_FLAG;
+	}
 }

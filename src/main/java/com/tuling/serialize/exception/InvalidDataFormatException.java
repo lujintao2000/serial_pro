@@ -8,7 +8,11 @@ package com.tuling.serialize.exception;
  */
 public class InvalidDataFormatException extends Exception{
 
-	public InvalidDataFormatException(String msg){
-		super(msg);
+	public InvalidDataFormatException(Exception ex){
+		super(ex);
+	}
+
+	public InvalidDataFormatException(String msg, Exception ex){
+		super(msg,ex);
 	}
 }

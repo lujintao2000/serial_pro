@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.sql.Ref;
 import java.util.*;
 import com.tuling.serialize.util.ReflectUtil;
 import com.tuling.serialize.util.NumberUtil;
@@ -20,10 +21,13 @@ public class ObjectOutputStream {
 	public static final int END_FLAG = 0;
 	//代表写入了NULL
 	public static final int NULL_FLAG = 254;
+
+	//代表写入了非空
+	public static final int NOT_NULL_FLAG = 253;
 	//代表写入了CONTINUE,循环还要进行
-	public static final int CONTINUE_FLAG = 253;
+	public static final int CONTINUE_FLAG = 252;
 	//代表当前要写入的值是之前已经写入流中的对象的引用
-	public static final int REFERENCE_FLAG = 252;
+	public static final int REFERENCE_FLAG = 251;
 	//表示数组
 	public static final String ARRAY = "Array";
 
@@ -54,7 +58,7 @@ public class ObjectOutputStream {
 			//判断是否是数组类型或集合类型
 			if(obj.getClass().isArray() || obj instanceof Collection || obj instanceof Map){
 				//1.写入对象类型
-				this.writeClassName(obj.getClass().getTypeName());
+				this.writeClassName(obj.getClass());
 				//2.写入元素个数
 				int length = obj.getClass().isArray() ? Array.getLength(obj) : ((obj instanceof Collection) ? ((Collection)obj).size() : ((Map)obj).size());
 				this.out.write(NumberUtil.getByteArray(length));
@@ -83,7 +87,7 @@ public class ObjectOutputStream {
 					this.writeValue(obj, obj.getClass());
 				}else{
 					//1. 写入类名
-					this.writeClassName(targetClass.getName());
+					this.writeClassName(targetClass);
 					while(targetClass != null){
 						Field[] fields = ReflectUtil.getAllInstanceField(targetClass);
 						//2. 写入属性个数  2字节
@@ -136,7 +140,17 @@ public class ObjectOutputStream {
 		}
 	}
 	
-	private void writeClassName(String className) throws IOException{
+	private void writeClassName(Class type) throws IOException{
+		if(type == null){
+			throw new IllegalArgumentException("type can't be null");
+		}
+
+		String className = "";
+		if(ReflectUtil.isBaseType(type)){
+			className = ReflectUtil.getFlagOfBaseType(type);
+		}else{
+			className = type.getTypeName();
+		}
 		//1. 写入类名长度  2字节
 		this.out.write(NumberUtil.getByteArray( ((short)className.getBytes().length) ) );
 		//2. 写入类名
@@ -176,6 +190,10 @@ public class ObjectOutputStream {
 	
 	private void writeNull() throws IOException{
 		this.out.write(NULL_FLAG);
+	}
+
+	private void writeNotNull() throws IOException{
+		this.out.write(NOT_NULL_FLAG);
 	}
 	
 	private void writeContine() throws IOException{
@@ -219,11 +237,13 @@ public class ObjectOutputStream {
 	 */
 	protected void writeValue(Object value, Class type) throws IOException{
 		if(value == null){
-			this.writeClassName(type.getTypeName());
+			this.writeClassName(type);
 			this.writeNull();
 			return;
 		}
-		this.writeClassName(value.getClass().getTypeName());
+		this.writeClassName(value.getClass());
+		this.writeNotNull();
+
 
 //		if(ReflectUtil.isBaseType(value.getClass())){
 //			this.writeClassName(value.getClass().getTypeName());

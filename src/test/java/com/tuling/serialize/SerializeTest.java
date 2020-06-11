@@ -17,13 +17,14 @@ import java.util.*;
 public class SerializeTest {
 
     private void test(Object originalValue) throws Exception {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(output);
+        boolean needOrder = false;
+        ByteArrayOutputStream output2 = new ByteArrayOutputStream();
+        OutputStream output = new FileOutputStream("e:\\user.obj");
+        ObjectOutputStream out = new ObjectOutputStream(output, needOrder,false);
         out.write(originalValue);
         out.close();
 
-        ObjectInputStream in = new DefaultObjectInputStream(new ByteArrayInputStream(output.toByteArray()
-        ));
+        ObjectInputStream in = new DefaultObjectInputStream(new ByteArrayInputStream(output2.toByteArray()),needOrder);
         Object obj = null;
         try {
             obj = in.readObject();

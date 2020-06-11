@@ -2,7 +2,9 @@ package com.tuling.serialize;
 
 import com.tuling.domain.Company;
 import com.tuling.domain.User;
+import com.tuling.serialize.util.ReflectUtil;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -14,15 +16,11 @@ import java.util.Set;
 public class Application {
 
     public static void main(String[] args){
-        Set<User> set = new HashSet<>();
-//        set.addAll(getUsers());
-        User firstUser = new User("wangfei", 20, 180.f, 76.0f);
-//        firstUser.setCompany(new Company("优识云创"));
-        User secondUser = new User("zhiguo", 30, 190.0f, 72.03f);
-//        secondUser.setCompany(new Company("奇米科技"));
-        set.add(firstUser);
-        set.add(secondUser);
-        set.contains(firstUser);
+
+        Field[] fields = ReflectUtil.getAllInstanceField(User.class, true
+        );
+        System.out.print(fields);
+
     }
 
     private static List<User> getUsers(){

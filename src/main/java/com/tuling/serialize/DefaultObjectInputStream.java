@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 
+import com.tuling.serialize.exception.ClassNotSameException;
 import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
 import com.tuling.serialize.util.NumberUtil;
@@ -19,7 +20,16 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	private static final Logger LOGGER = Logger.getLogger(DefaultObjectInputStream.class);
 
 	public DefaultObjectInputStream(InputStream in){
-		super(in);
+		this(in, false);
+	}
+
+	/**
+	 *
+	 * @param in  序列化输入流
+	 * @param needOrder  	//反序列化的时候，是否需要对对象属性进行排序，按序读入属性值
+	 */
+	public DefaultObjectInputStream(InputStream in, boolean needOrder){
+		super(in, needOrder);
 	}
 	
 	
@@ -60,7 +70,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @throws NoSuchFieldException 
 	 */
 	@Override
-	protected void readField(Object obj,Class currentType) throws IOException,ClassNotFoundException, InvalidDataFormatException,InvalidAccessException {
+	protected void readField(Object obj,Class currentType) throws IOException,ClassNotFoundException, InvalidDataFormatException,InvalidAccessException,ClassNotSameException {
 		int length = this.in.read();
 		byte[] fieldByteArray = new byte[length];
 		this.in.read(fieldByteArray);
@@ -69,8 +79,17 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 			Field field = currentType.getDeclaredField(fieldName);
 			field.setAccessible(true);
 			try {
-				Class valueType = ReflectUtil.get(this.readClassName());
-				field.set(obj, this.readValue(valueType));
+				Object value = null;
+				if(!isNull()){
+					Class valueType = field.getType();
+					//如果字段不是基本数据类型
+					if(!ReflectUtil.isBaseType(valueType)){
+						valueType = Class.forName(this.readClassName());
+					}
+					value = this.readValue(valueType);
+				}
+				field.set(obj,value );
+
 			} catch (IllegalArgumentException e) {
 				LOGGER.error(e.getCause() + "|field:" + fieldName, e);
 				throw new InvalidAccessException(e.getCause() + "|field:" + fieldName, e);
@@ -87,6 +106,40 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		}
 	}
 
+	/**
+	 * 从输入流中读取属性的值并给属性设置值
+	 * @param obj
+	 * @param type 属性定义所在的类
+	 * @param field 当前在读取的字段
+	 * @throws IOException
+	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
+	 */
+	protected  void readField(Object obj,Class type,Field field) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException{
+		try {
+			field.setAccessible(true);
+			try {
+				Object value = null;
+				if(!isNull()){
+					Class valueType = field.getType();
+					//如果字段不是基本数据类型
+					if(!ReflectUtil.isBaseType(valueType)){
+						valueType = Class.forName(this.readClassName());
+					}
+					value = this.readValue(valueType);
+				}
+				field.set(obj,value );
+			} catch (IllegalArgumentException e) {
+				LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
+				throw new InvalidAccessException(e.getCause() + "|field:" + field.getName(), e);
+			} catch (IllegalAccessException e) {
+				LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
+				throw new InvalidAccessException(e.getCause() + "|field:" + field.getName(), e);
+			}
+		} catch (SecurityException e) {
+			LOGGER.error(String.format("属性 %s 访问受限", field.getName()), e);
+			throw new InvalidAccessException(String.format("属性 %s 访问受限", field.getName()), e);
+		}
+	}
 
 
 	/**
@@ -223,10 +276,10 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @param type  要读取数据的类型
 	 * @return
 	 */
-	protected Object readValue(Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException{
-		if(isNull()){
-			return null;
-		}
+	protected Object readValue(Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException{
+//		if(isNull()){
+//			return null;
+//		}
 		Object value = null;
 		if(type == boolean.class || type == Boolean.class){
 			value = this.readBoolean();

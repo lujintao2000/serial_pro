@@ -3,9 +3,11 @@ package com.tuling.serialize;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Map;
 
+import com.tuling.serialize.exception.ClassNotSameException;
 import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
 import org.apache.log4j.Logger;
@@ -23,12 +25,15 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	protected static final ThreadLocal<Context> threadLocal = new ThreadLocal();
 
 	protected InputStream in;
-	
-	public AbstractObjectInputStream(InputStream in){
+	//反序列化的时候，是否需要对对象属性进行排序，按序读入属性值
+	private boolean needOrder;
+
+	public AbstractObjectInputStream(InputStream in,boolean needOrder){
 		this.in = in;
+		this.needOrder = needOrder;
 	}
 	
-	public Object readObject() throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException {
+	public Object readObject() throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException {
 		Object obj = null;
 		
 		if(this.start()){
@@ -56,7 +61,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				try {
 					Class objectClass = ReflectUtil.get(className);
 					if(ReflectUtil.isBaseType(objectClass)){
-						obj = readValue(objectClass);
+						if(!isNull()){
+							obj = readValue(objectClass);
+						}
 					}else{
 						try {
 							obj = objectClass.newInstance();
@@ -78,10 +85,14 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 							}else{
 								Class currentType = objectClass;
 								while(true){
+									Field[] fields = ReflectUtil.getAllInstanceField(currentType, needOrder);
 									short fieldCount = this.readFieldCount();
+									if(fieldCount != fields.length){
+										throw new ClassNotSameException("属性个数不一致");
+									}
 									//循环读取属性
 									for(int i = 0; i < fieldCount; i++){
-										this.readField(obj,currentType);
+										this.readField(obj,currentType,fields[i]);
 									}
 									this.in.mark(0);
 									if(!this.end()){
@@ -163,8 +174,18 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException  
 	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
 	 */
-	protected abstract void readField(Object obj,Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException;
-	
+	protected abstract void readField(Object obj,Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException;
+
+	/**
+	 * 从输入流中读取属性的值并给属性设置值
+	 * @param obj
+	 * @param type 属性定义所在的类
+	 * @param field 当前在读取的字段
+	 * @throws IOException
+	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
+	 */
+	protected abstract void readField(Object obj,Class type,Field field) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException;
+
 	/**
 	 * 从指定输入流中读取当前要反序列化的对象的类名
 	 * @param in
@@ -199,5 +220,5 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param type  要读取数据的类型
 	 * @return
 	 */
-	protected abstract Object readValue(Class baseType) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException;
+	protected abstract Object readValue(Class baseType) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException;
 }

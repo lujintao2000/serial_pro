@@ -36,10 +36,19 @@ public class ObjectOutputStream {
 	private static final ThreadLocal<Integer> counterThreadLocal = new ThreadLocal<>();
 	
 	private OutputStream out;
-	
+	//序列化的时候，是否需要对对象属性进行排序，按序写入流中
+	private boolean needOrder = false;
+	//默认不缓存类的字段信息
+	private boolean isCacheField = false;
 	
 	public ObjectOutputStream(OutputStream output){
+		this(output,false,false);
+	}
+
+	public ObjectOutputStream(OutputStream output, boolean needOrder,boolean isCacheField){
 		this.out = output;
+		this.needOrder = needOrder;
+		this.isCacheField = isCacheField;
 	}
 	
 	public void write(Object obj) throws IOException{
@@ -54,11 +63,10 @@ public class ObjectOutputStream {
 			}
 			context.enter();
 			context.put(obj);
-
+			//1. 写入对象类型
+			this.writeClassName(obj.getClass());
 			//判断是否是数组类型或集合类型
 			if(obj.getClass().isArray() || obj instanceof Collection || obj instanceof Map){
-				//1.写入对象类型
-				this.writeClassName(obj.getClass());
 				//2.写入元素个数
 				int length = obj.getClass().isArray() ? Array.getLength(obj) : ((obj instanceof Collection) ? ((Collection)obj).size() : ((Map)obj).size());
 				this.out.write(NumberUtil.getByteArray(length));
@@ -86,10 +94,8 @@ public class ObjectOutputStream {
 				if(ReflectUtil.isBaseType(targetClass)){
 					this.writeValue(obj, obj.getClass());
 				}else{
-					//1. 写入类名
-					this.writeClassName(targetClass);
 					while(targetClass != null){
-						Field[] fields = ReflectUtil.getAllInstanceField(targetClass);
+						Field[] fields = ReflectUtil.getAllInstanceField(targetClass,needOrder,isCacheField);
 						//2. 写入属性个数  2字节
 						this.out.write(NumberUtil.getByteArray( ((short)fields.length) ));
 						//3. 循环写入属性
@@ -167,10 +173,10 @@ public class ObjectOutputStream {
 		field.setAccessible(true);
 		try {
 			Object value = field.get(obj);
-			//1. 写入属性名 长度  1 字节      
-			this.out.write(field.getName().getBytes().length);
-			//2. 写入属性名对应的字节数组
-			this.out.write(field.getName().getBytes());
+//			//1. 写入属性名 长度  1 字节
+//			this.out.write(field.getName().getBytes().length);
+//			//2. 写入属性名对应的字节数组
+//			this.out.write(field.getName().getBytes());
 			//3. 写入属性值
 			this.writeValue(value, field.getType());
 		} catch (IllegalArgumentException e) {
@@ -233,17 +239,19 @@ public class ObjectOutputStream {
 	/**
 	 * 写入基本数据类型对应包装类对象的值
 	 * @param value
+	 * @param  type 值所属字段的类型
 	 * @throws IOException
 	 */
 	protected void writeValue(Object value, Class type) throws IOException{
 		if(value == null){
-			this.writeClassName(type);
+			//this.writeClassName(type);
 			this.writeNull();
 			return;
 		}
-		this.writeClassName(value.getClass());
 		this.writeNotNull();
-
+		if(!ReflectUtil.isBaseType(type)){
+			this.writeClassName(value.getClass());
+		}
 
 //		if(ReflectUtil.isBaseType(value.getClass())){
 //			this.writeClassName(value.getClass().getTypeName());

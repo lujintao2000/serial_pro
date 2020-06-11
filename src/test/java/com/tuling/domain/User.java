@@ -4,10 +4,10 @@ import java.io.Serializable;
 
 public class User extends Person implements Serializable{
 
+
+    private Company company = null;
     private String name;
     private Integer age;
-    private Company company = null;
-
 
     public User(){
         super(null, 0.0f);

@@ -60,7 +60,7 @@ public class ReflectUtil {
      * @param isCacheField 是否缓存类的字段信息
      * @return
      */
-    public static Field[] getAllInstanceField(Class targetClass,boolean isCacheField) {
+    public static Field[] getAllInstanceFieldNoOrder(Class targetClass,boolean isCacheField) {
         Field[] result = null;
         if(isCacheField){
             if (fieldMap.containsKey(targetClass)) {
@@ -96,7 +96,7 @@ public class ReflectUtil {
                 return getSortedFields(targetClass, needOrder);
             }
         } else {
-            result = getAllInstanceField(targetClass, isCacheField);
+            result = getAllInstanceFieldNoOrder(targetClass, isCacheField);
         }
         return result;
     }

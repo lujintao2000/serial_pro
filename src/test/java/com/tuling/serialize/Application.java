@@ -17,7 +17,7 @@ public class Application {
 
     public static void main(String[] args){
 
-        Field[] fields = ReflectUtil.getAllInstanceField(User.class, true
+        Field[] fields = ReflectUtil.getAllInstanceField(User.class, true, true
         );
         System.out.print(fields);
 

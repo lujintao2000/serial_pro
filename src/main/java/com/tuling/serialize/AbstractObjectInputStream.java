@@ -27,10 +27,13 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	protected InputStream in;
 	//反序列化的时候，是否需要对对象属性进行排序，按序读入属性值
 	private boolean needOrder;
+	//是否缓存类的字段信息
+	private boolean isCacheField = false;
 
-	public AbstractObjectInputStream(InputStream in,boolean needOrder){
+	public AbstractObjectInputStream(InputStream in,boolean needOrder,boolean isCacheField){
 		this.in = in;
 		this.needOrder = needOrder;
+		this.isCacheField = isCacheField;
 	}
 	
 	public Object readObject() throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException {
@@ -85,7 +88,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 							}else{
 								Class currentType = objectClass;
 								while(true){
-									Field[] fields = ReflectUtil.getAllInstanceField(currentType, needOrder);
+									Field[] fields = ReflectUtil.getAllInstanceField(currentType, needOrder,isCacheField);
 									short fieldCount = this.readFieldCount();
 									if(fieldCount != fields.length){
 										throw new ClassNotSameException("属性个数不一致");

@@ -20,16 +20,17 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	private static final Logger LOGGER = Logger.getLogger(DefaultObjectInputStream.class);
 
 	public DefaultObjectInputStream(InputStream in){
-		this(in, false);
+		this(in,false, false);
 	}
 
 	/**
 	 *
 	 * @param in  序列化输入流
 	 * @param needOrder  	//反序列化的时候，是否需要对对象属性进行排序，按序读入属性值
+	 * @param isCacheField 表示是否缓存类的字段信息
 	 */
-	public DefaultObjectInputStream(InputStream in, boolean needOrder){
-		super(in, needOrder);
+	public DefaultObjectInputStream(InputStream in, boolean needOrder,boolean isCacheField){
+		super(in, needOrder,isCacheField);
 	}
 	
 	

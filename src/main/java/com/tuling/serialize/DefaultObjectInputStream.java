@@ -7,6 +7,7 @@ import java.lang.reflect.Field;
 import com.tuling.serialize.exception.ClassNotSameException;
 import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
+import com.tuling.serialize.util.Constant;
 import com.tuling.serialize.util.NumberUtil;
 import com.tuling.serialize.util.ReflectUtil;
 import org.apache.log4j.Logger;
@@ -36,12 +37,12 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	
 	@Override
 	protected boolean start() throws IOException{
-		return this.in.read() == ObjectOutputStream.BEGIN_FLAG;
+		return this.in.read() == Constant.BEGIN_FLAG;
 	}
 	
 	@Override
 	protected boolean end() throws IOException{
-		return this.in.read() == ObjectOutputStream.END_FLAG;
+		return this.in.read() == Constant.END_FLAG;
 	}
 
 	/**
@@ -50,7 +51,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @throws IOException
 	 */
 	private boolean isReference() throws IOException{
-		return this.in.read() == ObjectOutputStream.REFERENCE_FLAG;
+		return this.in.read() == Constant.REFERENCE_FLAG;
 	}
 	
 	/**
@@ -319,6 +320,6 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @throws IOException
 	 */
 	protected  boolean isNull() throws IOException{
-		return this.in.read() == ObjectOutputStream.NULL_FLAG;
+		return this.in.read() == Constant.NULL_FLAG;
 	}
 }

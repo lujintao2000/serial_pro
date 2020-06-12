@@ -39,7 +39,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	public Object readObject() throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException {
 		Object obj = null;
 		
-		if(this.start()){
+		if(!this.isNull()){
 			Context context = threadLocal.get();
 			if(context == null){
 				context = new Context();
@@ -97,11 +97,15 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 									for(int i = 0; i < fieldCount; i++){
 										this.readField(obj,currentType,fields[i]);
 									}
-									this.in.mark(0);
-									if(!this.end()){
-										currentType = currentType.getSuperclass();
-									}else{
-										this.in.reset();
+//									this.in.mark(0);
+//									if(!this.end()){
+//										currentType = currentType.getSuperclass();
+//									}else{
+//										this.in.reset();
+//										break;
+//									}
+									currentType = currentType.getSuperclass();
+									if(currentType == null || currentType == Object.class){
 										break;
 									}
 								}
@@ -127,7 +131,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				threadLocal.remove();
 			}
 
-			this.end();
+//			this.end();
 		}
 		return obj;
 	}

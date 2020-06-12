@@ -20,7 +20,7 @@ public class SerializeTest {
         boolean needOrder = true;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-        ObjectOutputStream out = new ObjectOutputStream(output, needOrder,false);
+        ObjectOutputStream out = new DefaultObjectOutputStream(output, needOrder,false);
         out.write(originalValue);
         out.close();
 
@@ -32,34 +32,39 @@ public class SerializeTest {
         } catch (InvalidDataFormatException e) {
             e.printStackTrace();
         }
-        if(originalValue.getClass().isArray()){
-            boolean flag = true;
-            int length = Array.getLength(originalValue);
-            if(obj != null && obj.getClass().isArray() && length == Array.getLength(obj)){
-               for(int i = 0; i < length; i++){
-                   if(!Array.get(originalValue,i).equals(Array.get(obj,i))){
-                       flag = false;
-                       break;
-                   }
-               }
+        if(originalValue != null){
+            if(originalValue.getClass().isArray()){
+                boolean flag = true;
+                int length = Array.getLength(originalValue);
+                if(obj != null && obj.getClass().isArray() && length == Array.getLength(obj)){
+                    for(int i = 0; i < length; i++){
+                        if(!Array.get(originalValue,i).equals(Array.get(obj,i))){
+                            flag = false;
+                            break;
+                        }
+                    }
+                }else{
+                    flag = false;
+                }
+                Assert.assertEquals(flag, true);
+
+            }else if(originalValue instanceof  Collection){
+                boolean flag = false;
+                if(obj != null && obj instanceof  Collection && ((Collection)originalValue).size() == ((Collection)obj).size()){
+                    List list = new ArrayList();
+                    list.add((Collection)originalValue);
+                    flag = ((Collection) obj).stream().noneMatch(x -> list.contains(x));
+
+                }
+                Assert.assertEquals(flag, true);
+
             }else{
-                flag = false;
+                Assert.assertEquals(originalValue,obj);
             }
-            Assert.assertEquals(flag, true);
-
-        }else if(originalValue instanceof  Collection){
-            boolean flag = false;
-            if(obj != null && obj instanceof  Collection && ((Collection)originalValue).size() == ((Collection)obj).size()){
-                List list = new ArrayList();
-                list.add((Collection)originalValue);
-                flag = ((Collection) obj).stream().noneMatch(x -> list.contains(x));
-
-            }
-            Assert.assertEquals(flag, true);
-
         }else{
             Assert.assertEquals(originalValue,obj);
         }
+
 
     }
 
@@ -81,7 +86,7 @@ public class SerializeTest {
         User user = new User("wangfei", 20, 180.f, 76.0f);
 
 //        user.setCompany(new Company("优识云创"));
-        test(user);
+        test(null);
         //test null
         user.setAge(null);
         test(user);

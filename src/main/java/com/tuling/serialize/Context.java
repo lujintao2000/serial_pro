@@ -14,7 +14,11 @@ public class Context {
     //表示在序列化时，当前与该context相关的对象的个数
     private Integer counter = 0;
     private Map<Class,List> map = new HashMap<>();
+    //表示在一次序列化的过程中，已经往流中写入类名的类的集合
+    private List<Class> classList = new ArrayList<>();
 
+    //表示在一次反序列化的过程中，已经读取过完整类名的类的集合
+    private List<String> hasReadClassNameList = new ArrayList<>();
 
     public void enter(){
         counter++;
@@ -22,6 +26,60 @@ public class Context {
 
     public void leave(){
         counter--;
+    }
+
+    /**
+     * 添加新类
+     * @param item
+     */
+    public void addClass(Class item){
+        this.classList.add(item);
+    }
+
+    /**
+     * 判断指定的类是否已存在于上下文中
+     * @param target
+     * @return
+     */
+    public boolean contains(Class target){
+        return classList.contains(target);
+    }
+
+    /**
+     * 获取指定类在上下文已写入类集合中的序号
+     * @param target
+     * @return
+     */
+    public int getIndex(Class target){
+        return classList.indexOf(target);
+    }
+
+    /**
+     * 往已读取类名集合中添加一个新类名
+     * @param item
+     */
+    public void addClassName(String className){
+        if(!hasReadClassNameList.contains(className)){
+            hasReadClassNameList.add(className);
+        }
+    }
+
+    /**
+     * 从已读取类名集合中获取指定序号对应的类名
+     * @param int index
+     * @return
+     */
+    public String getClassName(int index){
+        return hasReadClassNameList.get(index);
+    }
+
+    /**
+     * 根据序号获取与之对应的类
+     * @param index
+     * @return
+     */
+    public Class getClassByIndex(int index){
+        return classList.get(index);
     }
 
     /**

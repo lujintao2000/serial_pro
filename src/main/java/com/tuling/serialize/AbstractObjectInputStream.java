@@ -194,13 +194,15 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	protected abstract void readField(Object obj,Class type,Field field) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException;
 
 	/**
-	 * 从指定输入流中读取当前要反序列化的对象的类名
-	 * @param in
-	 * @return
-	 * @throws IOException 
+	 * 读取当前要反序列化的对象的类名
+	 * @return  读取的类名
+	 * @throws IOException
+	 * @throws ClassNotFoundException 当类名对应的类不存在时，抛出此异常
 	 */
-	protected abstract String readClassName() throws IOException;
-	
+	protected abstract String readClassName() throws IOException, ClassNotFoundException;
+
+
+
 	/**
 	 * 读取数组长度
 	 * @return

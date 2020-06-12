@@ -141,17 +141,24 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         if(type == null){
             throw new IllegalArgumentException("type can't be null");
         }
-
-        String className = "";
-        if(ReflectUtil.isBaseType(type)){
-            className = ReflectUtil.getFlagOfBaseType(type);
+        Context context = threadLocal.get();
+        if(context == null || !context.contains(type)){
+            String className = "";
+            if(ReflectUtil.isBaseType(type)){
+                className = ReflectUtil.getFlagOfBaseType(type);
+            }else{
+                className = type.getTypeName();
+            }
+            //1. 写入类名长度  2字节
+            this.out.write(NumberUtil.getByteArray( ((short)className.getBytes().length) ) );
+            //2. 写入类名
+            this.out.write(className.getBytes());
+            context.addClass(type);
         }else{
-            className = type.getTypeName();
+            //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
+            this.out.write(NumberUtil.getByteArray((short)0));
+            this.out.write(NumberUtil.getByteArray((short) context.getIndex(type)));
         }
-        //1. 写入类名长度  2字节
-        this.out.write(NumberUtil.getByteArray( ((short)className.getBytes().length) ) );
-        //2. 写入类名
-        this.out.write(className.getBytes());
     }
 
     /**

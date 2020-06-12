@@ -151,14 +151,25 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @throws IOException 
 	 */
 	@Override
-	protected String readClassName() throws IOException{
+	protected String readClassName() throws IOException, ClassNotFoundException {
+		Context context = threadLocal.get();
 		//1. 读入类名字节长度
 		short length = this.readShort();
-		//2. 读入类名
-		byte[] classNameByteArray = new byte[length];
-		this.in.read(classNameByteArray);
-		return new String(classNameByteArray);
+		if(length > 0){
+			//2. 读入类名
+			byte[] classNameByteArray = new byte[length];
+			this.in.read(classNameByteArray);
+			String className = new String(classNameByteArray);
+			context.addClassName(className);
+			return className;
+		}else{
+			//读取引用序号
+			short index = this.readShort();
+			return context.getClassName(index);
+		}
 	}
+
+
 	
 	/**
 	 * 读取数组长度

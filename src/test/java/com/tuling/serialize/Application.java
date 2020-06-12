@@ -15,12 +15,14 @@ import java.util.Set;
  */
 public class Application {
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws ClassNotFoundException {
 
         Field[] fields = ReflectUtil.getAllInstanceField(User.class, true, true
         );
         System.out.print(fields);
-
+        String[] a =  new String[]{};
+        String[] b = new String[]{"a"};
+        System.out.println(a.getClass() == b.getClass());
     }
 
     private static List<User> getUsers(){

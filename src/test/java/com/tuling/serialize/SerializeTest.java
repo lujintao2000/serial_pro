@@ -19,7 +19,7 @@ public class SerializeTest {
     private void test(Object originalValue) throws Exception {
         boolean needOrder = true;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-
+        OutputStream output2 = new FileOutputStream("e:\\list.obj");
         ObjectOutputStream out = new DefaultObjectOutputStream(output, needOrder,false);
         out.write(originalValue);
         out.close();
@@ -31,6 +31,8 @@ public class SerializeTest {
             System.out.println(obj);
         } catch (InvalidDataFormatException e) {
             e.printStackTrace();
+        }finally {
+            in.close();
         }
         if(originalValue != null){
             if(originalValue.getClass().isArray()){
@@ -109,8 +111,16 @@ public class SerializeTest {
         list.add(null);
         list.add(4);
         test(list);
-        test(getUsers());
 
+    }
+
+    @Test
+    public void testListObject()  throws Exception{
+        List<User> users = new ArrayList<>();
+        users.addAll(getUsers());
+        users.addAll(getUsers());
+        users.addAll(getUsers());
+        test(users);
     }
 
     @Test

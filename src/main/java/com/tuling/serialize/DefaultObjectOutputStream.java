@@ -82,10 +82,39 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
             //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
             if(context != null && context.contains(value)){
                 this.writeReference();
-                this.out.write(NumberUtil.getByteArray(context.getIndex(value)));
+                this.writeClassName(value.getClass());
+                this.out.write(NumberUtil.getByteArray((short) context.getIndex(value)));
             }else{
                 this.write(value);
             }
         }
     }
+
+    @Override
+    protected void writeClassName(Class type) throws IOException{
+        if(type == null){
+            throw new IllegalArgumentException("type can't be null");
+        }
+        Context context = threadLocal.get();
+        if(context == null || !context.contains(type)){
+            String className = "";
+            if(ReflectUtil.isBaseType(type)){
+                className = ReflectUtil.getFlagOfBaseType(type);
+            }else if(context.getCurrentField() != null && context.getCurrentField().getType() == type){  //当值的实际类型和字段类型相同时，不需要写入类名，写入标识字符即可
+                className = BaseTypeEnum.VOID.getValue();
+            }else{
+                className = type.getTypeName();
+            }
+            //1. 写入类名长度  2字节
+            this.out.write(NumberUtil.getByteArray( ((short)className.getBytes().length) ) );
+            //2. 写入类名
+            this.out.write(className.getBytes());
+            context.addClass(type);
+        }else{
+            //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
+            this.out.write(NumberUtil.getByteArray((short)0));
+            this.out.write(NumberUtil.getByteArray((short) context.getIndex(type)));
+        }
+    }
+
 }

@@ -29,4 +29,13 @@ public class Company {
 	public void setUser(User user) {
 		this.user = user;
 	}
+
+	@Override
+	public int hashCode(){
+		int result = 1;
+		if(this.name != null){
+			result *= this.name.hashCode();
+		}
+		return result;
+	}
 }

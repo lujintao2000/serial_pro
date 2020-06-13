@@ -48,6 +48,17 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                 context = new Context();
                 threadLocal.set(context);
             }
+
+
+//            //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
+//            if(context.contains(obj)){
+//                this.writeReference();
+//                this.writeClassName(obj.getClass());
+//                this.out.write(NumberUtil.getByteArray(context.getIndex(obj)));
+//                return;
+//            }
+
+
             context.enter();
             context.put(obj);
             //1. 写入对象类型
@@ -87,14 +98,11 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                         this.out.write(NumberUtil.getByteArray( ((short)fields.length) ));
                         //3. 循环写入属性
                         for(Field field : fields){
+                            context.setCurrentField(field);
                             this.writeField(field, obj);
                         }
+                        context.setCurrentField(null);
                         targetClass = targetClass.getSuperclass();
-//                        if(targetClass != null && targetClass != Object.class){
-//                            //this.writeContine();
-//                        }else{
-//                            break;
-//                        }
                         if(targetClass == null || targetClass == Object.class){
                             break;
                         }
@@ -105,7 +113,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             if(context.isFinish()){
                 threadLocal.remove();
             }
-//            this.writeEnd();
         }
     }
 
@@ -136,29 +143,13 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         }
     }
 
-    protected void writeClassName(Class type) throws IOException{
-        if(type == null){
-            throw new IllegalArgumentException("type can't be null");
-        }
-        Context context = threadLocal.get();
-        if(context == null || !context.contains(type)){
-            String className = "";
-            if(ReflectUtil.isBaseType(type)){
-                className = ReflectUtil.getFlagOfBaseType(type);
-            }else{
-                className = type.getTypeName();
-            }
-            //1. 写入类名长度  2字节
-            this.out.write(NumberUtil.getByteArray( ((short)className.getBytes().length) ) );
-            //2. 写入类名
-            this.out.write(className.getBytes());
-            context.addClass(type);
-        }else{
-            //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
-            this.out.write(NumberUtil.getByteArray((short)0));
-            this.out.write(NumberUtil.getByteArray((short) context.getIndex(type)));
-        }
-    }
+    /**
+     * 将指定类的类名输出到流中
+     * @param type
+     * @throws IOException
+     */
+    protected abstract void writeClassName(Class type) throws IOException;
+
 
     /**
      * 将指定对象 指定的属性写入输出流

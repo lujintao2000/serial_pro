@@ -58,11 +58,10 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				for(int i = 0;i < length;i++){
 					Array.set(obj , i , this.readObject());
 				}
-
 			}else
 			{
 				try {
-					Class objectClass = ReflectUtil.get(className);
+					Class objectClass = Class.forName(className);
 					if(ReflectUtil.isBaseType(objectClass)){
 						if(!isNull()){
 							obj = readValue(objectClass);
@@ -95,8 +94,10 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 									}
 									//循环读取属性
 									for(int i = 0; i < fieldCount; i++){
+										context.setCurrentField(fields[i]);
 										this.readField(obj,currentType,fields[i]);
 									}
+									context.setCurrentField(null);
 									currentType = currentType.getSuperclass();
 									if(currentType == null || currentType == Object.class){
 										break;
@@ -121,8 +122,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			if(context.isFinish()){
 				threadLocal.remove();
 			}
-
-//			this.end();
 		}
 		return obj;
 	}

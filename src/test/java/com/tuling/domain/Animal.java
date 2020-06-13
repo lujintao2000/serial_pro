@@ -45,4 +45,13 @@ public  class Animal {
         }
     }
 
+    @Override
+    public int hashCode(){
+        int result = 1;
+        if(this.height != null){
+            result *= this.height;
+        }
+        result = (int)(result * this.weight);
+        return result;
+    }
 }

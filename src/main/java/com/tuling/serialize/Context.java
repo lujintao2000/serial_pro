@@ -1,5 +1,6 @@
 package com.tuling.serialize;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +20,8 @@ public class Context {
 
     //表示在一次反序列化的过程中，已经读取过完整类名的类的集合
     private List<String> hasReadClassNameList = new ArrayList<>();
+    //表示当前正在读取或写入的字段
+    private Field currentField = null;
 
     public void enter(){
         counter++;
@@ -144,5 +147,13 @@ public class Context {
         }else{
             return null;
         }
+    }
+
+    public Field getCurrentField() {
+        return currentField;
+    }
+
+    public void setCurrentField(Field currentField) {
+        this.currentField = currentField;
     }
 }

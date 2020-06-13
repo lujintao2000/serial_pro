@@ -133,17 +133,17 @@ public class ReflectUtil {
                 || targetClass == int.class || targetClass == char.class
                 || targetClass == byte.class || targetClass == boolean.class
                 || targetClass == short.class || targetClass == long.class
-                || targetClass == float.class || targetClass == double.class;
+                || targetClass == float.class || targetClass == double.class || targetClass == Void.class;
     }
 
     /**
-     * 判断指定字符串是否是基本数据类型的包装类型。这里要注意：基本数据类型的包装类在序列化流中是用标记字符表示,请参阅BaseTypeEnum
+     * 判断指定的类名是否是原类名的简写。这里要注意：基本数据类型的包装类在序列化流中是用标记字符表示,请参阅BaseTypeEnum
      *
-     * @param flagName 标识字符串
-     * @return 如果指定字符串是标识基本数据类型的包装类型，返回true;否则，返回false
+     * @param className 类名
+     * @return 如果指定的类名是否是原类名的简写，返回true;否则，返回false
      */
-    public static boolean isBaseType(String flagName) {
-        return baseTypeMap.containsKey(flagName);
+    public static boolean isShortName(String className) {
+        return baseTypeMap.containsKey(className);
     }
 
     /**
@@ -153,10 +153,23 @@ public class ReflectUtil {
      * @return
      */
     public static Class get(String className) throws ClassNotFoundException {
-        if (isBaseType(className)) {
+        if (isShortName(className)) {
             return baseTypeMap.get(className);
         } else {
             return Class.forName(className);
+        }
+    }
+
+    /**
+     * 根据类的简称，获取类的全名
+     * @param shortNameForClass  类的简称
+     * @return
+     */
+    public static String getFullName(String shortNameForClass){
+        if(isShortName(shortNameForClass)){
+            return baseTypeMap.get(shortNameForClass).getTypeName();
+        }else{
+            return shortNameForClass;
         }
     }
 
@@ -173,6 +186,4 @@ public class ReflectUtil {
             return type.getTypeName();
         }
     }
-
-
 }

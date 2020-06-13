@@ -71,6 +71,25 @@ public class User extends Person implements Serializable{
         return false;
     }
 
+    @Override
+    public int hashCode(){
+        int result = super.hashCode();
+        if(company != null){
+            result  += company.hashCode();
+        }
+        if(role != null){
+            result += role.hashCode();
+        }
+        if(department != null){
+            result += department.hashCode();
+        }
+        if(profession != null){
+            result += profession.hashCode();
+        }
+
+        return result;
+    }
+
     public Role getRole() {
         return role;
     }

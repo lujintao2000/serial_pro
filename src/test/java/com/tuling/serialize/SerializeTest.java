@@ -52,9 +52,7 @@ public class SerializeTest {
             }else if(originalValue instanceof  Collection){
                 boolean flag = false;
                 if(obj != null && obj instanceof  Collection && ((Collection)originalValue).size() == ((Collection)obj).size()){
-                    List list = new ArrayList();
-                    list.add((Collection)originalValue);
-                    flag = ((Collection) obj).stream().noneMatch(x -> list.contains(x));
+                    flag = ((Collection) obj).stream().noneMatch(x -> !((Collection)originalValue).contains(x));
 
                 }
                 Assert.assertEquals(flag, true);
@@ -84,7 +82,7 @@ public class SerializeTest {
 
     @Test
     public void testDomain() throws Exception{
-        User user = new User("wangfei", 20, 180.f, 76.0f);
+        User user = new User("wangfei", null, null, 76.0f);
         user.setCompany(new Company("优识云创"));
         test(null);
         //test null
@@ -118,8 +116,8 @@ public class SerializeTest {
     @Test
     public void testListObject()  throws Exception{
         List<User> users = new ArrayList<>();
-        users.addAll(getUsers());
-        users.addAll(getUsers());
+//        users.addAll(getUsers());
+//        users.addAll(getUsers());
         users.addAll(getUsers());
         test(users);
     }
@@ -152,8 +150,23 @@ public class SerializeTest {
         secondUser.setCompany(new Company("奇米科技"));
         User thirdUser = new User("huabing", 30, 172.f, 74.0f);
         thirdUser.setCompany(new Company("微尘大业"));
-        users.add(firstUser);
-        users.add(secondUser);
+        Role role = new Role("项目经理");
+        Department department = new Department("技术部");
+        Profession profession = new Profession("java工程师");
+        firstUser.setRole(role);
+        firstUser.setDepartment(department);
+        firstUser.setProfession(profession);
+        secondUser.setRole(role);
+        secondUser.setDepartment(department);
+        secondUser.setProfession(profession);
+        thirdUser.setRole(role);
+        thirdUser.setDepartment(department);
+        thirdUser.setProfession(profession);
+
+
+//        users.add(firstUser);
+//        users.add(secondUser);
+        users.add(thirdUser);
         users.add(thirdUser);
         return users;
     }

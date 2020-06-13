@@ -4,11 +4,9 @@ import com.tuling.domain.Company;
 import com.tuling.domain.User;
 import com.tuling.serialize.util.ReflectUtil;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by Administrator on 2020-06-10.
@@ -20,10 +18,18 @@ public class Application {
         Field[] fields = ReflectUtil.getAllInstanceField(User.class, true, true
         );
         System.out.print(fields);
-        String[] a =  new String[]{};
-        String[] b = new String[]{"a"};
-        System.out.println(a.getClass() == b.getClass());
-        System.out.println(String.format("类%s",String.class));
+//        String[] a =  new String[]{};
+//        String[] b = new String[]{"a"};
+//        System.out.println(a.getClass() == b.getClass());
+//        System.out.println(String.format("类%s",String.class));
+        Object obj = Array.newInstance(String.class,2);
+        Object obj2 = Array.newInstance(String.class,3);
+        System.out.println(obj.getClass() == obj2.getClass());
+
+        Map map = new HashMap();
+        map.put("xiaowang",20);
+        System.out.println(map.get(new String("xiaowang")));
+
     }
 
     private static List<User> getUsers(){

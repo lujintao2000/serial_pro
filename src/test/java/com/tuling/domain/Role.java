@@ -31,4 +31,13 @@ public class Role {
         }
         return false;
     }
+
+    @Override
+    public int hashCode(){
+        int result = 1;
+        if(this.name != null){
+            result *= this.name.hashCode();
+        }
+        return result;
+    }
 }

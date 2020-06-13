@@ -2,6 +2,7 @@ package com.tuling.serialize;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 
 import com.tuling.serialize.exception.ClassNotSameException;
@@ -61,52 +62,6 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	protected  short readFieldCount() throws IOException{
 		return this.readShort();
 	}
-	
-//	/**
-//	 * 从输入流中读取属性的值并给属性设置值
-//	 * @param obj
-//	 * @param currentType 属性定义所在的类
-//	 * @throws IOException
-//	 * @throws InvalidDataFormatException
-//	 * @throws SecurityException
-//	 * @throws NoSuchFieldException
-//	 */
-//	@Override
-//	protected void readField(Object obj,Class currentType) throws IOException,ClassNotFoundException, InvalidDataFormatException,InvalidAccessException,ClassNotSameException {
-//		int length = this.in.read();
-//		byte[] fieldByteArray = new byte[length];
-//		this.in.read(fieldByteArray);
-//		String fieldName = new String(fieldByteArray);
-//		try {
-//			Field field = currentType.getDeclaredField(fieldName);
-//			field.setAccessible(true);
-//			try {
-//				Object value = null;
-//				if(!isNull()){
-//					Class valueType = field.getType();
-//					//如果字段不是基本数据类型
-//					if(!ReflectUtil.isBaseType(valueType)){
-//						valueType = Class.forName(this.readClassName());
-//					}
-//					value = this.readValue(valueType);
-//				}
-//				field.set(obj,value );
-//
-//			} catch (IllegalArgumentException e) {
-//				LOGGER.error(e.getCause() + "|field:" + fieldName, e);
-//				throw new InvalidAccessException(e.getCause() + "|field:" + fieldName, e);
-//			} catch (IllegalAccessException e) {
-//				LOGGER.error(e.getCause() + "|field:" + fieldName, e);
-//				throw new InvalidAccessException(e.getCause() + "|field:" + fieldName, e);
-//			}
-//		} catch (NoSuchFieldException e) {
-//			LOGGER.error("没有该属性:" + fieldName, e);
-//			throw new InvalidDataFormatException("没有该属性:" + fieldName, e);
-//		} catch (SecurityException e) {
-//			LOGGER.error(String.format("属性 %s 访问受限", fieldName), e);
-//			throw new InvalidAccessException(String.format("属性 %s 访问受限", fieldName), e);
-//		}
-//	}
 
 	/**
 	 * 从输入流中读取属性的值并给属性设置值
@@ -122,12 +77,8 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 			try {
 				Object value = null;
 				if(!isNull()){
-					Class valueType = field.getType();
-					//如果字段不是基本数据类型
-//					if(!ReflectUtil.isBaseType(valueType)){
-//						valueType = Class.forName(this.readClassName());
-//					}
-					value = this.readValue(valueType);
+					Class fieldType = field.getType();
+					value = this.readValue(fieldType);
 				}
 				field.set(obj,value );
 			} catch (IllegalArgumentException e) {
@@ -145,7 +96,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 
 
 	/**
-	 * 从指定输入流中读取当前要反序列化对象的类名
+	 * 从指定输入流中读取当前要反序列化对象的类名()
 	 * @param in
 	 * @return
 	 * @throws IOException 
@@ -159,9 +110,12 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 			//2. 读入类名
 			byte[] classNameByteArray = new byte[length];
 			this.in.read(classNameByteArray);
-			String className = new String(classNameByteArray);
-			context.addClassName(className);
-			return className;
+			String fullClassName = ReflectUtil.getFullName(new String(classNameByteArray));
+			if(fullClassName.equals(BaseTypeEnum.VOID.getType().getTypeName())){
+				fullClassName = context.getCurrentField().getType().getTypeName();
+			}
+			context.addClassName(fullClassName);
+			return fullClassName;
 		}else{
 			//读取引用序号
 			short index = this.readShort();
@@ -286,7 +240,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 
 	/**
 	 * 从流中当前位置读取指定类型的值
-	 * @param type  要读取数据的类型
+	 * @param type  要读取数据所对应的字段类型
 	 * @return
 	 */
 	protected Object readValue(Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException{
@@ -312,9 +266,17 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		}else{
 			this.in.mark(0);
 			if(isReference()){
-				int index = this.readInt();
+
+				String className = this.readClassName();
+				int index = this.readShort();
+				Class valueType = null;
+				if(className.endsWith("[]")){
+					valueType = Array.newInstance(Class.forName(className.substring(0,className.length() - 2)),0).getClass();
+				}else{
+					valueType = Class.forName(className);
+				}
 				Context context = threadLocal.get();
-				value = context.get(type, index);
+				value = context.get(valueType, index);
 			}else{
 				this.in.reset();
 				value = this.readObject();

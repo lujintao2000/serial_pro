@@ -18,7 +18,9 @@ public enum BaseTypeEnum {
     LONG(Long.class,"*"),
     FLOAT(Float.class,"("),
     DOUBLE(Double.class,")"),
-    STRING(String.class,"?");
+    STRING(String.class,"?"),
+    VOID(Void.class,"-");
+
 
     private static Map<Class,BaseTypeEnum> map = new HashMap<>();
     private Class type;

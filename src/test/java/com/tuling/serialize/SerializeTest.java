@@ -1,7 +1,6 @@
 package com.tuling.serialize;
 
-import com.tuling.domain.Company;
-import com.tuling.domain.User;
+import com.tuling.domain.*;
 import com.tuling.serialize.exception.InvalidDataFormatException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -86,10 +85,12 @@ public class SerializeTest {
     @Test
     public void testDomain() throws Exception{
         User user = new User("wangfei", 20, 180.f, 76.0f);
-
-//        user.setCompany(new Company("优识云创"));
+        user.setCompany(new Company("优识云创"));
         test(null);
         //test null
+        user.setRole(new Role("项目经理"));
+        user.setDepartment(new Department("技术部"));
+        user.setProfession(new Profession("java工程师"));
         user.setAge(null);
         test(user);
     }

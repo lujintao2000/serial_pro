@@ -97,28 +97,19 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 									for(int i = 0; i < fieldCount; i++){
 										this.readField(obj,currentType,fields[i]);
 									}
-//									this.in.mark(0);
-//									if(!this.end()){
-//										currentType = currentType.getSuperclass();
-//									}else{
-//										this.in.reset();
-//										break;
-//									}
 									currentType = currentType.getSuperclass();
 									if(currentType == null || currentType == Object.class){
 										break;
 									}
 								}
 							}
-
-
-
 						} catch (InstantiationException e) {
-							LOGGER.error(e.getCause(), e);
-							throw new InvalidDataFormatException("创建对象失败:" + e.getMessage(), e);
+							String msg = String.format("创建对象失败,%s缺乏无参构造方法",objectClass);
+							LOGGER.error(msg, e);
+							throw new InvalidDataFormatException(msg, e);
 						} catch (IllegalAccessException e) {
 							LOGGER.error(e.getCause(), e);
-							throw new InvalidDataFormatException("访问对象成员受限:" + e.getMessage(), e);
+							throw new InvalidDataFormatException("对象成员访问受限:" + e.getMessage(), e);
 						}
 					}
 				} catch (ClassNotFoundException e) {
@@ -174,14 +165,14 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 */
 	protected abstract short readFieldCount() throws IOException;
 	
-	/**
-	 * 从输入流中读取属性的值并给属性设置值
-	 * @param obj
-	 * @param type 属性定义所在的类
-	 * @throws IOException  
-	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
-	 */
-	protected abstract void readField(Object obj,Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException;
+//	/**
+//	 * 从输入流中读取属性的值并给属性设置值
+//	 * @param obj
+//	 * @param type 属性定义所在的类
+//	 * @throws IOException
+//	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
+//	 */
+//	protected abstract void readField(Object obj,Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException;
 
 	/**
 	 * 从输入流中读取属性的值并给属性设置值

@@ -41,9 +41,10 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
         }
     }
 
+
     /**
      * 写入基本数据类型对应包装类对象的值
-     * @param value
+     * @param value  要写入的值
      * @param  type 值所属字段的类型
      * @throws IOException
      */
@@ -54,9 +55,6 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
             return;
         }
         this.writeNotNull();
-        if(!ReflectUtil.isBaseType(type)){
-            this.writeClassName(value.getClass());
-        }
 
         if(value instanceof Boolean){
             this.out.write( ((Boolean)value).equals(Boolean.TRUE) ? 1 : 0 );

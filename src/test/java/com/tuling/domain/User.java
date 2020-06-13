@@ -3,9 +3,10 @@ package com.tuling.domain;
 import java.io.Serializable;
 
 public class User extends Person implements Serializable{
-
-
     private Company company = null;
+    private Role role = null;
+    private Profession profession = null;
+    private Department department = null;
     private String name;
     private Integer age;
 
@@ -59,11 +60,38 @@ public class User extends Person implements Serializable{
             User another = (User)obj;
             if(super.equals(obj)){
                 if((this.name == another.getName() || (this.name != null && this.name.equals(another.getName()))) && this.age == another.getAge()
-                        && (this.company == another.getCompany() || (this.company != null && another.getCompany() != null && this.company.getName().equals(another.getCompany().getName())) )){
+                        && (this.company == another.getCompany() || (this.company != null && another.getCompany() != null && this.company.getName().equals(another.getCompany().getName())) )
+                        && (this.role == another.getRole() || (this.role != null && another.getRole() != null && this.role.getName().equals(another.getRole().getName())) )
+                        && (this.department == another.getDepartment() || (this.department != null && another.getDepartment() != null && this.department.getName().equals(another.getDepartment().getName())) )
+                        && (this.profession == another.getProfession() || (this.profession != null && another.getProfession() != null && this.profession.getName().equals(another.getProfession().getName())) )){
                    return  true;
                 }
             }
         }
         return false;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public Profession getProfession() {
+        return profession;
+    }
+
+    public void setProfession(Profession profession) {
+        this.profession = profession;
+    }
+
+    public Department getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(Department department) {
+        this.department = department;
     }
 }

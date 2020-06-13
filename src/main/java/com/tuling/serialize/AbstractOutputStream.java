@@ -43,7 +43,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             this.writeNull();
         }else{
             this.writeNotNull();
-            //this.writeStart();
             Context context = threadLocal.get();
             if(context == null){
                 context = new Context();
@@ -80,7 +79,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                 Class targetClass = obj.getClass();
                 //判断是否是基本数据类型对应的包装类型
                 if(ReflectUtil.isBaseType(targetClass)){
-                    this.writeValue(obj, obj.getClass());
+                    this.writeValue(obj, targetClass);
                 }else{
                     while(targetClass != null){
                         Field[] fields = ReflectUtil.getAllInstanceField(targetClass,needOrder,isCacheField);

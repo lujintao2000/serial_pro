@@ -23,6 +23,7 @@ public class Application {
         String[] a =  new String[]{};
         String[] b = new String[]{"a"};
         System.out.println(a.getClass() == b.getClass());
+        System.out.println(String.format("类%s",String.class));
     }
 
     private static List<User> getUsers(){

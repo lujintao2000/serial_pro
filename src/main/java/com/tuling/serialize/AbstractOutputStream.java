@@ -169,8 +169,20 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         this.out.write(Constant.CONTINUE_FLAG);
     }
 
+    /**
+     * 写入引用标记
+     * @throws IOException
+     */
     protected void writeReference() throws IOException{
         this.out.write(Constant.REFERENCE_FLAG);
+    }
+
+    /**
+     * 写入普通标记
+     * @throws IOException
+     */
+    protected void writeNormal() throws IOException{
+        this.out.write(Constant.NORMAL_FLAG);
     }
 
     //将一个short类型整数 转变成对应的字节数组

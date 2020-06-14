@@ -262,7 +262,6 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		}else if(type == String.class){
 			value = this.readString();
 		}else{
-			this.in.mark(0);
 			if(isReference()){
 
 				String className = this.readClassName();
@@ -276,7 +275,6 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 				Context context = threadLocal.get();
 				value = context.get(valueType, index);
 			}else{
-				this.in.reset();
 				value = this.readObject();
 			}
 		}

@@ -19,11 +19,11 @@ public class SerializeTest {
         boolean needOrder = true;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         OutputStream output2 = new FileOutputStream("e:\\list.obj");
-        ObjectOutputStream out = new DefaultObjectOutputStream(output, needOrder,false);
+        ObjectOutputStream out = new DefaultObjectOutputStream(output2, needOrder,false);
         out.write(originalValue);
         out.close();
 
-        ObjectInputStream in = new DefaultObjectInputStream(new ByteArrayInputStream(output.toByteArray()),needOrder,false);
+        ObjectInputStream in = new DefaultObjectInputStream(new FileInputStream("e:\\list.obj"),needOrder,false);
         Object obj = null;
         try {
             obj = in.readObject();
@@ -87,7 +87,7 @@ public class SerializeTest {
         test(null);
         //test null
         user.setRole(new Role("项目经理"));
-        user.setDepartment(new Department("技术部"));
+        user.setDepartment(new AboardDepartment("技术部",new Country("china")));
         user.setProfession(new Profession("java工程师"));
         user.setAge(null);
         test(user);
@@ -156,7 +156,7 @@ public class SerializeTest {
         User thirdUser = new User("huabing", 30, 172.f, 74.0f);
         thirdUser.setCompany(new Company("微尘大业"));
         Role role = new Role("项目经理");
-        Department department = new Department("技术部");
+        Department department = new AboardDepartment("技术部",new Country("中国"));
         Profession profession = new Profession("java工程师");
         firstUser.setRole(role);
         firstUser.setDepartment(department);

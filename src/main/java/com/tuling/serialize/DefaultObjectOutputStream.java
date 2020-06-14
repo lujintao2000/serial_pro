@@ -87,6 +87,7 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
                 this.writeClassName(value.getClass());
                 this.out.write(NumberUtil.getByteArray((short) context.getIndex(value)));
             }else{
+                this.writeNormal();
                 this.write(value);
             }
         }

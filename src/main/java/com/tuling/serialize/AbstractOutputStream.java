@@ -48,17 +48,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                 context = new Context();
                 threadLocal.set(context);
             }
-
-
-//            //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
-//            if(context.contains(obj)){
-//                this.writeReference();
-//                this.writeClassName(obj.getClass());
-//                this.out.write(NumberUtil.getByteArray(context.getIndex(obj)));
-//                return;
-//            }
-
-
             context.enter();
             context.put(obj);
             //1. 写入对象类型
@@ -71,17 +60,18 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                 //3. 循环写入数组中的元素
                 if(obj.getClass().isArray()){
                     for(int i = 0; i < length; i++){
-                        this.write(Array.get(obj, i));
+                        Object value = Array.get(obj, i);
+                        this.writeValue(value, obj.getClass().getComponentType());
                     }
                 }else if(obj instanceof Collection){
                     for(Object item : (Collection)obj){
-                        this.write(item);
+                        this.writeValue(item,  Object.class);
                     }
                 }else{
                     for(Object item : ((Map)obj).entrySet()){
                         Map.Entry entry = (Map.Entry)item;
-                        this.write(entry.getKey());
-                        this.write(entry.getValue());
+                        this.writeValue(entry.getKey(), Object.class);
+                        this.writeValue(entry.getValue(), Object.class);
                     }
                 }
 

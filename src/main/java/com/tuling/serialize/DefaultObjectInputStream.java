@@ -75,12 +75,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		try {
 			field.setAccessible(true);
 			try {
-				Object value = null;
-				if(!isNull()){
-					Class fieldType = field.getType();
-					value = this.readValue(fieldType);
-				}
-				field.set(obj,value );
+				field.set(obj,this.readValue(field.getType()) );
 			} catch (IllegalArgumentException e) {
 				LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
 				throw new InvalidAccessException(e.getCause() + "|field:" + field.getName(), e);
@@ -244,6 +239,9 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @return
 	 */
 	protected Object readValue(Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException{
+		if(isNull()){
+			return null;
+		}
 		Object value = null;
 		if(type == boolean.class || type == Boolean.class){
 			value = this.readBoolean();

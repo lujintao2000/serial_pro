@@ -55,24 +55,26 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
             return;
         }
         this.writeNotNull();
-
-        if(value instanceof Boolean){
+        if(type == null){
+            throw new IllegalArgumentException("when value is not null,type can't be null");
+        }
+        if(type == boolean.class || type == Boolean.class){
             this.out.write( ((Boolean)value).equals(Boolean.TRUE) ? 1 : 0 );
-        }else if(value instanceof Character){
+        }else if(type == char.class || type == Character.class){
             this.out.write(NumberUtil.getByteArray( ((Character)value).charValue() ));
-        }else if(value instanceof Byte){
+        }else if(type == byte.class || type == Byte.class){
             this.out.write(new byte[]{(Byte)value});
-        }else if(value instanceof Short){
+        }else if(type == short.class || type == Short.class){
             this.out.write(NumberUtil.getByteArray((Short)value));
-        }else if(value instanceof Integer){
+        }else if(type == int.class || type == Integer.class){
             this.out.write(NumberUtil.getByteArray((Integer)value));
-        }else if(value instanceof Long){
+        }else if(type == long.class || type == Long.class){
             this.out.write(NumberUtil.getByteArray((Long)value));
-        }else if(value instanceof Float){
+        }else if(type == float.class || type == Float.class){
             this.out.write(NumberUtil.getByteArray((Float)value));
-        }else if(value instanceof Double){
+        }else if(type == double.class || type == Double.class){
             this.out.write(NumberUtil.getByteArray((Double)value));
-        }else if(value instanceof String){
+        }else if(type == String.class){
             //先写入字符串长度，再写入字符串对应的字节
             byte[] bytes = ((String)value).getBytes();
             this.out.write(NumberUtil.getByteArray( bytes.length ));

@@ -53,19 +53,20 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				//3.读取数组长度
 				int length = this.readArrayLength();
 				Object[] array = new Object[length];
-				obj = Array.newInstance(Class.forName(className.substring(0,className.length() - 2)), length);
+				Class type = Class.forName(className.substring(0,className.length() - 2));
+				obj = Array.newInstance(type, length);
 				context.put(obj);
 				for(int i = 0;i < length;i++){
-					Array.set(obj , i , this.readObject());
+					Array.set(obj , i , this.readValue(type));
 				}
 			}else
 			{
 				try {
 					Class objectClass = Class.forName(className);
 					if(ReflectUtil.isBaseType(objectClass)){
-						if(!isNull()){
+
 							obj = readValue(objectClass);
-						}
+
 					}else{
 						try {
 							obj = objectClass.newInstance();
@@ -74,15 +75,12 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 							if(Collection.class.isAssignableFrom(objectClass)){
 								int size = this.readCollectionSize();
 								for(int i = 0; i < size; i++){
-									Object value = this.readObject();
-									((Collection)obj).add(value);
+									((Collection)obj).add(this.readValue(Object.class));
 								}
 							}else if(Map.class.isAssignableFrom(objectClass)){
 								int size = this.readMapSize();
 								for(int i = 0; i < size; i++){
-									Object key = this.readObject();
-									Object value = this.readObject();
-									((Map)obj).put(key,value);
+									((Map)obj).put(this.readValue(Object.class),this.readValue(Object.class));
 								}
 							}else{
 								Class currentType = objectClass;

@@ -28,7 +28,9 @@ public class Application {
 
         Map map = new HashMap();
         map.put("xiaowang",20);
-        System.out.println(map.get(new String("xiaowang")));
+        System.out.println(new String[0].getClass().getComponentType());
+
+
 
     }
 

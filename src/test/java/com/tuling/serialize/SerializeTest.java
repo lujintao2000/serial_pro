@@ -95,9 +95,12 @@ public class SerializeTest {
 
     @Test
     public void testArray() throws Exception{
-        String[] array = new String[]{"red","yellow","blue"};
+        Integer[] array = new Integer[]{1,2,3};
         test(array);
-        //test Object Array
+    }
+
+    @Test
+    public void testArrayObject() throws Exception{
         test(getUsers().toArray(new User[0]));
     }
 
@@ -116,8 +119,6 @@ public class SerializeTest {
     @Test
     public void testListObject()  throws Exception{
         List<User> users = new ArrayList<>();
-//        users.addAll(getUsers());
-//        users.addAll(getUsers());
         users.addAll(getUsers());
         test(users);
     }
@@ -129,6 +130,10 @@ public class SerializeTest {
         set.add("second");
         set.add("third");
         test(set);
+    }
+
+    @Test
+    public void testSetObject()  throws Exception{
         Set<User> users = new HashSet<>();
         users.addAll(getUsers());
         test(users);
@@ -138,7 +143,7 @@ public class SerializeTest {
     public void testMap() throws Exception{
         Map<String, Object> map = new HashMap();
         map.put(null, null);
-        map.put("user", new User("wangfei", 20, 180.f, 76.0f));
+        map.put("user", new User("wangfei", null, null, 76.0f));
         test(map);
     }
 
@@ -168,6 +173,14 @@ public class SerializeTest {
 //        users.add(secondUser);
         users.add(thirdUser);
         users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
+
         return users;
     }
 }

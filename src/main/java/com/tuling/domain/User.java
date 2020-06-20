@@ -1,8 +1,9 @@
 package com.tuling.domain;
 
-import java.io.Serializable;
+import org.msgpack.annotation.Message;
 
-public class User extends Person implements Serializable{
+@Message
+public class User extends Person {
     private Company company = null;
     private Role role = null;
     private Profession profession = null;
@@ -10,9 +11,9 @@ public class User extends Person implements Serializable{
     private String name;
     private Integer age;
 
-    public User(){
-        super(null, 0.0f);
-    }
+//    public User(){
+//        super(null, 0.0f);
+//    }
 
     public User(String name){
         super(null,0.0f);

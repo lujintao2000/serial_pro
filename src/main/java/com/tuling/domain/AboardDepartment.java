@@ -1,13 +1,14 @@
 package com.tuling.domain;
 
 /**
- * Created by Administrator on 2020-06-14.
+ * @author ljt
+ * @date 2020-06-20
  */
 public class AboardDepartment extends Department {
     private Country country;
 
-    public AboardDepartment(){
-
+    public AboardDepartment(String name){
+        super(name);
     }
 
     public AboardDepartment(String name,Country country){

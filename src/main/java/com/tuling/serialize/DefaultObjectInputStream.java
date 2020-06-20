@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.util.Map;
 
+import com.tuling.serialize.exception.BuilderNotFoundException;
 import com.tuling.serialize.exception.ClassNotSameException;
 import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
@@ -71,11 +73,12 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @throws IOException
 	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
 	 */
-	protected  void readField(Object obj,Class type,Field field) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException{
+	protected  void readField(Object obj,Class type,Field field) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		try {
 			field.setAccessible(true);
 			try {
 				field.set(obj,this.readValue(field.getType()) );
+
 			} catch (IllegalArgumentException e) {
 				LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
 				throw new InvalidAccessException(e.getCause() + "|field:" + field.getName(), e);
@@ -89,6 +92,20 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		}
 	}
 
+	/**
+	 * 从输入流中读取字段的值，将值放到map中
+	 * @param map  存放值的map
+	 * @param field 当前即将要读取的字段
+	 * @throws IOException
+	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
+	 */
+	protected  Map readField(Map map, Field field) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
+		if(map == null){
+			throw new IllegalArgumentException("map can't be null");
+		}
+		map.put(field.getName(),this.readValue(field.getType()));
+		return map;
+	}
 
 	/**
 	 * 从指定输入流中读取当前要反序列化对象的类名()
@@ -238,7 +255,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @param type  要读取数据所对应的字段类型
 	 * @return
 	 */
-	protected Object readValue(Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException{
+	protected Object readValue(Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		if(isNull()){
 			return null;
 		}
@@ -268,9 +285,9 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 				int index = this.readShort();
 				Class valueType = null;
 				if(className.endsWith("[]")){
-					valueType = Array.newInstance(Class.forName(className.substring(0,className.length() - 2)),0).getClass();
+					valueType = Array.newInstance(ReflectUtil.get(className.substring(0,className.length() - 2)),0).getClass();
 				}else{
-					valueType = Class.forName(className);
+					valueType = ReflectUtil.get(className);
 				}
 				Context context = threadLocal.get();
 				value = context.get(valueType, index);

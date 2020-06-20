@@ -1,19 +1,23 @@
 package com.tuling.domain;
 
+import org.msgpack.annotation.Message;
+
+import java.io.Serializable;
+
 /**
  * Created by Administrator on 2020-06-13.
  */
-public class Department {
+@Message
+public class Role  implements Serializable {
+    private String name;
 
-    public Department(){
+    public Role(){
 
     }
 
-    public Department(String name){
+    public Role(String name){
         this.name = name;
     }
-
-    private String name;
 
     public String getName() {
         return name;
@@ -25,8 +29,8 @@ public class Department {
 
     @Override
     public boolean equals(Object obj){
-        if(obj != null && obj instanceof  Department){
-            if((this.name == null && ((Department)obj).getName() == null) || (this.name != null && this.name.equals(((Department)obj).getName()))){
+        if(obj != null && obj instanceof  Role){
+            if((this.name == null && ((Role)obj).getName() == null) || (this.name != null && this.name.equals(((Role)obj).getName()))){
                 return true;
             }
         }

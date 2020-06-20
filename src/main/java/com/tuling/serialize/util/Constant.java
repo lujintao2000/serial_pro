@@ -20,4 +20,5 @@ public class Constant {
     public static final int REFERENCE_FLAG = 251;
     //代表当前要写入的值是完整信息，并非之前已经写入流中的对象的引用
     public static final int NORMAL_FLAG = 250;
+
 }

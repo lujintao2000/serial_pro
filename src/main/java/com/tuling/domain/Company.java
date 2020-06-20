@@ -1,6 +1,11 @@
 package com.tuling.domain;
 
-public class Company {
+import org.msgpack.annotation.Message;
+
+import java.io.Serializable;
+
+@Message
+public class Company implements Serializable{
 
 	private String name;
 

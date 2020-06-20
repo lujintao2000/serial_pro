@@ -1,9 +1,11 @@
 package com.tuling.domain;
 
+import java.io.Serializable;
+
 /**
  * Created by Administrator on 2020-06-08.
  */
-public  class Animal {
+public  class Animal implements Serializable {
 
     private Float height;
     private float weight;

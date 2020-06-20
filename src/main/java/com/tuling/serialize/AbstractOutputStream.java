@@ -9,6 +9,7 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
@@ -26,6 +27,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
     private boolean needOrder = false;
     //默认不缓存类的字段信息
     private boolean isCacheField = false;
+    
 
     public AbstractOutputStream(OutputStream output){
         this(output,false,false);
@@ -82,8 +84,10 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                 if(ReflectUtil.isBaseType(targetClass)){
                     this.writeValue(obj, targetClass);
                 }else{
-                    while(targetClass != null){
-                        Field[] fields = ReflectUtil.getAllInstanceField(targetClass,needOrder,isCacheField);
+                    //获得包含该类以及该类的所有父类的集合
+                    List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(targetClass);
+                    for(Class item : superClassAndSelfList){
+                        Field[] fields = ReflectUtil.getAllInstanceFieldNoOrder(item,isCacheField);
                         //2. 写入属性个数  2字节
                         this.out.write(NumberUtil.getByteArray( ((short)fields.length) ));
                         //3. 循环写入属性
@@ -92,16 +96,13 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                             this.writeField(field, obj);
                         }
                         context.setCurrentField(null);
-                        targetClass = targetClass.getSuperclass();
-                        if(targetClass == null || targetClass == Object.class){
-                            break;
-                        }
                     }
                 }
             }
             context.leave();
             if(context.isFinish()){
                 threadLocal.remove();
+                out.flush();
             }
         }
     }

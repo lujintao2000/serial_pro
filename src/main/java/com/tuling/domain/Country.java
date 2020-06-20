@@ -1,9 +1,11 @@
 package com.tuling.domain;
 
+import java.io.Serializable;
+
 /**
  * Created by Administrator on 2020-06-14.
  */
-public class Country {
+public class Country implements Serializable{
     private String name;
 
     public Country(){

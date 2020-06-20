@@ -2,11 +2,13 @@ package com.tuling.serialize;
 
 import com.tuling.domain.*;
 import com.tuling.serialize.exception.InvalidDataFormatException;
+import com.tuling.serialize.util.BuilderUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.*;
 import java.lang.reflect.Array;
+import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -16,6 +18,7 @@ import java.util.*;
 public class SerializeTest {
 
     private void test(Object originalValue) throws Exception {
+
         boolean needOrder = true;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         OutputStream output2 = new FileOutputStream("e:\\list.obj");
@@ -69,6 +72,7 @@ public class SerializeTest {
 
     @Test
     public void testAllBaseType() throws Exception{
+        Number t;
         test(1);
         test(true);
         test('A');
@@ -78,19 +82,29 @@ public class SerializeTest {
         test(1f);
         test(1d);
         test("world");
+        test(new BigInteger("200000"));
     }
+
+
 
     @Test
     public void testDomain() throws Exception{
-        User user = new User("wangfei", null, null, 76.0f);
+        User user = new User("wangfei", 20, 170.0f, 76.0f);
         user.setCompany(new Company("优识云创"));
-        test(null);
         //test null
+//        test(null);
+
         user.setRole(new Role("项目经理"));
-        user.setDepartment(new AboardDepartment("技术部",new Country("china")));
+        user.setDepartment(new Department("技术部"));
         user.setProfession(new Profession("java工程师"));
-        user.setAge(null);
+//        user.setAge(null);
         test(user);
+    }
+
+    @Test
+    public void testArrayBase() throws Exception{
+        int[] array = new int[]{1,2,3};
+        test(array);
     }
 
     @Test
@@ -98,6 +112,8 @@ public class SerializeTest {
         Integer[] array = new Integer[]{1,2,3};
         test(array);
     }
+
+
 
     @Test
     public void testArrayObject() throws Exception{
@@ -112,7 +128,7 @@ public class SerializeTest {
         list.add(5);
         list.add(null);
         list.add(4);
-        test(list);
+        test(Arrays.asList(1,2,3,5));
 
     }
 
@@ -120,6 +136,7 @@ public class SerializeTest {
     public void testListObject()  throws Exception{
         List<User> users = new ArrayList<>();
         users.addAll(getUsers());
+        String defaultPackageName = BuilderUtil.getDefaultPackageName();
         test(users);
     }
 
@@ -171,14 +188,14 @@ public class SerializeTest {
 
 //        users.add(firstUser);
 //        users.add(secondUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
         users.add(thirdUser);
 
         return users;

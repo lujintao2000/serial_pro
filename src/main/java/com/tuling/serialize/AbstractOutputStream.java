@@ -80,24 +80,14 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                         this.writeValue(value, obj.getClass().getComponentType(),out);
                     }
                 }
-//                else if(obj instanceof Collection){
-//                    for(Object item : (Collection)obj){
-//                        this.writeValue(item,  Object.class);
-//                    }
-//                }else{
-//                    for(Object item : ((Map)obj).entrySet()){
-//                        Map.Entry entry = (Map.Entry)item;
-//                        this.writeValue(entry.getKey(), Object.class);
-//                        this.writeValue(entry.getValue(), Object.class);
-//                    }
-//                }
-
             }else{
                 //先写入该类类名及该类自定义的属性，然后写入父类名及父类定义的属性
                 Class targetClass = obj.getClass();
                 //判断是否是基本数据类型对应的包装类型
                 if(ReflectUtil.isBaseType(targetClass)){
                     this.writeValue(obj, targetClass, out);
+                }else if(targetClass.isEnum()){
+                    this.writeValue(obj.toString(),String.class,out);
                 }else{
                     //获得包含该类以及该类的所有父类的集合
                     List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(targetClass);

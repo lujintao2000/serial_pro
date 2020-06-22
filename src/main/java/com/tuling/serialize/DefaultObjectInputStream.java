@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 import com.tuling.serialize.exception.BuilderNotFoundException;
@@ -304,7 +305,17 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 			value = this.readDouble(in);
 		}else if(type == String.class){
 			value = this.readString(in);
-		}else{
+		}else if(type.isEnum()){
+			String name = this.readString(in);
+			try {
+				Method method = type.getMethod("valueOf",String.class);
+				value = method.invoke(null,name);
+			} catch (Exception e) {
+
+			}
+
+		}
+		else{
 			if(isReference(in)){
 
 				String className = this.readClassName(in);

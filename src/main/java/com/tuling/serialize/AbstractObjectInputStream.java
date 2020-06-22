@@ -10,6 +10,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import com.sun.corba.se.impl.ior.OldJIDLObjectKeyTemplate;
+import com.tuling.domain.User;
 import com.tuling.serialize.exception.BuilderNotFoundException;
 import com.tuling.serialize.exception.ClassNotSameException;
 import com.tuling.serialize.exception.InvalidAccessException;
@@ -409,7 +410,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		Object obj = null;
 		try {
 
-			if(ReflectUtil.isBaseType(objectClass)){
+			if(ReflectUtil.isBaseType(objectClass) || objectClass.isEnum()){
 				obj = readValue(objectClass,in);
 			}else{
 				try {
@@ -481,7 +482,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param constructors
 	 * @return
 	 */
-	private Constructor getProperConstructor(Constructor[] constructors){
+	public Constructor getProperConstructor(Constructor[] constructors){
 		Constructor result = constructors[0];
 		if(constructors.length > 1){
 			for(int i = 1;i < constructors.length; i++){

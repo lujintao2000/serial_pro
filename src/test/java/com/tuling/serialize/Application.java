@@ -15,13 +15,15 @@ import java.util.*;
 public class Application {
 
     public static void main(String[] args) throws Exception {
+        BaseTypeEnum t = BaseTypeEnum.valueOf("VOID");
+        Class departClass = Class.forName("com.tuling.serialize.BaseTypeEnum");
 
-        Class departClass = Class.forName("java.util.Arrays$ArrayList");
-        Constructor[] constructors = Country.class.getDeclaredConstructors();
-        Constructor constructor = Country.class.getDeclaredConstructors()[0];
+
+        Constructor[] constructors = departClass.getDeclaredConstructors();
+        Constructor constructor = constructors[0];
         constructor.setAccessible(true);
-        Object obj = Array.newInstance(Object.class,1);
-        Object department = constructor.newInstance(obj);
+
+        Object department = constructor.newInstance("STRING",10,String.class,"");
         Constructor[]  constructors2 = User.class.getConstructors();
 
         List<Class> list = ReflectUtil.getSelfAndSuperClass(Object.class);

@@ -32,7 +32,7 @@ public class SerializeTest {
         try {
             obj = in.readObject(null,input);
             System.out.println(obj);
-        } catch (InvalidDataFormatException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }finally {
             input.close();
@@ -113,7 +113,10 @@ public class SerializeTest {
         test(array);
     }
 
-
+    @Test
+    public void testEnum() throws Exception{
+        test(BaseTypeEnum.CHARACTER);
+    }
 
     @Test
     public void testArrayObject() throws Exception{

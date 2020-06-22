@@ -4,6 +4,8 @@ import com.tuling.domain.*;
 import com.tuling.serialize.util.ReflectUtil;
 import org.msgpack.MessagePack;
 import java.io.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -13,11 +15,20 @@ import java.util.*;
 public class Application {
 
     public static void main(String[] args) throws Exception {
+
+        Class departClass = Class.forName("java.util.Arrays$ArrayList");
+        Constructor[] constructors = Country.class.getDeclaredConstructors();
+        Constructor constructor = Country.class.getDeclaredConstructors()[0];
+        constructor.setAccessible(true);
+        Object obj = Array.newInstance(Object.class,1);
+        Object department = constructor.newInstance(obj);
+        Constructor[]  constructors2 = User.class.getConstructors();
+
         List<Class> list = ReflectUtil.getSelfAndSuperClass(Object.class);
         list =  ReflectUtil.getSelfAndSuperClass(Object.class);
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-//        com.tuling.serialize.ObjectOutputStream out = new DefaultObjectOutputStream(output, false,true);
+        com.tuling.serialize.ObjectOutputStream out = new DefaultObjectOutputStream( false,true);
 //        Map<Class,List<Class>> map = new HashMap<>();
 //        List<Class> parentClassList = new ArrayList<>();
 //        parentClassList.add(Department.class);
@@ -26,7 +37,10 @@ public class Application {
 //
 //        Department department = new Department("开发部");
 //        Field field = Department.class.getDeclaredField("name");
-        java.io.ObjectOutputStream  out = new java.io.ObjectOutputStream (output);
+//        java.io.ObjectOutputStream  out = new java.io.ObjectOutputStream (output);
+        out.write(getUser(),output);
+
+
         int i = 0;
         long startTime = new Date().getTime();
 
@@ -34,64 +48,40 @@ public class Application {
 
 //        MessagePack messagePack = new MessagePack();
 ////        messagePack.register(User.class);
-//        byte[] content = messagePack.write(new Department("开发部"));
-//
-//        Object obj = messagePack.read(content);
+//        byte[] content = messagePack.write(getUser());
+
+       // Object obj = messagePack.read(content);
 
         for(i = 0;i < 100000; i++){
-//            field.setAccessible(true);
-//            Object value = field.get(department);
-//            out.write(getUser());
-//            Class t = Department.class.getSuperclass();
-//            Object obj = parentClassList.get(0);
-            out.writeObject(getUsers());
-//            Class a = map.get("java.util.ArrayList");
-//            Class.forName("java.util.ArrayList");
+            ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+            com.tuling.serialize.ObjectInputStream in = new DefaultObjectInputStream();
+             in.readObject(input);
 
         }
-        String.class.getDeclaredField()
-
-
+//
         long endTime = new Date().getTime();
-        System.out.println("Total cost " + (endTime - startTime) + "ms");
+        System.out.println("serial cost " + (endTime - startTime) + "ms");
+//
+//        testUnserialWithJava();
+
+    }
+
+    private static void testUnserialWithJava() throws IOException,ClassNotFoundException{
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(output);
+        out.writeObject(getUser());
         out.close();
 
+        long startTime = new Date().getTime();
+        for(int i = 0; i < 10000; i++) {
+            ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+            java.io.ObjectInputStream in = new java.io.ObjectInputStream(input);
+            Object obj = in.readObject();
+            in.close();
+        }
+        long endTime = new Date().getTime();
+        System.out.println("java cost " + (endTime - startTime) + "ms");
 
-
-//        Field[] fields = ReflectUtil.getAllInstanceField(User.class, true, true
-//        );
-//        BigInteger a = new BigInteger("10241024102410241024");
-//        BigDecimal b = new BigDecimal("");
-//        System.out.println(a.toString(10));
-//        System.out.println(String.class.getResource("/").getPath());
-////        String[] a =  new String[]{};
-////        String[] b = new String[]{"a"};
-////        System.out.println(a.getClass() == b.getClass());
-////        System.out.println(String.format("类%s",String.class));
-//        Object obj = Array.newInstance(String.class,2);
-//        Object obj2 = Array.newInstance(String.class,3);
-//        System.out.println(obj.getClass() == obj2.getClass());
-//
-//        Map map = new HashMap();
-//        map.put("xiaowang",20);
-//        System.out.println(new String[0].getClass().getComponentType());
-////        MessagePacker messagePack = MessagePack.newDefaultPacker(new ByteArrayOutputStream());
-//        ObjectOutputStream outputStream = null;
-//        try {
-//             outputStream = new ObjectOutputStream(new FileOutputStream("e:\\list.obj"));
-//            outputStream.writeObject(getUsers());
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }finally {
-//            if(outputStream != null){
-//                try{
-//                    outputStream.close();
-//                }catch (Exception ex){
-//                    ex.printStackTrace();
-//                }
-//
-//            }
-//        }
 
     }
 
@@ -117,13 +107,8 @@ public class Application {
         thirdUser.setProfession(profession);
 
 
-//        users.add(firstUser);
-//        users.add(secondUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
+        users.add(firstUser);
+        users.add(secondUser);
         users.add(thirdUser);
         users.add(thirdUser);
         users.add(thirdUser);

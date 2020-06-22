@@ -22,19 +22,20 @@ public class SerializeTest {
         boolean needOrder = true;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         OutputStream output2 = new FileOutputStream("e:\\list.obj");
-        ObjectOutputStream out = new DefaultObjectOutputStream(output2, needOrder,false);
-        out.write(originalValue);
-        out.close();
+        ObjectOutputStream out = new DefaultObjectOutputStream( needOrder,false);
+        out.write(originalValue,output);
+       output.close();
 
-        ObjectInputStream in = new DefaultObjectInputStream(new FileInputStream("e:\\list.obj"),needOrder,false);
+        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+        ObjectInputStream in = new DefaultObjectInputStream(needOrder,false);
         Object obj = null;
         try {
-            obj = in.readObject();
+            obj = in.readObject(null,input);
             System.out.println(obj);
         } catch (InvalidDataFormatException e) {
             e.printStackTrace();
         }finally {
-            in.close();
+            input.close();
         }
         if(originalValue != null){
             if(originalValue.getClass().isArray()){
@@ -85,8 +86,6 @@ public class SerializeTest {
         test(new BigInteger("200000"));
     }
 
-
-
     @Test
     public void testDomain() throws Exception{
         User user = new User("wangfei", 20, 170.0f, 76.0f);
@@ -95,10 +94,11 @@ public class SerializeTest {
 //        test(null);
 
         user.setRole(new Role("项目经理"));
-        user.setDepartment(new Department("技术部"));
+        user.setDepartment(new AboardDepartment("技术部"));
         user.setProfession(new Profession("java工程师"));
 //        user.setAge(null);
         test(user);
+
     }
 
     @Test
@@ -128,7 +128,7 @@ public class SerializeTest {
         list.add(5);
         list.add(null);
         list.add(4);
-        test(Arrays.asList(1,2,3,5));
+        test(Arrays.asList(1,2,3,null,5));
 
     }
 
@@ -136,7 +136,7 @@ public class SerializeTest {
     public void testListObject()  throws Exception{
         List<User> users = new ArrayList<>();
         users.addAll(getUsers());
-        String defaultPackageName = BuilderUtil.getDefaultPackageName();
+
         test(users);
     }
 
@@ -192,10 +192,10 @@ public class SerializeTest {
 //        users.add(thirdUser);
 //        users.add(thirdUser);
 //        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
+        users.add(thirdUser);
         users.add(thirdUser);
 
         return users;

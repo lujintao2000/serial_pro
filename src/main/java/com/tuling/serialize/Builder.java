@@ -28,4 +28,12 @@ public interface Builder<T> {
      * @return
      */
     public Class getType();
+
+    /**
+     * 是否已完成对象属性的设值
+     * @return
+     */
+    public default boolean isFinish(){
+        return false;
+    }
 }

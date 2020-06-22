@@ -1,11 +1,16 @@
 package com.tuling.domain;
 
+import org.msgpack.annotation.Message;
+
 /**
  * @author ljt
  * @date 2020-06-20
  */
+@Message
 public class AboardDepartment extends Department {
     private Country country;
+
+
 
     public AboardDepartment(String name){
         super(name);

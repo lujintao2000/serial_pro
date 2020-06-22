@@ -1,15 +1,20 @@
 package com.tuling.domain;
 
+import org.msgpack.annotation.Message;
+
 import java.io.Serializable;
 
 /**
  * Created by Administrator on 2020-06-14.
  */
-public class Country implements Serializable{
+@Message
+public class Country<T> implements Serializable{
     private String name;
 
-    public Country(){
+    private T other;
 
+    public Country(T other){
+        this.other = other;
     }
 
     public Country(String name){

@@ -37,27 +37,28 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
         writerMap.put(String.class, new StringWrite());
     }
 
-    public DefaultObjectOutputStream(OutputStream output){
-        super(output);
+    public DefaultObjectOutputStream(){
+
     }
 
-    public DefaultObjectOutputStream(OutputStream output, boolean needOrder, boolean isCacheField){
-        super(output,needOrder,isCacheField);
+    public DefaultObjectOutputStream(boolean needOrder, boolean isCacheField){
+        super(needOrder,isCacheField);
     }
 
     /**
      * 将指定对象 指定的属性写入输出流
      * @param field
      * @param obj
+     * @param out 输出流
      * @throws IOException
      */
     @Override
-    protected void writeField(Field field, Object obj) throws IOException{
+    protected  void writeField(Field field,Object obj,OutputStream out) throws IOException{
         field.setAccessible(true);
         try {
             Object value = field.get(obj);
             //3. 写入属性值
-            this.writeValue(value, field.getType());
+            this.writeValue(value, field.getType(),out);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
@@ -70,15 +71,16 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
      * 写入基本数据类型对应包装类对象的值
      * @param value  要写入的值
      * @param  type 值所属字段的类型
+     * @param out 输出流
      * @throws IOException
      */
     @Override
-    protected void writeValue(Object value, Class type) throws IOException{
+    protected void writeValue(Object value, Class type,OutputStream out) throws IOException{
         if(value == null){
-            this.writeNull();
+            this.writeNull(out);
             return;
         }
-        this.writeNotNull();
+        this.writeNotNull(out);
         if(type == null){
             throw new IllegalArgumentException("when value is not null,type can't be null");
         }
@@ -89,12 +91,12 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
              Context context = threadLocal.get();
             //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
             if(context != null && context.contains(value)){
-                this.writeReference();
-                this.writeClassName(value.getClass());
-                this.out.write(NumberUtil.getByteArray((short) context.getIndex(value)));
+                this.writeReference(out);
+                this.writeClassName(value.getClass(),out);
+                out.write(NumberUtil.getByteArray((short) context.getIndex(value)));
             }else{
-                this.writeNormal();
-                this.write(value);
+                this.writeNormal(out);
+                this.write(value,out);
             }
         }
 //        if(type == boolean.class || type == Boolean.class){
@@ -133,7 +135,7 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
     }
 
     @Override
-    protected void writeClassName(Class type) throws IOException{
+    protected void writeClassName(Class type,OutputStream out) throws IOException{
         if(type == null){
             throw new IllegalArgumentException("type can't be null");
         }
@@ -148,14 +150,14 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
                 className = type.getTypeName();
             }
             //1. 写入类名长度  2字节
-            this.out.write(NumberUtil.getByteArray( ((short)className.getBytes().length) ) );
+            out.write(NumberUtil.getByteArray( ((short)className.getBytes().length) ) );
             //2. 写入类名
-            this.out.write(className.getBytes());
+            out.write(className.getBytes());
             context.addClass(type);
         }else{
             //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
-            this.out.write(NumberUtil.getByteArray((short)0));
-            this.out.write(NumberUtil.getByteArray((short) context.getIndex(type)));
+            out.write(NumberUtil.getByteArray((short)0));
+            out.write(NumberUtil.getByteArray((short) context.getIndex(type)));
         }
     }
 

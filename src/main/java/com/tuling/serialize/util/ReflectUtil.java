@@ -2,6 +2,7 @@ package com.tuling.serialize.util;
 
 import com.tuling.serialize.BaseTypeEnum;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -90,11 +91,11 @@ public class ReflectUtil {
             if (fieldMap.containsKey(targetClass)) {
                 result = fieldMap.get(targetClass);
             } else {
-                result = getFields(targetClass);
+                result = getFields(targetClass,false);
                 fieldMap.put(targetClass, result);
             }
         } else {
-            result = getFields(targetClass);
+            result = getFields(targetClass,false);
         }
         return result;
     }
@@ -113,11 +114,11 @@ public class ReflectUtil {
                 if (orderedFieldMap.containsKey(targetClass)) {
                     return orderedFieldMap.get(targetClass);
                 } else {
-                    result = getFields(targetClass);
+                    result = getFields(targetClass,needOrder);
                     orderedFieldMap.put(targetClass, result);
                 }
             } else {
-                return getFields(targetClass);
+                return getFields(targetClass,needOrder);
             }
         } else {
             result = getAllInstanceFieldNoOrder(targetClass, isCacheField);
@@ -129,15 +130,19 @@ public class ReflectUtil {
      * 获得指定类的所有实例字段,包括父类的字段，数组中排在前的是当前类的字段，然后是父类的字段
      *
      * @param type
+     * @param needOrder 是否需要按属性名排序
      * @return
      */
-    private static Field[] getFields(Class type) {
+    private static Field[] getFields(Class type,boolean needOrder) {
         Field[] fields = Arrays.asList(type.getDeclaredFields())
                 .stream()
                 .filter(x -> !Modifier.isStatic(x.getModifiers()))
                 .collect(Collectors.toList()).toArray(new Field[0]);
         List<Field> list = Arrays.asList(fields);
         list.forEach(x -> x.setAccessible(true));
+        if(needOrder){
+            Collections.sort(list,(one,another) -> one.getName().compareTo(another.getName()));
+        }
         Field[] result = list.toArray(new Field[0]);
         return result;
     }
@@ -210,7 +215,11 @@ public class ReflectUtil {
     public static Class getComplexClass(String className) throws ClassNotFoundException{
         Class result = classMap.get(className);
         if (result == null) {
-            result = Class.forName(className);
+            if(className.endsWith("[]")){
+                result = Array.newInstance(get(className.substring(0,className.length() - 2)) ,0).getClass();
+            }else{
+                result = Class.forName(className);
+            }
             classMap.put(className, result);
         }
         return result;

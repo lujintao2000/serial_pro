@@ -9,10 +9,7 @@ import org.msgpack.io.Output;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * Created by Administrator on 2020-06-12.
@@ -25,10 +22,31 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
 
 
     //序列化的时候，是否需要对对象属性进行排序，按序写入流中
-    private boolean needOrder = false;
+    private boolean needOrder = true;
     //默认不缓存类的字段信息
-    private boolean isCacheField = false;
+    private boolean isCacheField = true;
 
+    private static final Map<Class,ObjectWrite> writerMap = new HashMap<>();
+
+    static{
+        writerMap.put(boolean.class, new BooleanWrite());
+        writerMap.put(Boolean.class, new BooleanWrite());
+        writerMap.put(byte.class,new ByteWrite());
+        writerMap.put(Byte.class,new ByteWrite());
+        writerMap.put(char.class,new CharacterWrite());
+        writerMap.put(Character.class, new CharacterWrite());
+        writerMap.put(short.class,new ShortWrite());
+        writerMap.put(Short.class, new ShortWrite());
+        writerMap.put(int.class,new IntegerWrite());
+        writerMap.put(Integer.class, new IntegerWrite());
+        writerMap.put(long.class,new LongWrite());
+        writerMap.put(Long.class, new LongWrite());
+        writerMap.put(float.class,new FloatWrite());
+        writerMap.put(Float.class, new FloatWrite());
+        writerMap.put(double.class,new DoubleWrite());
+        writerMap.put(Double.class, new DoubleWrite());
+        writerMap.put(String.class, new StringWrite());
+    }
 
     public AbstractOutputStream(){
         this(false,false);
@@ -145,8 +163,31 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @param  out 输出流
      * @throws IOException
      */
-    protected abstract void writeClassName(Class type,OutputStream out) throws IOException;
-
+    protected void writeClassName(Class type,OutputStream out) throws IOException{
+        if(type == null){
+            throw new IllegalArgumentException("type can't be null");
+        }
+        Context context = threadLocal.get();
+        if(context == null || !context.contains(type)){
+            String className = "";
+            if(ReflectUtil.isBaseType(type)){
+                className = ReflectUtil.getFlagOfBaseType(type);
+            }else if(context.getCurrentField() != null && context.getCurrentField().getType() == type){  //当值的实际类型和字段类型相同时，不需要写入类名，写入标识字符即可
+                className = BaseTypeEnum.VOID.getValue();
+            }else{
+                className = type.getTypeName();
+            }
+            //1. 写入类名长度  2字节
+            out.write(NumberUtil.getByteArray( ((short)className.getBytes().length) ) );
+            //2. 写入类名
+            out.write(className.getBytes());
+            context.addClass(type);
+        }else{
+            //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
+            out.write(NumberUtil.getByteArray((short)0));
+            out.write(NumberUtil.getByteArray((short) context.getIndex(type)));
+        }
+    }
 
     /**
      * 将指定对象 指定的属性写入输出流
@@ -211,6 +252,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         return (num > 127) ? (byte)(num - 256) : (byte)num;
     }
 
+
     /**
      * 写入基本数据类型对应包装类对象的值
      * @param value  要写入的值
@@ -218,6 +260,95 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @param out 输出流
      * @throws IOException
      */
-    protected abstract void writeValue(Object value, Class type,OutputStream out) throws IOException;
+    protected void writeValue(Object value, Class type,OutputStream out) throws IOException{
+        if(value == null){
+            this.writeNull(out);
+            return;
+        }
+        this.writeNotNull(out);
+        if(type == null){
+            throw new IllegalArgumentException("when value is not null,type can't be null");
+        }
+        ObjectWrite objectWrite = writerMap.get(type);
+        if(objectWrite != null){
+            objectWrite.write(out,value);
+        }else{
+            Context context = threadLocal.get();
+            //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
+            if(context != null && context.contains(value)){
+                this.writeReference(out);
+                this.writeClassName(value.getClass(),out);
+                out.write(NumberUtil.getByteArray((short) context.getIndex(value)));
+            }else{
+                this.writeNormal(out);
+                this.write(value,out);
+            }
+        }
+    }
 
+    private static interface  ObjectWrite<T>{
+        /**
+         * 将值写入指定流中
+         * @param out
+         * @param value
+         */
+        public void write(OutputStream out,T value) throws IOException;
+    }
+
+    private static class BooleanWrite implements ObjectWrite<Boolean> {
+        public void write(OutputStream out,Boolean value) throws IOException{
+            out.write( ((Boolean)value).equals(Boolean.TRUE) ? 1 : 0 );
+        }
+    }
+
+    private static class ByteWrite implements ObjectWrite<Byte> {
+        public void write(OutputStream out,Byte value) throws IOException{
+            out.write(new byte[]{(Byte)value});
+        }
+    }
+
+    private static class CharacterWrite implements ObjectWrite<Character> {
+        public void write(OutputStream out,Character value) throws IOException{
+            out.write(NumberUtil.getByteArray( ((Character)value).charValue() ));
+        }
+    }
+
+    private static class ShortWrite implements ObjectWrite<Short> {
+        public void write(OutputStream out,Short value) throws IOException{
+            out.write(NumberUtil.getByteArray((Short)value));
+        }
+    }
+
+    private static class IntegerWrite implements ObjectWrite<Integer> {
+        public void write(OutputStream out,Integer value) throws IOException{
+            out.write(NumberUtil.getByteArray((Integer)value));
+        }
+    }
+
+    private static class LongWrite implements ObjectWrite<Long> {
+        public void write(OutputStream out,Long value) throws IOException{
+            out.write(NumberUtil.getByteArray((Long)value));
+        }
+    }
+
+    private static class FloatWrite implements ObjectWrite<Float> {
+        public void write(OutputStream out,Float value) throws IOException{
+            out.write(NumberUtil.getByteArray((Float)value));
+        }
+    }
+
+    private static class DoubleWrite implements ObjectWrite<Double> {
+        public void write(OutputStream out,Double value) throws IOException{
+            out.write(NumberUtil.getByteArray((Double)value));
+        }
+    }
+
+    private static class StringWrite implements ObjectWrite<String> {
+        public void write(OutputStream out,String value) throws IOException{
+            //先写入字符串长度，再写入字符串对应的字节
+            byte[] bytes = ((String)value).getBytes();
+            out.write(NumberUtil.getByteArray( bytes.length ));
+            out.write(bytes);
+        }
+    }
 }

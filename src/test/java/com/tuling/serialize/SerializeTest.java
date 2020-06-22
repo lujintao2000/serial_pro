@@ -22,15 +22,17 @@ public class SerializeTest {
         boolean needOrder = true;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         OutputStream output2 = new FileOutputStream("e:\\list.obj");
-        ObjectOutputStream out = new DefaultObjectOutputStream( needOrder,false);
-        out.write(originalValue,output);
+        //ObjectOutputStream out = new DefaultObjectOutputStream( needOrder,true);
+        ObjectOutputStream out = new CompatibleObjectOutputStream( );
+        out.write(originalValue,false,output);
        output.close();
 
         ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-        ObjectInputStream in = new DefaultObjectInputStream(needOrder,false);
+        //ObjectInputStream in = new DefaultObjectInputStream(needOrder,true);
+        ObjectInputStream in = new CompatibleObjectInputStream();
         Object obj = null;
         try {
-            obj = in.readObject(null,input);
+            obj = in.readObject(originalValue.getClass(),input);
             System.out.println(obj);
         } catch (Exception e) {
             e.printStackTrace();

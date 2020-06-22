@@ -1,6 +1,8 @@
 package com.tuling.serialize.util;
 
 import com.tuling.serialize.BaseTypeEnum;
+import com.tuling.serialize.DefaultObjectInputStream;
+import org.apache.log4j.Logger;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -15,12 +17,15 @@ import java.util.stream.Collectors;
  * @date 2017-04-20
  */
 public class ReflectUtil {
+    private static final Logger LOGGER = Logger.getLogger(ReflectUtil.class);
+
     private static final Map<String, Class> baseTypeNameMap = new HashMap<>();
     private static final Map<Class, Class> baseTypeMap = new HashMap<>();
+
     //该集合用于存放类的未排序字段
-    private static Map<Class, Field[]> fieldMap = new HashMap<>();
+    private static Map<Class,Map<String,Field>> fieldMap = new HashMap<>();
     //该集合用于存放类的已排序字段
-    private static Map<Class, Field[]> orderedFieldMap = new HashMap<>();
+    private static Map<Class, Map<String,Field>> orderedFieldMap = new HashMap<>();
     //存放类信息，key为类名
     private static Map<String, Class> classMap = new HashMap<>();
     //存储序列化对象所属类的父类信息
@@ -89,10 +94,14 @@ public class ReflectUtil {
         Field[] result = null;
         if (isCacheField) {
             if (fieldMap.containsKey(targetClass)) {
-                result = fieldMap.get(targetClass);
+                result = fieldMap.get(targetClass).values().toArray(new Field[0]);
             } else {
                 result = getFields(targetClass,false);
-                fieldMap.put(targetClass, result);
+                Map<String,Field> map = new HashMap<>();
+                for(Field item : result){
+                    map.put(item.getName(),item);
+                }
+                fieldMap.put(targetClass, map);
             }
         } else {
             result = getFields(targetClass,false);
@@ -112,10 +121,14 @@ public class ReflectUtil {
         if (needOrder) {
             if (isCacheField) {
                 if (orderedFieldMap.containsKey(targetClass)) {
-                    return orderedFieldMap.get(targetClass);
+                    return orderedFieldMap.get(targetClass).values().toArray(new Field[0]);
                 } else {
                     result = getFields(targetClass,needOrder);
-                    orderedFieldMap.put(targetClass, result);
+                    Map<String,Field> map = new HashMap<>();
+                    for(Field item : result){
+                        map.put(item.getName(),item);
+                    }
+                    orderedFieldMap.put(targetClass, map);
                 }
             } else {
                 return getFields(targetClass,needOrder);
@@ -147,6 +160,26 @@ public class ReflectUtil {
         return result;
     }
 
+    /**
+     * 获取指定类指定名称的字段；如果对应的字段不存在，就返回null
+     * @param type   要获取字段所属的类
+     * @param name   字段名称
+     * @return  与属性名称对应的字段
+     */
+    public static Field getField(Class type,String name){
+        Field result = null;
+        Map<Class,Map<String,Field>> map = (fieldMap.size() > 0) ? fieldMap  : ((orderedFieldMap.size() > 0) ? orderedFieldMap : null);
+        if(map != null && map.containsKey(type)){
+            result = map.get(type).get(name);
+        }else{
+            try {
+                result = type.getDeclaredField(name);
+            }catch (NoSuchFieldException ex){
+                LOGGER.error(ex.getMessage(),ex);
+            }
+        }
+        return result;
+    }
 
     /**
      * 判断目标类是否是基本类型（基本类型包括原始类型的包装类和String）

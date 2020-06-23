@@ -36,6 +36,17 @@ public class Company implements Serializable{
 	}
 
 	@Override
+	public boolean equals(Object obj){
+		if(obj != null && obj instanceof  Company){
+			if(((this.name == null && ((Company)obj).getName() == null) || (this.name != null && this.name.equals(((Company)obj).getName())))
+					&& ((this.user == null && ((Company)obj).getUser() == null)) || (this.user != null && this.user.equals(((Company)obj).getUser()))){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
 	public int hashCode(){
 		int result = 1;
 		if(this.name != null){

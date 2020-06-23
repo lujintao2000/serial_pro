@@ -21,8 +21,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
     protected static final ThreadLocal<Context> threadLocal = new ThreadLocal();
 
 
-    //序列化的时候，是否需要对对象属性进行排序，按序写入流中
-    private boolean needOrder = true;
     //默认不缓存类的字段信息
     private boolean isCacheField = true;
 
@@ -49,11 +47,10 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
     }
 
     public AbstractOutputStream(){
-        this(false,false);
+        this(false);
     }
 
-    public AbstractOutputStream( boolean needOrder,boolean isCacheField){
-        this.needOrder = needOrder;
+    public AbstractOutputStream( boolean isCacheField){
         this.isCacheField = isCacheField;
     }
 
@@ -69,15 +66,16 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @throws IOException
      */
     @Override
-    public void write(Object obj, boolean isWriteClassName, OutputStream out) throws IOException{
+    public void write(Object obj, boolean isWriteClassName, OutputStream out) throws IOException{            Context context = threadLocal.get();
         if(obj == null){
             this.writeNull(out);
         }else{
             this.writeNotNull(out);
-            Context context = threadLocal.get();
             if(context == null){
                 context = new Context();
                 threadLocal.set(context);
+                //写入当前序列化格式版本
+                out.write(Constant.CURRENT_VERSION);
             }
             context.enter();
             context.put(obj);
@@ -110,7 +108,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                     //获得包含该类以及该类的所有父类的集合
                     List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(targetClass);
                     for(Class item : superClassAndSelfList){
-                        Field[] fields = ReflectUtil.getAllInstanceField(item,needOrder,isCacheField);
+                        Field[] fields = ReflectUtil.getAllInstanceField(item,isCacheField);
                         //2. 写入属性个数  2字节
                         out.write(NumberUtil.getByteArray( ((short)fields.length) ));
                         //3. 循环写入属性

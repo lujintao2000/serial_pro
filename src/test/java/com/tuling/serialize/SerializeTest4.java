@@ -15,26 +15,24 @@ import java.util.*;
  * @author lujintao
  * @date 2020-06-09
  */
-public class SerializeTest {
+public class SerializeTest4 {
 
     private void test(Object originalValue) throws Exception {
-
-        boolean needOrder = true;
 //        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        OutputStream output = new FileOutputStream("e:\\list2.obj");
-        //ObjectOutputStream out = new DefaultObjectOutputStream( needOrder,true);
-        ObjectOutputStream out = new DefaultObjectOutputStream( );
-        out.write(originalValue,false,output);
-         output.close();
+        OutputStream output = new FileOutputStream("e:\\list.obj");
+
+        ObjectOutputStream out = new CompatibleObjectOutputStream( );
+        out.write(originalValue,output);
+        output.close();
 
 
 //        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-        //ObjectInputStream in = new DefaultObjectInputStream(needOrder,true);
-        InputStream input = new FileInputStream("e:\\list2.obj");
-        ObjectInputStream in = new DefaultObjectInputStream();
+
+        InputStream input = new FileInputStream("e:\\list.obj");
+        ObjectInputStream in = new CompatibleObjectInputStream();
         Object obj = null;
         try {
-            obj = in.readObject(originalValue.getClass(),input);
+            obj = in.readObject(input);
             System.out.println(obj);
         } catch (Exception e) {
             e.printStackTrace();
@@ -94,10 +92,13 @@ public class SerializeTest {
     public void testDomain() throws Exception{
         User user = new User("wangfei", 20, 170.0f, 76.0f);
         user.setCompany(new Company("优识云创"));
+
         user.setRole(new Role("项目经理"));
         user.setDepartment(new AboardDepartment("技术部"));
         user.setProfession(new Profession("java工程师"));
+
         test(user);
+
     }
 
     @Test
@@ -193,13 +194,6 @@ public class SerializeTest {
         thirdUser.setDepartment(department);
         thirdUser.setProfession(profession);
 
-
-//        users.add(firstUser);
-//        users.add(secondUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
         users.add(thirdUser);
         users.add(thirdUser);
         users.add(thirdUser);

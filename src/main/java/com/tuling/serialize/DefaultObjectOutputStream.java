@@ -18,11 +18,11 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
 
 
     public DefaultObjectOutputStream(){
-        this(false,true);
+        this(true);
     }
 
-    public DefaultObjectOutputStream(boolean needOrder, boolean isCacheField){
-        super(needOrder,isCacheField);
+    public DefaultObjectOutputStream( boolean isCacheField){
+        super(isCacheField);
     }
 
     /**

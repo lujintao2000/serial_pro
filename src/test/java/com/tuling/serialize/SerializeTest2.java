@@ -15,26 +15,25 @@ import java.util.*;
  * @author lujintao
  * @date 2020-06-09
  */
-public class SerializeTest {
+public class SerializeTest2{
 
     private void test(Object originalValue) throws Exception {
 
         boolean needOrder = true;
-//        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        OutputStream output = new FileOutputStream("e:\\list2.obj");
-        //ObjectOutputStream out = new DefaultObjectOutputStream( needOrder,true);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+//        OutputStream output = new FileOutputStream("e:\\list.obj");
+
         ObjectOutputStream out = new DefaultObjectOutputStream( );
-        out.write(originalValue,false,output);
-         output.close();
+        out.write(originalValue,true,output);
+        output.close();
 
+        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
 
-//        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-        //ObjectInputStream in = new DefaultObjectInputStream(needOrder,true);
-        InputStream input = new FileInputStream("e:\\list2.obj");
+//        InputStream input = new FileInputStream("e:\\list.obj");
         ObjectInputStream in = new DefaultObjectInputStream();
         Object obj = null;
         try {
-            obj = in.readObject(originalValue.getClass(),input);
+            obj = in.readObject(input);
             System.out.println(obj);
         } catch (Exception e) {
             e.printStackTrace();
@@ -193,13 +192,6 @@ public class SerializeTest {
         thirdUser.setDepartment(department);
         thirdUser.setProfession(profession);
 
-
-//        users.add(firstUser);
-//        users.add(secondUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
         users.add(thirdUser);
         users.add(thirdUser);
         users.add(thirdUser);

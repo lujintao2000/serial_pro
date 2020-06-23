@@ -27,16 +27,15 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	private static final Logger LOGGER = Logger.getLogger(DefaultObjectInputStream.class);
 
 	public DefaultObjectInputStream(){
-		this(false, false);
+		this( false);
 	}
 
 	/**
 	 *
-	 * @param needOrder  	//反序列化的时候，是否需要对对象属性进行排序，按序读入属性值
 	 * @param isCacheField 表示是否缓存类的字段信息
 	 */
-	public DefaultObjectInputStream( boolean needOrder,boolean isCacheField){
-		super( needOrder,isCacheField);
+	public DefaultObjectInputStream(boolean isCacheField){
+		super( isCacheField);
 	}
 	
 	
@@ -140,7 +139,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		List<Class> selfAndSuperList = ReflectUtil.getSelfAndSuperClass(objectClass);
 		int count = 0;
 		for(Class currentType : selfAndSuperList){
-			Field[] fields = ReflectUtil.getAllInstanceField(currentType,needOrder,isCacheField);
+			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
 			short fieldCount = this.readFieldCount(in);
 			if(fieldCount != fields.length){
 				throw new ClassNotSameException("属性个数不一致");

@@ -11,10 +11,7 @@ import java.util.function.Consumer;
 
 import com.sun.corba.se.impl.ior.OldJIDLObjectKeyTemplate;
 import com.tuling.domain.User;
-import com.tuling.serialize.exception.BuilderNotFoundException;
-import com.tuling.serialize.exception.ClassNotSameException;
-import com.tuling.serialize.exception.InvalidAccessException;
-import com.tuling.serialize.exception.InvalidDataFormatException;
+import com.tuling.serialize.exception.*;
 import com.tuling.serialize.util.BuilderUtil;
 import com.tuling.serialize.util.Constant;
 import org.apache.log4j.Logger;
@@ -32,8 +29,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	protected static final ThreadLocal<Context> threadLocal = new ThreadLocal();
 
 
-	//反序列化的时候，是否需要对对象属性进行排序，按序读入属性值
-	protected boolean needOrder = true;
 	//是否缓存类的字段信息
 	protected boolean isCacheField = true;
 
@@ -41,18 +36,23 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	public AbstractObjectInputStream(){
 	}
 
-	public AbstractObjectInputStream(boolean needOrder,boolean isCacheField){
-		this.needOrder = needOrder;
+	public AbstractObjectInputStream(boolean isCacheField){
 		this.isCacheField = isCacheField;
 	}
 	
 	public Object readObject(InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException {
+
 		Object obj = null;
 		if(!this.isNull(in)){
 			Context context = threadLocal.get();
 			if(context == null){
 				context = new Context();
 				threadLocal.set(context);
+				//判断序列化格式版本是否支持
+				int version = readVersion(in);
+				if (version < Constant.MIN_VERSION || version > Constant.MAX_VERSION) {
+					throw new VersionNotSupportException("Current version of serialization is not supported.Current version is " + version + ",but " + (version < Constant.MIN_VERSION ? "the mininum supported version is " + Constant.MIN_VERSION : "the maximum supported version is " + Constant.MAX_VERSION));
+				}
 			}
 			context.enter();
 			//1.读取序列化对象所对应的类名
@@ -65,11 +65,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			{
 				obj = readObjectWithOutArray(context, ReflectUtil.getComplexClass(className),in);
 			}
-			context.leave();
-			if(context.isFinish()){
-				threadLocal.remove();
-			}
+			leave(context);
 		}
+
 		return obj;
 	}
 
@@ -171,7 +169,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		Map<String,Object> currentMap = valueMap;
 		List<Class> superAndSelfClassList = ReflectUtil.getSelfAndSuperClass(obj.getClass());
 		for(Class currentType : superAndSelfClassList){
-			Field[] fields = ReflectUtil.getAllInstanceField(currentType,needOrder,isCacheField);
+			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
 			//循环读取属性
 			for(int i = 0; i < fields.length; i++){
 //				fields[i].setAccessible(true);
@@ -543,6 +541,11 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			if(context == null){
 				context = new Context();
 				threadLocal.set(context);
+				//判断序列化格式版本是否支持
+				int version = readVersion(in);
+				if (version < Constant.MIN_VERSION || version > Constant.MAX_VERSION) {
+					throw new VersionNotSupportException("Current version of serialization is not supported.Current version is " + version + ",but " + (version < Constant.MIN_VERSION ? "the mininum supported version is " + Constant.MIN_VERSION : "the maximum supported version is " + Constant.MAX_VERSION));
+				}
 			}
 			context.enter();
 
@@ -553,12 +556,26 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			{
 				obj = readObjectWithOutArray(context,objectClass,in);
 			}
-			context.leave();
-			if(context.isFinish()){
-				threadLocal.remove();
-			}
+			leave(context);
 		}
 		return obj;
+	}
+
+
+	private void leave(Context context){
+		context.leave();
+		if(context.isFinish()){
+			threadLocal.remove();
+		}
+	}
+
+	/**
+	 * 读取当前对象数据的序列化格式版本
+	 * @param in
+	 * @return
+	 */
+	private int readVersion(InputStream in) throws IOException{
+		return in.read();
 	}
 
 	/**

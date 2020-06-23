@@ -116,27 +116,53 @@ public class ReflectUtil {
      * @param needOrder   字段是否需要排序
      * @return
      */
-    public static Field[] getAllInstanceField(Class targetClass, boolean needOrder, boolean isCacheField) {
+//    public static Field[] getAllInstanceField(Class targetClass, boolean needOrder, boolean isCacheField) {
+//        Field[] result = null;
+////        if (needOrder) {
+//            if (isCacheField) {
+//                if (orderedFieldMap.containsKey(targetClass)) {
+//                    return orderedFieldMap.get(targetClass).values().toArray(new Field[0]);
+//                } else {
+//                    result = getFields(targetClass,needOrder);
+//                    Map<String,Field> map = new HashMap<>();
+//                    for(Field item : result){
+//                        map.put(item.getName(),item);
+//                    }
+//                    orderedFieldMap.put(targetClass, map);
+//                }
+//            } else {
+//                return getFields(targetClass,needOrder);
+//            }
+////        } else {
+////            result = getAllInstanceFieldNoOrder(targetClass, isCacheField);
+////        }
+//        return result;
+//    }
+
+    /**
+     * 获得一个类上的所有实例字段(包括其父类的)
+     *
+     * @param targetClass
+     * @param needOrder   字段是否需要排序
+     * @return
+     */
+    public static Field[] getAllInstanceField(Class targetClass,  boolean isCacheField) {
         Field[] result = null;
-        if (needOrder) {
-            if (isCacheField) {
-                if (orderedFieldMap.containsKey(targetClass)) {
-                    return orderedFieldMap.get(targetClass).values().toArray(new Field[0]);
-                } else {
-                    result = getFields(targetClass,needOrder);
-                    Map<String,Field> map = new HashMap<>();
-                    for(Field item : result){
-                        map.put(item.getName(),item);
-                    }
-                    orderedFieldMap.put(targetClass, map);
-                }
-            } else {
-                return getFields(targetClass,needOrder);
-            }
-        } else {
-            result = getAllInstanceFieldNoOrder(targetClass, isCacheField);
-        }
-        return result;
+//        if (isCacheField) {
+//            if (orderedFieldMap.containsKey(targetClass)) {
+//                return orderedFieldMap.get(targetClass).values().toArray(new Field[0]);
+//            } else {
+//                result = getFields(targetClass,true);
+//                Map<String,Field> map = new HashMap<>();
+//                for(Field item : result){
+//                    map.put(item.getName(),item);
+//                }
+//                orderedFieldMap.put(targetClass, map);
+//            }
+//        } else {
+            return getFields(targetClass,true);
+   //     }
+//        return result;
     }
 
     /**

@@ -21,6 +21,15 @@ import java.util.Map;
  * @date 2020-06-22
  */
 public class CompatibleObjectInputStream extends AbstractObjectInputStream {
+
+    public CompatibleObjectInputStream(){
+
+    }
+
+    public CompatibleObjectInputStream( boolean isCacheField){
+        super(isCacheField);
+    }
+
     @Override
     protected Object readValue(Object obj, Class objectClass, Context context, InputStream in) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException {
         //存放字段的值，key为字段名称
@@ -34,6 +43,8 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
                     if(obj == null){
                         for(int i = 0; i < fieldCount; i++){
                             String fieldName = this.readString(in);
+                            //读取该字段值的长度
+                            int length = this.readInt(in);
                             Field field = ReflectUtil.getField(currentType,fieldName);
                             if(field != null){
                                 context.setCurrentField(field);
@@ -49,10 +60,14 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
                     }else{
                         for(int i = 0; i < fieldCount; i++){
                             String fieldName = this.readString(in);
+                            //读取该字段值的长度
+                            int length = this.readInt(in);
                             Field field = ReflectUtil.getField(currentType,fieldName);
                             if(field != null) {
                                 context.setCurrentField(field);
                                 this.readField(obj, objectClass, field, in);
+                            }else{
+                                in.skip(length);
                             }
                         }
                     }

@@ -1,6 +1,7 @@
 package com.tuling.serialize;
 
 import com.tuling.domain.*;
+import com.tuling.serialize.util.NumberUtil;
 import com.tuling.serialize.util.ReflectUtil;
 import org.msgpack.MessagePack;
 import java.io.*;
@@ -15,6 +16,11 @@ import java.util.*;
 public class Application {
 
     public static void main(String[] args) throws Exception {
+        Map<String, Object> map = new HashMap();
+        map.put(null, null);
+        byte b = -110;
+        int a = (int)b;
+        byte[] array = NumberUtil.getByteArray(a);
         BaseTypeEnum t = BaseTypeEnum.valueOf("VOID");
         Class departClass = Class.forName("com.tuling.serialize.BaseTypeEnum");
 
@@ -30,7 +36,7 @@ public class Application {
         list =  ReflectUtil.getSelfAndSuperClass(Object.class);
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        com.tuling.serialize.ObjectOutputStream out = new DefaultObjectOutputStream( false,true);
+        com.tuling.serialize.ObjectOutputStream out = new DefaultObjectOutputStream( true);
 //        Map<Class,List<Class>> map = new HashMap<>();
 //        List<Class> parentClassList = new ArrayList<>();
 //        parentClassList.add(Department.class);

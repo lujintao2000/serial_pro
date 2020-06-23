@@ -10,7 +10,6 @@ public class User extends Person {
     private Department department = null;
     private String name;
     private Integer age;
-    private final String a = "";
 
     private User(String name,boolean sex,Float height, float weight){
         super(sex,height,weight);

@@ -8,7 +8,8 @@ import java.io.OutputStream;
 import java.lang.reflect.Field;
 
 /**
- * 该实现会在序列化的时候写入属性名称
+ * 该实现会在序列化的时候写入属性名称,因此码率较大，适用于客户端/服务器端实体类属性不一致的情况。
+ * 如果能够确保客户端/服务器端的实体类属性一致，用DefaultObjectOutputStream进行序列化会更好
  * @author lujintao
  * @date 2020-06-22
  */

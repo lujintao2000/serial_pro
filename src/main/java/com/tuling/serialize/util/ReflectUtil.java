@@ -23,13 +23,13 @@ public class ReflectUtil {
     private static final Map<Class, Class> baseTypeMap = new HashMap<>();
 
     //该集合用于存放类的未排序字段
-    private static Map<Class,Map<String,Field>> fieldMap = new HashMap<>();
+    private static final Map<Class,Map<String,Field>> fieldMap = new HashMap<>();
     //该集合用于存放类的已排序字段
-    private static Map<Class, Map<String,Field>> orderedFieldMap = new HashMap<>();
+    private static final Map<Class, Field[]> orderedFieldMap = new HashMap<>();
     //存放类信息，key为类名
-    private static Map<String, Class> classMap = new HashMap<>();
+    private static final Map<String, Class> classMap = new HashMap<>();
     //存储序列化对象所属类的父类信息
-    private static Map<Class,List<Class>> superClassMap = new HashMap<>();
+    private static final Map<Class,List<Class>> superClassMap = new HashMap<>();
 
     static {
         Arrays.stream(BaseTypeEnum.values()).forEach(x -> baseTypeNameMap.put(x.getValue(), x.getType()));
@@ -109,35 +109,6 @@ public class ReflectUtil {
         return result;
     }
 
-    /**
-     * 获得一个类上的所有实例字段(包括其父类的)
-     *
-     * @param targetClass
-     * @param needOrder   字段是否需要排序
-     * @return
-     */
-//    public static Field[] getAllInstanceField(Class targetClass, boolean needOrder, boolean isCacheField) {
-//        Field[] result = null;
-////        if (needOrder) {
-//            if (isCacheField) {
-//                if (orderedFieldMap.containsKey(targetClass)) {
-//                    return orderedFieldMap.get(targetClass).values().toArray(new Field[0]);
-//                } else {
-//                    result = getFields(targetClass,needOrder);
-//                    Map<String,Field> map = new HashMap<>();
-//                    for(Field item : result){
-//                        map.put(item.getName(),item);
-//                    }
-//                    orderedFieldMap.put(targetClass, map);
-//                }
-//            } else {
-//                return getFields(targetClass,needOrder);
-//            }
-////        } else {
-////            result = getAllInstanceFieldNoOrder(targetClass, isCacheField);
-////        }
-//        return result;
-//    }
 
     /**
      * 获得一个类上的所有实例字段(包括其父类的)
@@ -148,21 +119,17 @@ public class ReflectUtil {
      */
     public static Field[] getAllInstanceField(Class targetClass,  boolean isCacheField) {
         Field[] result = null;
-//        if (isCacheField) {
-//            if (orderedFieldMap.containsKey(targetClass)) {
-//                return orderedFieldMap.get(targetClass).values().toArray(new Field[0]);
-//            } else {
-//                result = getFields(targetClass,true);
-//                Map<String,Field> map = new HashMap<>();
-//                for(Field item : result){
-//                    map.put(item.getName(),item);
-//                }
-//                orderedFieldMap.put(targetClass, map);
-//            }
-//        } else {
-            return getFields(targetClass,true);
-   //     }
-//        return result;
+        if (isCacheField) {
+            if (orderedFieldMap.containsKey(targetClass)) {
+                result = orderedFieldMap.get(targetClass);
+            } else {
+                 result = getFields(targetClass,true);
+                orderedFieldMap.put(targetClass, result);
+            }
+        } else {
+            result = getFields(targetClass,true);
+        }
+        return result;
     }
 
     /**
@@ -182,8 +149,13 @@ public class ReflectUtil {
         if(needOrder){
             Collections.sort(list,(one,another) -> one.getName().compareTo(another.getName()));
         }
-        Field[] result = list.toArray(new Field[0]);
-        return result;
+        if(!fieldMap.containsKey(type)){
+            Map<String,Field> map = new HashMap<>();
+            list.forEach( x -> map.put(x.getName(),x));
+            fieldMap.put(type,map);
+        }
+
+        return  list.toArray(new Field[0]);
     }
 
     /**
@@ -194,9 +166,8 @@ public class ReflectUtil {
      */
     public static Field getField(Class type,String name){
         Field result = null;
-        Map<Class,Map<String,Field>> map = (fieldMap.size() > 0) ? fieldMap  : ((orderedFieldMap.size() > 0) ? orderedFieldMap : null);
-        if(map != null && map.containsKey(type)){
-            result = map.get(type).get(name);
+        if(fieldMap.containsKey(type)){
+            result = fieldMap.get(type).get(name);
         }else{
             try {
                 result = type.getDeclaredField(name);
@@ -254,15 +225,6 @@ public class ReflectUtil {
             default:
                 return getComplexClass(className);
         }
-//        if(className == null){
-//            throw new IllegalArgumentException("className can't be empty");
-//        }
-//        Class result = classMap.get(className);
-//        if(result == null){
-//            result = Class.forName(className);
-//            classMap.put(className, result);
-//        }
-//        return result;
     }
 
     /**

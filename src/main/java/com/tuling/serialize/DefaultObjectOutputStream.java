@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 该实现是序列化的默认实现，它在写入属性的时候，只写入值，不写入属性名称。属性写入的先后与属性按名称排序后的先后一致。
+ * 此种实现适用于客户端/服务器端实体类属性一致的情况，优点是码率小，序列化数据占用空间小；如果不一致(不包含顺序不一致)，请参考CompatibleObjectOutputStream。
  * @author lujintao
  * @date 2020-06-12
  */

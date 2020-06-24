@@ -20,8 +20,7 @@ public class SerializeTest {
     private void test(Object originalValue) throws Exception {
 
 //        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        OutputStream output = new FileOutputStream("e:\\list2.obj");
-        //ObjectOutputStream out = new DefaultObjectOutputStream( needOrder,true);
+        OutputStream output = new FileOutputStream("e:\\list.obj");
         ObjectOutputStream out = new DefaultObjectOutputStream( );
         out.write(originalValue,false,output);
         output.close();
@@ -29,12 +28,12 @@ public class SerializeTest {
 
 //        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
         //ObjectInputStream in = new DefaultObjectInputStream(needOrder,true);
-        InputStream input = new FileInputStream("e:\\list2.obj");
+        InputStream input = new FileInputStream("e:\\list.obj");
         ObjectInputStream in = new DefaultObjectInputStream();
         Object obj = null;
         try {
             if(originalValue == null){
-                obj = in.readObject(User.class,input);
+                obj = in.readObject(input);
             }else{
                 obj = in.readObject(originalValue.getClass(),input);
             }

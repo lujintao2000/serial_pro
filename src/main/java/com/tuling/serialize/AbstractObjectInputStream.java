@@ -41,34 +41,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	}
 	
 	public Object readObject(InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException {
-
-		Object obj = null;
-		if(!this.isNull(in)){
-			Context context = threadLocal.get();
-			if(context == null){
-				context = new Context();
-				threadLocal.set(context);
-				//判断序列化格式版本是否支持
-				int version = readVersion(in);
-				if (version < Constant.MIN_VERSION || version > Constant.MAX_VERSION) {
-					throw new VersionNotSupportException("Current version of serialization is not supported.Current version is " + version + ",but " + (version < Constant.MIN_VERSION ? "the mininum supported version is " + Constant.MIN_VERSION : "the maximum supported version is " + Constant.MAX_VERSION));
-				}
-			}
-			context.enter();
-			//1.读取序列化对象所对应的类名
-			String className = this.readClassName(in);
-			//2.判断是否是数组类型
-			if(className.endsWith("[]")){
-				Class type = ReflectUtil.get(className.substring(0,className.length() - 2));
-				obj = readArray(context,type,in);
-			}else
-			{
-				obj = readObjectWithOutArray(context, ReflectUtil.getComplexClass(className),in);
-			}
-			leave(context);
-		}
-
-		return obj;
+		return readObject(null,in);
 	}
 
 
@@ -130,22 +103,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	protected Object readObjectWithAnother(Class objectClass,Context context,InputStream in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,IllegalAccessException,InvalidAccessException,BuilderNotFoundException{
 		Object obj = null;
 		Map<String,Object> map = new HashMap<>();
-//		if(Collection.class.isAssignableFrom(objectClass) || Map.class.isAssignableFrom(objectClass)){
-//			int size = this.readCollectionSize();
-//			List list = new ArrayList<>();
-//			for(int i = 0; i < size; i++){
-//				if(Collection.class.isAssignableFrom(objectClass)){
-//					list.add(this.readValue(Object.class));
-//				}else{
-//					list.add(new Entry(this.readValue(Object.class),this.readValue(Object.class)));
-//				}
-//
-//			}
-//			map.put(Builder.LIST, list);
-//		}else{
-			map = (Map)readValue(obj,objectClass,context,in);
-//		}
-
+		map = (Map)readValue(obj,objectClass,context,in);
 		Builder builder = BuilderUtil.get(objectClass);
 		obj = builder.create(map);
 		if(!builder.isFinish()){
@@ -532,9 +490,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws ClassNotSameException  当反序列化时加载的类的属性与序列化时类的属性不一致时，抛出此异常
 	 */
 	public Object  readObject(Class objectClass,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException{
-		if(objectClass == null){
-			return readObject(in);
-		}
 		Object obj = null;
 		if(!this.isNull(in)){
 			Context context = threadLocal.get();
@@ -548,6 +503,18 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				}
 			}
 			context.enter();
+			if(objectClass == null){
+				//1.读取序列化对象所对应的类名
+				String className = this.readClassName(in);
+				//2.判断是否是数组类型
+				if(className.endsWith("[]")){
+					Class type = ReflectUtil.get(className.substring(0,className.length() - 2));
+					objectClass = Array.newInstance(type,0).getClass();
+				}else
+				{
+					objectClass =  ReflectUtil.getComplexClass(className);
+				}
+			}
 
 			//2.判断是否是数组类型
 			if(objectClass.isArray()){

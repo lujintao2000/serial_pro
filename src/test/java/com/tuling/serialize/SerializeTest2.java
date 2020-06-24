@@ -18,13 +18,11 @@ import java.util.*;
 public class SerializeTest2{
 
     private void test(Object originalValue) throws Exception {
-
-        boolean needOrder = true;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 //        OutputStream output = new FileOutputStream("e:\\list.obj");
 
         ObjectOutputStream out = new DefaultObjectOutputStream( );
-        out.write(originalValue,true,output);
+        out.write(originalValue,output);
         output.close();
 
         ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());

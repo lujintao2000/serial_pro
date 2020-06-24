@@ -12,28 +12,29 @@ import java.io.OutputStream;
  */
 public class Serial {
     //默认的序列化实现
-    private static final ObjectOutputStream defaultOutput = new DefaultObjectOutputStream();
+    private static  ObjectOutputStream defaultOutput = new DefaultObjectOutputStream();
     //兼容模式的序列化实现
-    private static final ObjectOutputStream compatibleOutput = new CompatibleObjectOutputStream();
+    private static  ObjectOutputStream compatibleOutput = new CompatibleObjectOutputStream();
     //默认的反序列化实现
-    private static final ObjectInputStream defaultInput = new DefaultObjectInputStream();
+    private static  ObjectInputStream defaultInput = new DefaultObjectInputStream();
     //兼容模式的反序列化实现
-    private static final ObjectInputStream compatibleInput = new CompatibleObjectInputStream();
-
+    private static  ObjectInputStream compatibleInput = new CompatibleObjectInputStream();
+    //默认是以非兼容模式进行序列化、反序列化
+    private static final boolean IS_Compatible = false;
 
     /**
-     * 以兼容模式序列化指定对象到指定输出流中,序列化的时候会写入当前写入对象obj所属类的类名
+     * 以非兼容模式序列化指定对象到指定输出流中,序列化的时候会写入当前写入对象obj所属类的类名
      * @param obj   要序列化的对象
      * @param out  序列化数据需要写出的流
      * @throws IOException   遇到IO错误，抛出此异常
      * @throws SerializationException  序列化的时候出错，抛出此异常
      */
     public static void write(Object obj, OutputStream out) throws IOException,SerializationException{
-        write(obj,out,false,true);
+        write(obj,out,true,IS_Compatible);
     }
 
     /**
-     * 以兼容模式序列化指定对象到指定输出流中,序列化的时候会写入当前写入对象obj所属类的类名
+     * 以非兼容模式序列化指定对象到指定输出流中
      * @param obj   要序列化的对象
      * @param isWriteClassName  序列化的时候，是否写入对象obj所属类的类名;如果不写入类名，在反序列化的时候，需要提供反序列化对象的类型信息
      * @param out  序列化数据需要写出的流
@@ -41,8 +42,9 @@ public class Serial {
      * @throws SerializationException  序列化的时候出错，抛出此异常
      */
     public static void write(Object obj,  OutputStream out,boolean isWriteClassName) throws IOException,SerializationException{
-        write(obj,out,isWriteClassName,true);
+        write(obj,out,isWriteClassName,IS_Compatible);
     }
+
 
     /**
      * 序列化指定对象到指定输出流中
@@ -72,7 +74,7 @@ public class Serial {
      * @throws SerializationException
      */
     public static Object read(InputStream in) throws IOException,SerializationException{
-       return read(in,true);
+       return read(in,IS_Compatible,null);
     }
 
     /**
@@ -83,7 +85,7 @@ public class Serial {
      * @throws SerializationException
      */
     public static Object read(InputStream in, Class type) throws IOException,SerializationException{
-        return read(in, true ,type);
+        return read(in, IS_Compatible ,type);
     }
 
     /**

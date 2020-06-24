@@ -29,7 +29,7 @@ public class Application {
 //        Department department = new Department("开发部");
 //        Field field = Department.class.getDeclaredField("name");
 //        java.io.ObjectOutputStream  out = new java.io.ObjectOutputStream (output);
-        out.write(getUser(), output);
+        out.write(DataProvider.getUser(), output);
 
 
         int i = 0;
@@ -38,7 +38,7 @@ public class Application {
 
 //        MessagePack messagePack = new MessagePack();
 ////        messagePack.register(User.class);
-//        byte[] content = messagePack.write(getUser());
+//        byte[] content = messagePack.write(DataProvider.etUser());
 
         // Object obj = messagePack.read(content);
         int b = 0;
@@ -62,7 +62,7 @@ public class Application {
     private static void testUnserialWithJava() throws IOException, ClassNotFoundException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(output);
-        out.writeObject(getUser());
+        out.writeObject(DataProvider.getUser());
         out.close();
 
         long startTime = new Date().getTime();
@@ -110,12 +110,5 @@ public class Application {
         return users;
     }
 
-    public static User getUser() {
-        User user = new User("wangfei", 20, 170.0f, 76.0f);
-        user.setCompany(new Company("优识云创"));
-        user.setRole(new Role("项目经理"));
-        user.setDepartment(new Department("技术部"));
-        user.setProfession(new Profession("java工程师"));
-        return user;
-    }
+
 }

@@ -13,6 +13,7 @@ import com.tuling.serialize.exception.BuilderNotFoundException;
 import com.tuling.serialize.exception.ClassNotSameException;
 import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
+import com.tuling.serialize.util.ByteBuf;
 import com.tuling.serialize.util.Constant;
 import com.tuling.serialize.util.NumberUtil;
 import com.tuling.serialize.util.ReflectUtil;
@@ -27,7 +28,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	private static final Logger LOGGER = Logger.getLogger(DefaultObjectInputStream.class);
 
 	public DefaultObjectInputStream(){
-		this( false);
+		this( true);
 	}
 
 	/**
@@ -38,35 +39,6 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 		super( isCacheField);
 	}
 	
-	
-	@Override
-	/**
-	 * 判断是否是对象读取的开始位置
-	 * @param in  包含序列化数据的输入流
-	 */
-	protected boolean start(InputStream in) throws IOException{
-		return in.read() == Constant.BEGIN_FLAG;
-	}
-	
-	@Override
-	/**
-	 * 判断是否是对象读取的结束位置
-	 * @param in  包含序列化数据的输入流
-	 */
-	protected boolean end(InputStream in) throws IOException{
-		return in.read() == Constant.END_FLAG;
-	}
-
-
-	
-	/**
-	 * 读取属性总个数
-	 * @param in  包含序列化数据的输入流
-	 * @throws IOException
-	 */
-	protected  short readFieldCount(InputStream in) throws IOException{
-		return this.readShort(in);
-	}
 
 //	/**
 //	 * 从输入流中读取属性的值并给属性设置值
@@ -114,16 +86,6 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 
 
 	/**
-	 * 判断当前要读取的值是否为空
-	 * @param in  包含序列化数据的输入流
-	 * @throws IOException
-	 */
-	@Override
-	protected  boolean isNull(InputStream in) throws IOException{
-		return in.read() == Constant.NULL_FLAG;
-	}
-
-	/**
 	 * 读取值，将值存入指定的对象中,如果obj为空,则将读取的值存入Map
 	 * @param obj    需要读入值的对象
 	 * @param objectClass  要读取对象的类型
@@ -132,7 +94,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 * @return  存储了读取值的对象
 	 */
 	@Override
-	protected Object readValue(Object obj,Class objectClass,Context context,InputStream in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException{
+	protected Object readValue(Object obj,Class objectClass,Context context,ByteBuf in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException{
 		//存放字段的值，key为字段名称
 		Map<String,Object> valueMap = new HashMap<>();
 		Map<String,Object> currentMap = valueMap;
@@ -149,7 +111,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 			if(obj == null){
 				for(int i = 0; i < fieldCount; i++){
 					context.setCurrentField(fields[i]);
-					this.readField(currentMap, fields[i],in);
+					this.readField(currentMap, fields[i],in,context);
 				}
 				count++;
 				if(count < selfAndSuperList.size()){
@@ -160,7 +122,7 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 			}else{
 				for(int i = 0; i < fieldCount; i++){
 					context.setCurrentField(fields[i]);
-					this.readField(obj,objectClass,fields[i],in);
+					this.readField(obj,objectClass,fields[i],in,context);
 				}
 			}
 		}

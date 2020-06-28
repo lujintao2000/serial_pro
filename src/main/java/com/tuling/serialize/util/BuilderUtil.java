@@ -1,9 +1,6 @@
 package com.tuling.serialize.util;
 
-import com.tuling.builder.ArrayListBuilder;
-import com.tuling.builder.DepartmentBuilder;
-import com.tuling.domain.Department;
-import com.tuling.serialize.AbstractObjectInputStream;
+
 import com.tuling.serialize.Builder;
 import org.apache.log4j.Logger;
 

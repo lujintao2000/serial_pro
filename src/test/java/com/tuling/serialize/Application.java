@@ -1,14 +1,10 @@
 package com.tuling.serialize;
 
 import com.tuling.domain.*;
-import com.tuling.serialize.util.NumberUtil;
-import com.tuling.serialize.util.ReflectUtil;
-import org.msgpack.MessagePack;
+import com.tuling.serialize.util.ByteBuf;
 
+import javax.xml.crypto.Data;
 import java.io.*;
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -17,46 +13,38 @@ import java.util.*;
 public class Application {
 
     public static void main(String[] args) throws Exception {
-
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        com.tuling.serialize.ObjectOutputStream out = new DefaultObjectOutputStream(true);
-//        Map<Class,List<Class>> map = new HashMap<>();
-//        List<Class> parentClassList = new ArrayList<>();
-//        parentClassList.add(Department.class);
-//        map.put(AboardDepartment.class,parentClassList);
-//
-//
-//        Department department = new Department("开发部");
-//        Field field = Department.class.getDeclaredField("name");
-//        java.io.ObjectOutputStream  out = new java.io.ObjectOutputStream (output);
-        out.write(DataProvider.getUser(), output);
-
-
-        int i = 0;
-        long startTime = new Date().getTime();
-
-
-//        MessagePack messagePack = new MessagePack();
-////        messagePack.register(User.class);
-//        byte[] content = messagePack.write(DataProvider.etUser());
-
-        // Object obj = messagePack.read(content);
-        int b = 0;
-        for (i = 0; i < 100000000; i++) {
-//            ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-//            com.tuling.serialize.ObjectInputStream in = new DefaultObjectInputStream();
-//             in.readObject(input);
-            int a = 233;
-            b = a << 1;
-
-        }
-        Object t;
-//
-        long endTime = new Date().getTime();
-        System.out.println("serial cost " + (endTime - startTime) + "ms" + " " + b);
-//
+        int length = "我们在".getBytes().length;
+        testSerialWithSerial();
+//        testSerialWithJava();
 //        testUnserialWithJava();
+//        testUnserialWithSerial();
+    }
 
+    private static void testSerialWithSerial() throws Exception{
+        User user = DataProvider.getUser();
+        long startTime = new Date().getTime();
+        for (int i = 0; i < 300000; i++) {
+            OutputStream outputStream = new ByteArrayOutputStream();
+            Serial.write(user,outputStream);
+            outputStream.close();
+        }
+        long endTime = new Date().getTime();
+
+        System.out.println("serial serialization cost " + (endTime - startTime) + "ms");
+    }
+
+    private static void testSerialWithJava() throws Exception{
+        User user = DataProvider.getUser();
+        long startTime = new Date().getTime();
+        for (int i = 0; i < 300000; i++) {
+            OutputStream outputStream = new ByteArrayOutputStream();
+            java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(outputStream);
+            out.writeObject(user);
+            outputStream.close();
+        }
+        long endTime = new Date().getTime();
+
+        System.out.println("java serialazation cost " + (endTime - startTime) + "ms");
     }
 
     private static void testUnserialWithJava() throws IOException, ClassNotFoundException {
@@ -64,18 +52,36 @@ public class Application {
         java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(output);
         out.writeObject(DataProvider.getUser());
         out.close();
-
+        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+//        java.io.ObjectInputStream in = new java.io.ObjectInputStream(input);
         long startTime = new Date().getTime();
-        for (int i = 0; i < 10000; i++) {
-            ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+        for (int i = 0; i < 100000; i++) {
             java.io.ObjectInputStream in = new java.io.ObjectInputStream(input);
-            Object obj = in.readObject();
-            in.close();
+            in.readObject();
+            input.reset();
         }
         long endTime = new Date().getTime();
-        System.out.println("java cost " + (endTime - startTime) + "ms");
+        System.out.println("java unserialazation cost " + (endTime - startTime) + "ms");
 
 
+    }
+
+    private static void testUnserialWithSerial() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ObjectOutputStream out = new DefaultObjectOutputStream( );
+        out.write(DataProvider.getUser(),output);
+        output.close();
+
+        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+
+        long startTime = new Date().getTime();
+        for (int i = 0; i < 100000; i++) {
+            ObjectInputStream in = new DefaultObjectInputStream();
+            in.readObject(input);
+            input.reset();
+        }
+        long endTime = new Date().getTime();
+        System.out.println("serial unserialization cost " + (endTime - startTime) + "ms");
     }
 
     private static List<User> getUsers() {
@@ -107,7 +113,7 @@ public class Application {
         users.add(thirdUser);
         users.add(thirdUser);
 
-        return users;
+        return Arrays.asList(firstUser,secondUser,thirdUser,thirdUser,thirdUser,thirdUser);
     }
 
 

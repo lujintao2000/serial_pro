@@ -100,6 +100,7 @@ public class SerializeTest {
         user.setRole(new Role("项目经理"));
         user.setDepartment(new AboardDepartment("技术部"));
         user.setProfession(new Profession("java工程师"));
+        user.setAnother(new Object());
         test(user);
     }
 

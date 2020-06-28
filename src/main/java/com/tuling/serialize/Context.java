@@ -1,10 +1,13 @@
 package com.tuling.serialize;
 
+import com.tuling.serialize.util.IdGenerator;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 该类保存了对象序列化时的相关信息，如对某个对象进行序列化时，相关的哪些对象也正在进行序列化
@@ -12,6 +15,8 @@ import java.util.Map;
  * @date 2020-06-07
  */
 public class Context {
+    //存储当前所有的context对象,键为context的id
+    private static Map<Integer, Context> contextMap = new ConcurrentHashMap<>();
     //表示在序列化时，当前与该context相关的对象的个数
     private Integer counter = 0;
     private Map<Class,List> map = new HashMap<>();
@@ -22,6 +27,31 @@ public class Context {
     private List<String> hasReadClassNameList = new ArrayList<>();
     //表示当前正在读取或写入的字段
     private Field currentField = null;
+    //标识
+    private Integer  id;
+
+    public Context(){
+        id = IdGenerator.getId();
+    }
+
+    /**
+     * 获取一个新的context对象
+     * @param id
+     * @return
+     */
+    public static Context create(){
+        Context context = new Context();
+        contextMap.put(context.getId(), context);
+        return context;
+    }
+
+    /**
+     * 销毁当前context
+     * @param id
+     */
+    public void destory(){
+          contextMap.remove(this.id);
+    }
 
     public void enter(){
         counter++;
@@ -155,5 +185,9 @@ public class Context {
 
     public void setCurrentField(Field currentField) {
         this.currentField = currentField;
+    }
+
+    public int getId() {
+        return id;
     }
 }

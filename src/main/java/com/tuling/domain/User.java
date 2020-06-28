@@ -10,6 +10,7 @@ public class User extends Person {
     private Department department = null;
     private String name;
     private Integer age;
+    private Object another;
 
     private User(String name,boolean sex,Float height, float weight){
         super(sex,height,weight);
@@ -115,5 +116,13 @@ public class User extends Person {
 
     public void setDepartment(Department department) {
         this.department = department;
+    }
+
+    public Object getAnother() {
+        return another;
+    }
+
+    public void setAnother(Object another) {
+        this.another = another;
     }
 }

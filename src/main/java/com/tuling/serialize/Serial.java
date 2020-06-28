@@ -30,7 +30,7 @@ public class Serial {
      * @throws SerializationException  序列化的时候出错，抛出此异常
      */
     public static void write(Object obj, OutputStream out) throws IOException,SerializationException{
-        write(obj,out,true,IS_Compatible);
+        defaultOutput.write(obj,out);
     }
 
     /**
@@ -42,7 +42,7 @@ public class Serial {
      * @throws SerializationException  序列化的时候出错，抛出此异常
      */
     public static void write(Object obj,  OutputStream out,boolean isWriteClassName) throws IOException,SerializationException{
-        write(obj,out,isWriteClassName,IS_Compatible);
+        defaultOutput.write(obj,isWriteClassName,out);
     }
 
 
@@ -67,7 +67,7 @@ public class Serial {
     }
 
     /**
-     * 从指定输入流读取数据，将数据反序列化为对象
+     * 以默认模式从指定输入流读取数据，将数据反序列化为对象
      * @param isCompatible 反序列化的时候，是否开启兼容模式
      * @param in  包含序列化数据的输入流
      * @throws IOException

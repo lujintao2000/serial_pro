@@ -12,11 +12,8 @@ import java.util.function.Consumer;
 import com.sun.corba.se.impl.ior.OldJIDLObjectKeyTemplate;
 import com.tuling.domain.User;
 import com.tuling.serialize.exception.*;
-import com.tuling.serialize.util.BuilderUtil;
-import com.tuling.serialize.util.Constant;
+import com.tuling.serialize.util.*;
 import org.apache.log4j.Logger;
-import com.tuling.serialize.util.ReflectUtil;
-import com.tuling.serialize.util.NumberUtil;
 
 /**
  * 该类主要实现了对象的反序列化
@@ -52,7 +49,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param in  包含序列化数据的输入流
 	 * @return
 	 */
-	protected Object readArray(Context context,Class type,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
+	protected Object readArray(Context context,Class type,ByteBuf in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		Object obj = null;
 		//3.读取数组长度
 		int length = this.readArrayLength(in);
@@ -60,7 +57,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		obj = Array.newInstance(type, length);
 		context.put(obj);
 		for(int i = 0;i < length;i++){
-			Array.set(obj , i , this.readValue(type,in));
+			Array.set(obj , i , this.readValue(type,in,context));
 		}
 		return obj;
 	}
@@ -69,12 +66,13 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * 读取集合对象中的元素，将其放入集合中
 	 * @param obj  要装入元素的集合对象
 	 * @param in  包含序列化数据的输入流
+	 * @param context 序列化上下文
 	 * @return
 	 */
-	protected Object readCollection(Collection obj,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
+	protected Object readCollection(Collection obj,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		int size = this.readCollectionSize(in);
 		for(int i = 0; i < size; i++){
-			obj.add(this.readValue(Object.class,in));
+			obj.add(this.readValue(Object.class,in,context));
 		}
 		return obj;
 	}
@@ -83,12 +81,13 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * 读取key,value,将其存入Map对象
 	 * @param obj  要装入key,value的对象
 	 * @param in  包含序列化数据的输入流
+	 * @param context 序列化上下文
 	 * @return
 	 */
-	protected Object readMap(Map obj,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
+	protected Object readMap(Map obj,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		int size = this.readMapSize(in);
 		for(int i = 0; i < size; i++){
-			((Map)obj).put(this.readValue(Object.class,in),this.readValue(Object.class,in));
+			((Map)obj).put(this.readValue(Object.class,in,context),this.readValue(Object.class,in,context));
 		}
 		return obj;
 	}
@@ -100,7 +99,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param in  包含序列化数据的输入流
 	 * @return
 	 */
-	protected Object readObjectWithAnother(Class objectClass,Context context,InputStream in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,IllegalAccessException,InvalidAccessException,BuilderNotFoundException{
+	protected Object readObjectWithAnother(Class objectClass,Context context,ByteBuf in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,IllegalAccessException,InvalidAccessException,BuilderNotFoundException{
 		Object obj = null;
 		Map<String,Object> map = new HashMap<>();
 		map = (Map)readValue(obj,objectClass,context,in);
@@ -177,7 +176,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param in  包含序列化数据的输入流
 	 * @return  存储了读取值的对象
 	 */
-	protected abstract Object readValue(Object obj,Class objectClass,Context context,InputStream in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException;
+	protected abstract Object readValue(Object obj,Class objectClass,Context context,ByteBuf in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException;
 
 
 
@@ -185,8 +184,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * 判断是否是对象读取的开始位置
 	 * @param in  包含序列化数据的输入流
 	 */
-	protected boolean start(InputStream in) throws IOException{
-		return in.read() == Constant.BEGIN_FLAG;
+	protected boolean start(ByteBuf in) throws IOException{
+//		return in.read() == Constant.BEGIN_FLAG;
+		return in.readByte() == (byte) Constant.BEGIN_FLAG;
 	}
 
 
@@ -194,8 +194,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * 判断是否是对象读取的结束位置
 	 * @param in  包含序列化数据的输入流
 	 */
-	protected boolean end(InputStream in) throws IOException{
-		return in.read() == Constant.END_FLAG;
+	protected boolean end(ByteBuf in) throws IOException{
+//		return in.read() == Constant.END_FLAG;
+		return in.readByte() == (byte) Constant.END_FLAG;
 	}
 
 	/**
@@ -203,8 +204,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param in  包含序列化数据的输入流
 	 * @throws IOException
 	 */
-	protected  boolean isNull(InputStream in) throws IOException{
-		return in.read() == Constant.NULL_FLAG;
+	protected  boolean isNull(ByteBuf in) throws IOException{
+//		return in.read() == Constant.NULL_FLAG;
+		return in.readByte() == (byte) Constant.NULL_FLAG;
 	}
 	
 	/**
@@ -212,7 +214,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param in  包含序列化数据的输入流
 	 * @throws IOException
 	 */
-	protected  short readFieldCount(InputStream in) throws IOException{
+	protected  short readFieldCount(ByteBuf in) throws IOException{
 		return this.readShort(in);
 	}
 
@@ -222,8 +224,24 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 * @throws IOException
 	 */
-	protected Short readShort(InputStream in) throws IOException{
-		return (short)(in.read() * 256 + in.read());
+	protected Short readShort(ByteBuf in) throws IOException{
+//		return (short)(in.read() * 256 + in.read());
+		return in.readShort();
+	}
+
+	/**
+	 * 读取整型值
+	 * @param in  包含序列化数据的缓冲
+	 * @return
+	 * @throws IOException
+	 */
+	protected Integer readInt(ByteBuf in) throws IOException{
+//		byte[] array = new byte[4];
+//		for(int i = 0; i < 4;i++){
+//			array[i] = NumberUtil.convertIntToByte(in.read());
+//		}
+//		return NumberUtil.getInteger( array );
+		return in.readInt();
 	}
 
 	/**
@@ -246,8 +264,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 * @throws IOException
 	 */
-	protected Boolean readBoolean(InputStream in) throws IOException{
-		return (in.read() == 1) ? true : false;
+	protected Boolean readBoolean(ByteBuf in) throws IOException{
+//		return (in.read() == 1) ? true : false;
+		return in.readBoolean();
 	}
 
 	/***
@@ -256,11 +275,13 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 * @throws IOException
 	 */
-	protected Character readCharacter(InputStream in) throws IOException{
-		byte[] array = new byte[2];
-		in.read(array);
-		char result = (char)(NumberUtil.converByteToInt(array[0]) * 256 + NumberUtil.converByteToInt(array[1]));
-		return  result;
+	protected Character readCharacter(ByteBuf in) throws IOException{
+//		byte[] array = new byte[2];
+//		in.read(array);
+//		char result = (char)(NumberUtil.converByteToInt(array[0]) * 256 + NumberUtil.converByteToInt(array[1]));
+//		return  result;
+
+		return in.readChar();
 	}
 
 	/**
@@ -268,8 +289,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 * @throws IOException
 	 */
-	protected Byte readByte(InputStream in) throws IOException{
-		return NumberUtil.convertIntToByte(in.read());
+	protected Byte readByte(ByteBuf in) throws IOException{
+//		return NumberUtil.convertIntToByte(in.read());
+		return in.readByte();
 	}
 
 	/**
@@ -278,21 +300,24 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 * @throws IOException
 	 */
-	protected Long readLong(InputStream in) throws IOException{
-		byte[] array = new byte[8];
-		for(int i = 0; i < 8;i++){
-			array[i] = NumberUtil.convertIntToByte(in.read());
-		}
-		return NumberUtil.getLong( array );
+	protected Long readLong(ByteBuf in) throws IOException{
+//		byte[] array = new byte[8];
+//		for(int i = 0; i < 8;i++){
+//			array[i] = NumberUtil.convertIntToByte(in.read());
+//		}
+//		return NumberUtil.getLong( array );
+		return in.readLong();
 	}
 
-	protected Float readFloat(InputStream in) throws IOException{
-		return Float.intBitsToFloat(this.readInt(in));
+	protected Float readFloat(ByteBuf in) throws IOException{
+//		return Float.intBitsToFloat(this.readInt(in));
+		return in.readFloat();
 	}
 
-	protected Double readDouble(InputStream in) throws IOException{
-		Long num = this.readLong(in);
-		return Double.longBitsToDouble(num);
+	protected Double readDouble(ByteBuf in) throws IOException{
+//		Long num = this.readLong(in);
+//		return Double.longBitsToDouble(num);
+		return in.readDouble();
 	}
 
 	/**
@@ -301,13 +326,16 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 * @throws IOException
 	 */
-	protected String readString(InputStream in) throws IOException{
+	protected String readString(ByteBuf in) throws IOException{
 		//1. 读取字符串对应字节长度
 		int length = this.readInt(in);
-		byte[] array = new byte[length];
+//		byte[] array = new byte[length];
 		//读取字符串内容对应的字节数据
-		in.read(array);
-		return new String(array);
+//		in.read(array);
+//		in.readBytes(array);
+//		return new String(array,"unicode");
+//		return in.readCharSequence()
+		return in.readString(length);
 	}
 
 	/**
@@ -315,15 +343,16 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param obj
 	 * @param type 属性定义所在的类
 	 * @param field 当前在读取的字段
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
+	 * @param context 序列化上下文
 	 * @throws IOException
 	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
 	 */
-	protected  void readField(Object obj,Class type,Field field,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
+	protected  void readField(Object obj,Class type,Field field,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		try {
 			field.setAccessible(true);
 			try {
-				field.set(obj,this.readValue(field.getType(),in) );
+				field.set(obj,this.readValue(field.getType(),in,context) );
 
 			} catch (IllegalArgumentException e) {
 				LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
@@ -341,34 +370,35 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * 从输入流中读取字段的值，将值放到map中
 	 * @param map  存放值的map
 	 * @param field 当前即将要读取的字段
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
+	 * @param context 序列化上下文
 	 * @throws IOException
 	 * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
 	 */
-	protected  Map readField(Map map, Field field,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
+	protected  Map readField(Map map, Field field,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		if(map == null){
 			throw new IllegalArgumentException("map can't be null");
 		}
-		map.put(field.getName(),this.readValue(field.getType(),in));
+		map.put(field.getName(),this.readValue(field.getType(),in,context));
 		return map;
 	}
 
 	/**
 	 * 读取当前要反序列化的对象的类名
 	 * @param in  包含序列化数据的输入流
+	 * @param context 序列化上下文
 	 * @return  读取的类名
 	 * @throws IOException
 	 * @throws ClassNotFoundException 当类名对应的类不存在时，抛出此异常
 	 */
-	protected String readClassName(InputStream in) throws IOException, ClassNotFoundException {
-		Context context = threadLocal.get();
+	protected String readClassName(ByteBuf in,Context context) throws IOException, ClassNotFoundException {
 		//1. 读入类名字节长度
 		short length = this.readShort(in);
 		if(length > 0){
 			//2. 读入类名
-			byte[] classNameByteArray = new byte[length];
-			in.read(classNameByteArray);
-			String fullClassName = ReflectUtil.getFullName(new String(classNameByteArray));
+//			byte[] classNameByteArray = new byte[length];
+//			in.readBytes(classNameByteArray);
+			String fullClassName = ReflectUtil.getFullName(in.readString(length));
 			if(fullClassName.equals(BaseTypeEnum.VOID.getType().getTypeName())){
 				fullClassName = context.getCurrentField().getType().getTypeName();
 			}
@@ -384,51 +414,56 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 
 	/**
 	 * 读取数组长度
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
 	 * @return
 	 * @throws IOException
 	 */
-	protected int readArrayLength(InputStream in) throws IOException{
-		return this.readInt(in);
+	protected int readArrayLength(ByteBuf in) throws IOException{
+//		return this.readInt(in);
+		return in.readInt();
 	}
 
 	/**
 	 * 读取集合元素个数
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
 	 * @return
 	 * @throws IOException
 	 */
-	protected  int readCollectionSize(InputStream in) throws IOException{
-		return this.readInt(in);
+	protected  int readCollectionSize(ByteBuf in) throws IOException{
+//		return this.readInt(in);
+		return in.readInt();
 	}
 
 	/**
 	 * 读取Map元素个数
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
 	 * @return
 	 * @throws IOException
 	 */
-	protected  int readMapSize(InputStream in) throws IOException{
-		return this.readInt(in);
+	protected  int readMapSize(ByteBuf in) throws IOException{
+//		return this.readInt(in);
+		return in.readInt();
 	}
 
 	/**
 	 * 判断当前即将要读取到的对象是否为已反序列化对象的引用
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
 	 * @return
 	 * @throws IOException
 	 */
-	protected boolean isReference(InputStream in) throws IOException{
-		return in.read() == Constant.REFERENCE_FLAG;
+	protected boolean isReference(ByteBuf in) throws IOException{
+		//return in.read() == Constant.REFERENCE_FLAG;
+		return in.readByte() == (byte) Constant.REFERENCE_FLAG;
 	}
 
 	/**
 	 * 从流中当前位置读取指定类型的值
 	 * @param type  要读取数据的类型
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
+	 * @param context 序列化上下文
 	 * @return
 	 */
-	protected Object readValue(Class type,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
+	protected Object readValue(Class type,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		if(isNull(in)){
 			return null;
 		}
@@ -463,7 +498,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		else{
 			if(isReference(in)){
 
-				String className = this.readClassName(in);
+				String className = this.readClassName(in,context);
 				int index = this.readShort(in);
 				Class valueType = null;
 				if(className.endsWith("[]")){
@@ -471,14 +506,14 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				}else{
 					valueType = ReflectUtil.get(className);
 				}
-				Context context = threadLocal.get();
 				value = context.get(valueType, index);
 			}else{
-				value = this.readObject(in);
+				value = this.readObject(null,in,context);
 			}
 		}
 		return value;
 	}
+
 	/**
 	 * @param type 需要反序列化对象的类型
 	 * @param in 包含序列化数据的输入流
@@ -490,22 +525,43 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws ClassNotSameException  当反序列化时加载的类的属性与序列化时类的属性不一致时，抛出此异常
 	 */
 	public Object  readObject(Class objectClass,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException{
+		//判断序列化格式版本是否支持
+		int version = readVersion(in);
+		if (version < Constant.MIN_VERSION || version > Constant.MAX_VERSION) {
+			throw new VersionNotSupportException("Current version of serialization is not supported.Current version is " + version + ",but " + (version < Constant.MIN_VERSION ? "the mininum supported version is " + Constant.MIN_VERSION : "the maximum supported version is " + Constant.MAX_VERSION));
+		}
+		Context context = Context.create();
+
+		//读取对象长度
+		int length = this.readInt(in);
+		byte[] objectData = new byte[length];
+		in.read(objectData);
+		//先将对象数据读到缓冲
+		ByteBuf buf = new ByteBuf(objectData);
+		Object result = readObject(objectClass,buf,context);
+		buf.release();
+		context.destory();
+		return result;
+	}
+
+
+		/**
+         * @param type 需要反序列化对象的类型
+         * @param in 包含序列化数据的输入流
+		 * @param context 序列化上下文
+         * @return 反序列化出的对象
+         * @throws IOException
+         * @throws ClassNotFoundException
+         * @throws InvalidDataFormatException 如果反序列化数据的格式和具体序列化实现的要求不一致，抛出该异常
+         * @throws InvalidAccessException  如果方法或字段不让访问或方法传递参数不对，抛出该异常
+         * @throws ClassNotSameException  当反序列化时加载的类的属性与序列化时类的属性不一致时，抛出此异常
+         */
+	public Object  readObject(Class objectClass,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException{
 		Object obj = null;
 		if(!this.isNull(in)){
-			Context context = threadLocal.get();
-			if(context == null){
-				context = new Context();
-				threadLocal.set(context);
-				//判断序列化格式版本是否支持
-				int version = readVersion(in);
-				if (version < Constant.MIN_VERSION || version > Constant.MAX_VERSION) {
-					throw new VersionNotSupportException("Current version of serialization is not supported.Current version is " + version + ",but " + (version < Constant.MIN_VERSION ? "the mininum supported version is " + Constant.MIN_VERSION : "the maximum supported version is " + Constant.MAX_VERSION));
-				}
-			}
-			context.enter();
 			if(objectClass == null){
 				//1.读取序列化对象所对应的类名
-				String className = this.readClassName(in);
+				String className = this.readClassName(in,context);
 				//2.判断是否是数组类型
 				if(className.endsWith("[]")){
 					Class type = ReflectUtil.get(className.substring(0,className.length() - 2));
@@ -523,18 +579,10 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			{
 				obj = readObjectWithOutArray(context,objectClass,in);
 			}
-			leave(context);
 		}
 		return obj;
 	}
 
-
-	private void leave(Context context){
-		context.leave();
-		if(context.isFinish()){
-			threadLocal.remove();
-		}
-	}
 
 	/**
 	 * 读取当前对象数据的序列化格式版本
@@ -549,7 +597,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * 读取数组类型之外的对象
 	 * @param context
 	 * @param objectClass
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
 	 * @return
 	 * @throws IOException
 	 * @throws ClassNotFoundException
@@ -558,11 +606,11 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws ClassNotSameException
 	 * @throws BuilderNotFoundException
 	 */
-	protected Object readObjectWithOutArray(Context context,Class objectClass,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
+	protected Object readObjectWithOutArray(Context context,Class objectClass,ByteBuf in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		Object obj = null;
 		try {
 			if(ReflectUtil.isBaseType(objectClass) || objectClass.isEnum()){
-				obj = readValue(objectClass,in);
+				obj = readValue(objectClass,in,context);
 			}else{
 				try {
 					obj = createObject(objectClass);

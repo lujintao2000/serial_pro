@@ -114,7 +114,7 @@ public class ReflectUtil {
      * 获得一个类上的所有实例字段(包括其父类的)
      *
      * @param targetClass
-     * @param needOrder   字段是否需要排序
+     * @param isCacheField   字段是否需要缓存
      * @return
      */
     public static Field[] getAllInstanceField(Class targetClass,  boolean isCacheField) {
@@ -140,22 +140,28 @@ public class ReflectUtil {
      * @return
      */
     private static Field[] getFields(Class type,boolean needOrder) {
-        Field[] fields = Arrays.asList(type.getDeclaredFields())
+        List<Field> fields = Arrays.asList(type.getDeclaredFields())
                 .stream()
                 .filter(x -> !Modifier.isStatic(x.getModifiers()))
-                .collect(Collectors.toList()).toArray(new Field[0]);
-        List<Field> list = Arrays.asList(fields);
-        list.forEach(x -> x.setAccessible(true));
-        if(needOrder){
-            Collections.sort(list,(one,another) -> one.getName().compareTo(another.getName()));
-        }
+                .map(x -> {
+                    x.setAccessible(true);
+                    return x;
+                })
+                .sorted((x,y) -> x.getName().compareTo(y.getName()))
+                .collect(Collectors.toList());
+//                .collect(Collectors.toList()).toArray(new Field[0]);
+//        List<Field> list = Arrays.asList(fields);
+//        list.forEach(x -> x.setAccessible(true));
+//        if(needOrder){
+     //       Collections.sort(list,(one,another) -> one.getName().compareTo(another.getName()));
+//        }
         if(!fieldMap.containsKey(type)){
             Map<String,Field> map = new HashMap<>();
-            list.forEach( x -> map.put(x.getName(),x));
+            fields.parallelStream().forEach( x -> map.put(x.getName(),x) );
             fieldMap.put(type,map);
         }
 
-        return  list.toArray(new Field[0]);
+        return  fields.toArray(new Field[fields.size()]);
     }
 
     /**
@@ -261,16 +267,22 @@ public class ReflectUtil {
     }
 
     /**
-     * 获得指定数据类型的标识字符串
+     * 获得指定数据类型的标识字符串,如未找到，返回null,只有BaseTypeEnum中定义的类型才有标识字符串
      *
      * @param type
      * @return 数据类型的标识字符串
      */
     public static String getFlagOfBaseType(Class type) {
-        if (isBaseType(type)) {
-            return BaseTypeEnum.get(type).getValue();
-        } else {
-            return type.getTypeName();
+//        if (isBaseType(type)) {
+//            return BaseTypeEnum.get(type).getValue();
+//        } else {
+//            return type.getTypeName();
+//        }
+        BaseTypeEnum baseTypeEnum = BaseTypeEnum.get(type);
+        if(baseTypeEnum != null){
+            return baseTypeEnum.getValue();
+        }else{
+            return null;
         }
     }
 

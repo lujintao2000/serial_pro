@@ -132,9 +132,46 @@ public class NumberUtil {
 	     b[0] = (byte)  (0xff & (a >> 8));  
 	     b[1] = (byte)  (0xff & a);  
 	     return b;  
-	 } 
-	 
-	 /**
+	 }
+
+	// 将字符数组转换为byte[8]数组
+	public static byte[] getByteArray(char[] a) {
+		byte b[] = new byte[2 * a.length];
+		for(int i = 0;i < a.length;i++){
+			int index = i * 2;
+			b[index] = (byte)  (0xff & (a[i] >> 8));
+			b[index + 1] = (byte)  (0xff & a[i]);
+		}
+
+		return b;
+	}
+
+	// 转换为byte[8]数组
+
+	/****
+	 * 返回一个同时包含整形数和字符数组内容的字节数组
+	 * @param b
+	 * @param a
+	 * @return
+	 */
+	public static byte[] getByteArray(int b,char[] a) {
+		byte[] result = new byte[2 * a.length + 4];
+
+		result[0] = (byte)  (0xff & (b >> 24));
+		result[1] = (byte)  (0xff & (b >> 16));
+		result[2] = (byte)  (0xff & (b >> 8));
+		result[3] = (byte)  (0xff & b);
+
+		for(int i = 0;i < a.length;i++){
+			int index = i * 2 + 4;
+			result[index] = (byte)  (0xff & (a[i] >> 8));
+			result[index + 1] = (byte)  (0xff & a[i]);
+		}
+
+		return result;
+	}
+
+	/**
 	  * 将一个0-255范围内的整数转变为对应的byte数
 	  * @param num
 	  * @return

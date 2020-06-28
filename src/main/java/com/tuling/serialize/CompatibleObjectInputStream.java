@@ -5,10 +5,9 @@ import com.tuling.serialize.exception.BuilderNotFoundException;
 import com.tuling.serialize.exception.ClassNotSameException;
 import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
+import com.tuling.serialize.util.ByteBuf;
 import com.tuling.serialize.util.ReflectUtil;
-
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +30,7 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
     }
 
     @Override
-    protected Object readValue(Object obj, Class objectClass, Context context, InputStream in) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException {
+    protected Object readValue(Object obj, Class objectClass, Context context, ByteBuf in) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException {
         //存放字段的值，key为字段名称
         Map<String,Object> valueMap = new HashMap<>();
         Map<String,Object> currentMap = valueMap;
@@ -48,7 +47,7 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
                             Field field = ReflectUtil.getField(currentType,fieldName);
                             if(field != null){
                                 context.setCurrentField(field);
-                                this.readField(currentMap, field,in);
+                                this.readField(currentMap, field,in,context);
                             }
                         }
                         count++;
@@ -65,9 +64,10 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
                             Field field = ReflectUtil.getField(currentType,fieldName);
                             if(field != null) {
                                 context.setCurrentField(field);
-                                this.readField(obj, objectClass, field, in);
+                                this.readField(obj, objectClass, field, in,context);
                             }else{
                                 in.skip(length);
+                                in.readerIndex(in.readerIndex() + length);
                             }
                         }
                     }

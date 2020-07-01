@@ -8,12 +8,12 @@ import java.io.Serializable;
  * Created by Administrator on 2020-06-14.
  */
 @Message
-public class Country<T> implements Serializable{
+public class Country<Role> implements Serializable{
     private String name;
 
-    private T other;
+    private Role other;
 
-    public Country(T other){
+    public Country(Role other){
         this.other = other;
     }
 
@@ -46,5 +46,13 @@ public class Country<T> implements Serializable{
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Role getOther() {
+        return other;
+    }
+
+    public void setOther(Role other) {
+        this.other = other;
     }
 }

@@ -30,6 +30,11 @@ public class ByteBuf {
         increaseSize = initialSize;
     }
 
+    public ByteBuf(int initialSize,int increaseSize) {
+        array = new byte[initialSize];
+        this.increaseSize = increaseSize;
+    }
+
     public ByteBuf(byte[] array) {
         if (array == null) {
             throw new IllegalArgumentException("array can't be null");
@@ -150,13 +155,96 @@ public class ByteBuf {
      */
     public void writeString(String value) {
         char[] contentArray = value.toCharArray();
-        ensureCapacity(contentArray.length * 2);
+        ensureCapacity(contentArray.length * 2 + 4);
+        writeLengthOfString(contentArray.length * 2);
         for (int i = 0; i < contentArray.length; i++) {
             array[writerIndex + i * 2] = (byte) (contentArray[i] >> 8);
             array[writerIndex + i * 2 + 1] = (byte) contentArray[i];
         }
-
         writerIndex += contentArray.length * 2;
+    }
+
+    /**
+     * 写入字符串的长度。写入内容根据length 的大小占用的字节会不同，从1字节到4字节，首字节的前2位表示该长度共用几字节表示，
+     * 00表示1字节，01表示2字节，10表示3字节，11表示4字节
+     * @param length 要写入的长度值
+     */
+    public void writeLengthOfString(int length){
+        if(length <= 0x3f){  //第一字节首位 00
+            array[writerIndex] = (byte)length;
+            writerIndex += 1;
+        }else if(length <= 0x3fff){ //第一字节首位 0100 0000  0011 1111
+            array[writerIndex] = (byte)((length >> 8) | 0x40);
+            array[writerIndex + 1] = (byte)length;
+            writerIndex += 2;
+        }else if(length <= 0x3fffff){ //第一字节首位 1000 0000  1011 1111
+            array[writerIndex] = (byte)((length >> 16) | 0x80);
+            array[writerIndex + 1] = (byte)(length >> 8);
+            array[writerIndex + 2] = (byte)length;
+            writerIndex += 3;
+        }else if(length <= 0x3fffffff){ //第一字节首位 1100 0000  0011 1111
+            array[writerIndex] = (byte)((length >> 24) | 0xc0);
+            array[writerIndex + 1] = (byte)(length >> 16);
+            array[writerIndex + 2] = (byte)(length >> 8);
+            array[writerIndex + 3] = (byte)length;
+            writerIndex += 4;
+        }else{
+            throw new IllegalArgumentException("Length is too long.The max length which is allowed is " + 0x3fffffff);
+        }
+
+    }
+
+    /**
+     * 读取字符串的长度
+     * @return
+     */
+    public int readLengthOfString() {
+        int result = 0;
+        byte first = readByte();
+        int flag = (first & 0xc0) >> 6;
+        if (flag == 0) {  // 首位 00
+           result = first;
+        } else if (flag == 1){  // 首位 01
+            byte second = readByte();
+            result = ((first & 0xbf) << 8) | (second & 0xff);
+        }else if(flag == 2){   // 首位 10 0111 1111
+            byte second = readByte();
+            byte third = readByte();
+            result = ((first & 0x7f) << 16) |  ((second & 0xff) << 8) | (third & 0xff);
+        }else{  // 首位 11  0011 1111
+            byte second = readByte();
+            byte third = readByte();
+            byte forth = readByte();
+            result = ((first & 0x3f) << 24) |  ((second & 0xff) << 16) | ((third & 0xff) << 8) | (forth & 0xff);
+        }
+
+
+
+        return result;
+    }
+
+    /**
+     * 写入字符串;如果参数isAscii为true,则写入时用ascii对字符串进行编码;否则，用unicode编码
+     * @param isAsciiEncoding  是否采用ascii编码
+     * @param value
+     */
+    public void writeString(String value,boolean isAsciiEncoding) {
+       if(isAsciiEncoding){
+
+           try {
+               byte[] content = value.getBytes("ascii");
+               ensureCapacity(content.length + 4);
+//               this.writeShort(content.length);
+               this.writeLengthOfString(content.length);
+               this.writeBytes(content);
+           }catch (UnsupportedEncodingException ex){
+               LOGGER.error(ex.getMessage(),ex);
+               throw new RuntimeException("Write field name with value " + value + " failed.The value contains some character which ascii not support.");
+           }
+       }else{
+           writeString(value);
+       }
+
     }
 
 
@@ -318,6 +406,33 @@ public class ByteBuf {
             result = new String(content, "unicode");
         } catch (UnsupportedEncodingException ex) {
             LOGGER.error("读取字符串出错|" + ex.getMessage(), ex);
+        }
+        readerIndex += length;
+        return result;
+    }
+
+    /**
+     * 读取字符串，字符串对应的字节的长度为length
+     *
+     * @param length
+     * @param isAsciiDecoding 是否用ascii将字节数组解码成字符串
+     * @return
+     */
+    public String readString(int length,boolean isAsciiDecoding) {
+        if(!isAsciiDecoding){
+            return readString(length);
+        }
+        if (this.readableBytes() < length) {
+            throw new IllegalArgumentException("There are not enough data to be read.");
+        }
+        byte[] content = new byte[length];
+        System.arraycopy(array, readerIndex, content, 0, length);
+        String result = null;
+        try {
+            result = new String(content, "ascii");
+        } catch (UnsupportedEncodingException ex) {
+            LOGGER.error("读取字符串出错|" + ex.getMessage(), ex);
+            throw new RuntimeException(ex);
         }
         readerIndex += length;
         return result;

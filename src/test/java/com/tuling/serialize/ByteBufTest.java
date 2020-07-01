@@ -1,8 +1,11 @@
 package com.tuling.serialize;
 
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import com.tuling.serialize.util.ByteBuf;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
 
 /**
  * Created by Administrator on 2020-06-28.
@@ -64,6 +67,7 @@ public class ByteBufTest {
         base(TestType.SHORT,-188);
         base(TestType.SHORT,-539);
         base(TestType.SHORT,0);
+        base(TestType.SHORT,-1);
         base(TestType.SHORT,Short.MAX_VALUE);
         base(TestType.SHORT,Short.MIN_VALUE);
     }
@@ -194,6 +198,31 @@ public class ByteBufTest {
     }
 
     @Test
+    public void testWriteString(){
+        ByteBuf buf = new ByteBuf();
+        for(int i = 0;i < 10000; i++){
+            buf.writeString("good morning");
+        }
+        for(int i = 0;i < 10000; i++){
+            int length = buf.readLengthOfString();
+            Assert.assertTrue("good morning".equals(buf.readString(length)));
+        }
+
+    }
+
+    @Test
+    public void testWriteStringWithAscii(){
+        ByteBuf buf = new ByteBuf();
+        for(int i = 0;i < 10000; i++){
+            buf.writeString("good morning",true);
+        }
+        for(int i = 0;i < 10000; i++){
+            int length = buf.readLengthOfString();
+            Assert.assertTrue("good morning".equals(buf.readString(length,true)));
+        }
+    }
+
+    @Test
     public void testWriteBytes(){
         ByteBuf buf = new ByteBuf(30);
         for(int i = 0;i < 20;i++){
@@ -230,7 +259,116 @@ public class ByteBufTest {
     }
 
 
+    public final short readFieldCount(ByteBuf in) throws IOException {
+        short result = in.readByte();
+        if(result < 0){
+            result += 128;
+        }else{
+            result = (short)((result << 8) | (in.readByte() & 0xff));
+        }
+        return result;
+    }
 
+    protected final void writeFieldCount(int length,ByteBuf buf){
+        if(length <= 127){
+            buf.writeByte(length - 128);
+        }else{
+            buf.writeShort(length);
+        }
+    }
+
+
+    public void compareWriteReadOfFieldCount(int length) throws  IOException{
+        ByteBuf buf = new ByteBuf();
+        writeFieldCount(length,buf);
+
+        int readLength = readFieldCount(buf);
+        Assert.assertTrue(length == readLength);
+    }
+
+    @Test
+    public void testFieldCount() throws IOException{
+        compareWriteReadOfFieldCount(0);
+        compareWriteReadOfFieldCount(1);
+        compareWriteReadOfFieldCount(50);
+        compareWriteReadOfFieldCount(127);
+        compareWriteReadOfFieldCount(128);
+        compareWriteReadOfFieldCount(255);
+        compareWriteReadOfFieldCount(256);
+        compareWriteReadOfFieldCount(2034);
+    }
+
+    @Test
+    public void testWriteReadStringWithAscii(){
+        ByteBuf buf = new ByteBuf();
+        buf.writeString("name",true);
+        Assert.assertTrue(buf.readableBytes() == 5);
+        int length = buf.readLengthOfString();
+        String value = buf.readString(length,true);
+        Assert.assertEquals("name",value);
+
+    }
+
+    @Test
+    public void testWriteLengthOfString(){
+        writeLengthOfString(62);
+        writeLengthOfString(63);
+        writeLengthOfString(64);
+
+        writeLengthOfString(0x3fff - 2);
+        writeLengthOfString(0x3fff - 1);
+        writeLengthOfString(0x3fff);
+
+        writeLengthOfString(0x3fffff - 2);
+        writeLengthOfString(0x3fffff - 1);
+        writeLengthOfString(0x3fffff);
+
+
+        writeLengthOfString(0x3fffffff - 2);
+        writeLengthOfString(0x3fffffff - 1);
+        writeLengthOfString(0x3fffffff);
+    }
+
+    public ByteBuf writeLengthOfString(int length){
+        ByteBuf buf  =  new ByteBuf();
+        buf.writeLengthOfString(length);
+        return buf;
+    }
+
+    @Test
+    public  void testReadLengthOfString(){
+        Assert.assertTrue(isReadLengthEqualWriteLength(62));
+        Assert.assertTrue(isReadLengthEqualWriteLength(63));
+        Assert.assertTrue(isReadLengthEqualWriteLength(64));
+        Assert.assertTrue(isReadLengthEqualWriteLength(65));
+
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fff - 2));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fff - 1));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fff));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fff + 1));
+
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffff - 2));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffff - 1));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffff));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffff + 1));
+
+
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffffff - 2));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffffff - 1));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffffff));
+
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffffff - 5));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffffff - 6));
+        Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffffff - 200));
+    }
+
+    public boolean isReadLengthEqualWriteLength(int length){
+        ByteBuf buf  =  new ByteBuf();
+        buf.writeLengthOfString(length);
+        int readLength = buf.readLengthOfString();
+        return length == readLength;
+
+    }
 
     enum  TestType{
         SHORT,

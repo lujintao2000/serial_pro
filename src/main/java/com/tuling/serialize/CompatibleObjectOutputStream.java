@@ -1,6 +1,7 @@
 package com.tuling.serialize;
 
 import com.tuling.serialize.util.ByteBuf;
+import com.tuling.serialize.util.Constant;
 import com.tuling.serialize.util.NumberUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -33,7 +34,7 @@ public class CompatibleObjectOutputStream extends AbstractOutputStream {
             //1. 写入属性名
             writeString(field.getName(),buf);
             //先将值写入一个临时缓冲
-            ByteBuf tempBuf = new ByteBuf(128);
+            ByteBuf tempBuf = new ByteBuf(Constant.DEFAULT_BUFFER_SIZE_OF_FIELD);
             this.writeValue(value, field.getType(),tempBuf,context);
             //2. 写入属性值的字节长度
             buf.writeInt(tempBuf.readableBytes());

@@ -13,11 +13,32 @@ import java.util.*;
 public class Application {
 
     public static void main(String[] args) throws Exception {
-        int length = "我们在".getBytes().length;
+
+         byte t = 0;
+         short t2 = 0;
+
+         System.out.println(t == t2);
+//        testCharsetCost();
+
+//          byte a = (byte) 255;
+
+
+//        int length = "hello".getBytes("ascii").length;
         testSerialWithSerial();
 //        testSerialWithJava();
 //        testUnserialWithJava();
 //        testUnserialWithSerial();
+    }
+
+    private static void testCharsetCost() throws  Exception{
+        int length = 0;
+        long startTime = new Date().getTime();
+        for (int i = 0; i < 10000000; i++) {
+            length = "hello".getBytes("ascii").length;
+        }
+        long endTime = new Date().getTime();
+
+        System.out.println("serial serialization cost " + (endTime - startTime) + "ms" + length);
     }
 
     private static void testSerialWithSerial() throws Exception{
@@ -25,7 +46,8 @@ public class Application {
         long startTime = new Date().getTime();
         for (int i = 0; i < 300000; i++) {
             OutputStream outputStream = new ByteArrayOutputStream();
-            Serial.write(user,outputStream);
+            Serial.write(user,outputStream,true);
+
             outputStream.close();
         }
         long endTime = new Date().getTime();

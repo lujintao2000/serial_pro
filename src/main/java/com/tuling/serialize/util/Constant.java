@@ -10,7 +10,7 @@ public class Constant {
     //代表写对象结束
     public static final int END_FLAG = 126;
     //代表写入了NULL
-    public static final int NULL_FLAG = 125;
+    public static final byte NULL_FLAG = -2;
 
     //代表写入了非空
     public static final int NOT_NULL_FLAG = 124;
@@ -26,8 +26,13 @@ public class Constant {
     public static final short MIN_VERSION = 1;
     //当前序列化实现支持的序列化格式的最大版本
     public static final short MAX_VERSION = 1;
-
+    //ByteBuf对象创建默认的大小
     public static final int DEFAULT_BUFFER_SIZE = 256;
-
+    //存储字段内容的临时ByteBuf的默认大小
     public static final int DEFAULT_BUFFER_SIZE_OF_FIELD = 32;
+    //标识类名引用了先前已经缓存的类名
+    public static final short CLASSNAME_REFERENCE = 0;
+    //标识类名和字段的类型名一致
+    public static final short CLASSNAME_SAME_WITH_FIELD = -1;
+
 }

@@ -214,8 +214,15 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param in  包含序列化数据的输入流
 	 * @throws IOException
 	 */
-	protected  short readFieldCount(ByteBuf in) throws IOException{
-		return this.readShort(in);
+	public final short readFieldCount(ByteBuf in) throws IOException{
+//		return this.readShort(in);
+		short result = in.readByte();
+		if(result < 0){
+			result += 128;
+		}else{
+			result = (short)((result << 8) | (in.readByte() & 0xff));
+		}
+		return result;
 	}
 
 	/**
@@ -328,7 +335,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 */
 	protected String readString(ByteBuf in) throws IOException{
 		//1. 读取字符串对应字节长度
-		int length = this.readInt(in);
+		int length = in.readLengthOfString();
 //		byte[] array = new byte[length];
 		//读取字符串内容对应的字节数据
 //		in.read(array);
@@ -392,22 +399,26 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws ClassNotFoundException 当类名对应的类不存在时，抛出此异常
 	 */
 	protected String readClassName(ByteBuf in,Context context) throws IOException, ClassNotFoundException {
-		//1. 读入类名字节长度
-		short length = this.readShort(in);
-		if(length > 0){
+		//1. 读入类名字节长度,该次读取读到的并不一定是真实的字符串长度
+		byte preLength = this.readByte(in);
+		if(preLength > 0) {
+			in.readerIndex(in.readerIndex() - 1);
+			int length = in.readLengthOfString();
 			//2. 读入类名
-//			byte[] classNameByteArray = new byte[length];
-//			in.readBytes(classNameByteArray);
-			String fullClassName = ReflectUtil.getFullName(in.readString(length));
-			if(fullClassName.equals(BaseTypeEnum.VOID.getType().getTypeName())){
+			String fullClassName = ReflectUtil.getFullName(in.readString(length,true));
+			if (fullClassName.equals(BaseTypeEnum.VOID.getType().getTypeName())) {
 				fullClassName = context.getCurrentField().getType().getTypeName();
 			}
 			context.addClassName(fullClassName);
 			return fullClassName;
-		}else{
+		}else if(preLength == Constant.CLASSNAME_REFERENCE){
 			//读取引用序号
 			short index = this.readShort(in);
 			return context.getClassName(index);
+		}else{
+			String className = context.getCurrentField().getType().getTypeName();
+			context.addClassName(className);
+			return className;
 		}
 	}
 
@@ -559,6 +570,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	public Object  readObject(Class objectClass,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException{
 		Object obj = null;
 		if(!this.isNull(in)){
+			in.readerIndex(in.readerIndex() - 1);
 			if(objectClass == null){
 				//1.读取序列化对象所对应的类名
 				String className = this.readClassName(in,context);

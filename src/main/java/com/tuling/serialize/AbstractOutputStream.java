@@ -87,7 +87,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         if(obj == null){
             this.writeNull(out);
         }else{
-            this.writeNotNull(out);
+//            this.writeNotNull(out);
             context.put(obj);
 
             //1. 写入对象类型
@@ -120,7 +120,10 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                         Field[] fields = ReflectUtil.getAllInstanceField(item,isCacheField);
                         //2. 写入属性个数  2字节
 //                        out.write(NumberUtil.getByteArray( ((short)fields.length) ));
-                        out.writeShort(fields.length);
+//                        out.writeShort(fields.length);
+
+                       writeFieldCount(fields.length,out);
+
                         //3. 循环写入属性
                         for(Field field : fields){
                             context.setCurrentField(field);
@@ -130,6 +133,18 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * 写入字段个数
+     * @param length  字段个数
+     */
+    protected final void writeFieldCount(int length,ByteBuf buf){
+        if(length <= 127){
+            buf.writeByte(length - 128);
+        }else{
+            buf.writeShort(length);
         }
     }
 
@@ -224,20 +239,20 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             String className = ReflectUtil.getFlagOfBaseType(type);
             if(className == null){
                 if(context.getCurrentField() != null && context.getCurrentField().getType() == type){  //当值的实际类型和字段类型相同时，不需要写入类名，写入标识字符即可
-                    className = BaseTypeEnum.VOID.getValue();
+//                    className = BaseTypeEnum.VOID.getValue();
+                    out.writeByte(Constant.CLASSNAME_SAME_WITH_FIELD);
                 }else{
                     className = type.getTypeName();
                 }
             }
-
-            //写入类名
-            this.writeClassName(out,className);
+            if(className != null){
+                //写入类名
+                this.writeClassName(out,className);
+            }
             context.addClass(type);
         }else{
             //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
-//            out.write(NumberUtil.getByteArray((short)0));
-//            out.write(NumberUtil.getByteArray((short) index));
-            out.writeShort(0);
+            out.writeByte(Constant.CLASSNAME_REFERENCE);
             out.writeShort(index);
         }
     }
@@ -260,12 +275,9 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
     protected void writeClassName(ByteBuf out,String className) throws IOException{
         byte[] array = className.getBytes();
         //1. 写入类名长度  2字节
-//        out.write(NumberUtil.getByteArray( ((short)array.length)) );
-//        //2. 写入类名
-//        out.write(array);
-        out.writeShort(className.length() * 2);
-        out.writeString(className);
-
+//        out.writeShort(className.length() * 2);
+        //2. 写入类名
+        out.writeString(className,true);
     }
 
     protected void writeStart(ByteBuf out) throws IOException{
@@ -440,7 +452,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
 ////            out.write(NumberUtil.getByteArray( bytes.length));
 ////            out.write(bytes);
 //            out.writeBytes(NumberUtil.getByteArray(content.length * 2,content));
-            out.writeInt(value.length() * 2);
+//            out.writeInt(value.length() * 2);
             out.writeString(value);
         }
     }

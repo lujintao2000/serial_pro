@@ -8,6 +8,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -17,19 +18,30 @@ import java.util.stream.Collectors;
  * @date 2017-04-20
  */
 public class ReflectUtil {
+    //表示普通类型,即数组、枚举、基本类型之外的类型
+    public static final int GENERAL = 0;
+    //标识数组类型
+    public static final int ARRAY = 1;
+    //标识枚举类型
+    public static final int ENUM = 2;
+    //标识基本类型(包含String)
+    public static final int BASETYPE = 3;
+
     private static final Logger LOGGER = Logger.getLogger(ReflectUtil.class);
 
     private static final Map<String, Class> baseTypeNameMap = new HashMap<>();
     private static final Map<Class, Class> baseTypeMap = new HashMap<>();
 
     //该集合用于存放类的未排序字段
-    private static final Map<Class,Map<String,Field>> fieldMap = new HashMap<>();
+    private static final Map<Class,Map<String,Field>> fieldMap = new ConcurrentHashMap<>();
     //该集合用于存放类的已排序字段
-    private static final Map<Class, Field[]> orderedFieldMap = new HashMap<>();
+    private static final Map<Class, Field[]> orderedFieldMap = new ConcurrentHashMap<>();
     //存放类信息，key为类名
-    private static final Map<String, Class> classMap = new HashMap<>();
+    private static final Map<String, Class> classMap = new ConcurrentHashMap<>();
     //存储序列化对象所属类的父类信息
-    private static final Map<Class,List<Class>> superClassMap = new HashMap<>();
+    private static final Map<Class,List<Class>> superClassMap = new ConcurrentHashMap<>();
+    //存储类的标识信息，标识类是数组还是枚举，还是普通类
+    private static final Map<Class,Integer> typeMap = new ConcurrentHashMap<>();
 
     static {
         Arrays.stream(BaseTypeEnum.values()).forEach(x -> baseTypeNameMap.put(x.getValue(), x.getType()));
@@ -52,6 +64,33 @@ public class ReflectUtil {
         classMap.put("float", float.class);
         classMap.put("double", double.class);
 
+    }
+
+    /**
+     * 获取类的分类信息,看它是数组，还是枚举，还是基本类型或是普通类型
+     * 0表示普通类型，1表示数组类型，2表示枚举类型，3表示基本类型（包括String）
+     * @param target
+     * @return
+     */
+    public static int getTypeOfClass(Class target){
+        if(target == null){
+            throw new IllegalArgumentException("target cat't be null");
+        }
+        Integer result = typeMap.get(target);
+
+        if(result == null){
+            if(target.isArray()){
+                result = ARRAY;
+            }else if(target.isEnum()){
+                result = ENUM;
+            }else if(isBaseType(target)){
+                result = BASETYPE;
+            }else{
+                result = GENERAL;
+            }
+            typeMap.put(target,result);
+        }
+        return result;
     }
 
     /**
@@ -192,6 +231,32 @@ public class ReflectUtil {
      */
     public static boolean isBaseType(Class targetClass) {
         return baseTypeMap.containsKey(targetClass);
+    }
+
+    /**
+     * 判断指定对象是否基本类型的对象（基本类型包括原始类型的包装类和String）
+     *
+     * @param value  需要判断的对象
+     * @param type   对象所属类型
+     * @return 如果指定目标类是基本类型，返回true;否则，返回false
+     */
+    public static boolean isBaseType(Object value,Class type) {
+        //是否是基本类型
+        boolean flag = false;
+
+//        if(value.getClass() != type){
+//            if(value instanceof String || value instanceof Boolean || value instanceof Character){
+//                flag = true;
+//            }
+//            if(!flag && value instanceof Number){
+//                if(value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long || value instanceof Float || value instanceof Double){
+//                    flag = true;
+//                }
+//            }
+
+//        }
+
+       return flag;
     }
 
     /**

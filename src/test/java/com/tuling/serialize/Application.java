@@ -2,6 +2,7 @@ package com.tuling.serialize;
 
 import com.tuling.domain.*;
 import com.tuling.serialize.util.ByteBuf;
+import com.tuling.serialize.util.ReflectUtil;
 
 import javax.xml.crypto.Data;
 import java.io.*;
@@ -13,21 +14,60 @@ import java.util.*;
 public class Application {
 
     public static void main(String[] args) throws Exception {
-
-         byte t = 0;
-         short t2 = 0;
-
-         System.out.println(t == t2);
+//        testIsBasicType();
 //        testCharsetCost();
 
 //          byte a = (byte) 255;
 
 
 //        int length = "hello".getBytes("ascii").length;
-        testSerialWithSerial();
-//        testSerialWithJava();
+//        testSerialWithSerial();
+        testSerialWithJava();
 //        testUnserialWithJava();
 //        testUnserialWithSerial();
+    }
+
+    private static void testIsBasicType() throws  Exception{
+        int length = 0;
+        boolean flag = false;
+        long count = 0L;
+        String[] first = new String[3];
+        String[] second = new String[4];
+        Object obj = new Country<Role>("china");
+        Class t = obj.getClass();
+        flag = first.getClass() == second.getClass();
+        Map map = new HashMap();
+        Class key  = first.getClass();
+
+        map.put(key,true);
+        long startTime = new Date().getTime();
+        for (int i = 0; i < 3000000; i++) {
+           flag = map.containsKey(key);
+//            t = obj.getClass();
+//            flag = t.isEnum();
+//            flag = ReflectUtil.isBaseType(String.class);
+//              flag = isBasicType(Country.class);
+
+//              flag = t.isInterface();
+//              flag = String.class.isPrimitive();
+//           count++;
+        }
+        long endTime = new Date().getTime();
+
+        System.out.println("isBasicType invoke  cost " + (endTime - startTime) + "ms" + flag);
+    }
+
+    private static Object[] baseArray = new Object[]{Byte.class,Character.class,Boolean.class,Short.class,Integer.class,Long.class,Float.class,Double.class,String.class};
+
+    public static boolean isBasicType(Class type){
+        boolean flag = false;
+        for(int i = 0;i < 9;i++){
+            if(type == baseArray[i]){
+                flag = true;
+                break;
+            }
+        }
+        return flag;
     }
 
     private static void testCharsetCost() throws  Exception{
@@ -42,11 +82,22 @@ public class Application {
     }
 
     private static void testSerialWithSerial() throws Exception{
+//        Byte t;
+//        Boolean t2;
+//        Character t3;
+//        Double t3;
+//        Float t5;
+//        Long t6;
+//        Short t7;
+//        Integer t8;
+//        String t9;
+
+
         User user = DataProvider.getUser();
         long startTime = new Date().getTime();
-        for (int i = 0; i < 300000; i++) {
+        for (int i = 0; i < 600000; i++) {
             OutputStream outputStream = new ByteArrayOutputStream();
-            Serial.write(user,outputStream,true);
+            Serial.write(user,outputStream,false);
 
             outputStream.close();
         }
@@ -58,7 +109,7 @@ public class Application {
     private static void testSerialWithJava() throws Exception{
         User user = DataProvider.getUser();
         long startTime = new Date().getTime();
-        for (int i = 0; i < 300000; i++) {
+        for (int i = 0; i < 600000; i++) {
             OutputStream outputStream = new ByteArrayOutputStream();
             java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(outputStream);
             out.writeObject(user);

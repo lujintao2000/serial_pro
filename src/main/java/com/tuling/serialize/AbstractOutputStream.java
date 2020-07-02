@@ -1,5 +1,6 @@
 package com.tuling.serialize;
 
+import com.sun.xml.internal.ws.developer.Serialization;
 import com.tuling.serialize.util.ByteBuf;
 import com.tuling.serialize.util.Constant;
 import com.tuling.serialize.util.NumberUtil;
@@ -74,44 +75,67 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         Context context = Context.create();
         //先将对象数据写入缓冲,这样可以提高写入速度
         ByteBuf buf = new ByteBuf(256);
-        write(obj,isWriteClassName,buf ,context);
-        //写入对象长度
+        write(obj,isWriteClassName,buf ,context,true);
+        //写入对象长度。对象长度占用的字节随着长度的变化而变化，尽量用更少的字节存储
         out.write(NumberUtil.getByteArray(buf.readableBytes()));
+        //writeLengthOfObject(buf.readableBytes(), out);
         //写入对象内容
-        out.write(buf.array());
+        out.write(buf.fullArray());
         buf = null;
         context.destory();
     }
 
-    protected void write(Object obj,boolean isWriteClassName, ByteBuf out,Context context) throws IOException{
+    /**
+     * 往输出流写入对象长度
+     * @param length
+     * @param out
+     * @throws IOException
+     */
+    private void writeLengthOfObject(int length,OutputStream out) throws IOException{
+        ByteBuf tempBuf = new ByteBuf();
+        //先写入临时缓冲，就是为了获取长度写入对应的字节数据
+        tempBuf.writeLength(length);
+        out.write(tempBuf.fullArray());
+    }
+
+    /**
+     *
+     * @param obj  要写入对象
+     * @param isWriteClassName  是否写入对象所属类的类名
+     * @param out  输出缓冲
+     * @param context  序列化上下文
+     * @param possibleBaseType  是否可能是基本数据类型(包括String)
+     * @throws IOException
+     */
+    protected void write(Object obj,boolean isWriteClassName, ByteBuf out,Context context,boolean possibleBaseType){
         if(obj == null){
             this.writeNull(out);
         }else{
-//            this.writeNotNull(out);
             context.put(obj);
-
+            Class targetClass = obj.getClass();
+            int type = ReflectUtil.getTypeOfClass(targetClass);
             //1. 写入对象类型
             if(isWriteClassName){
-                this.writeClassName(obj.getClass(),out,context);
+                this.writeClassName(targetClass,out,context);
             }
             //判断是否是数组类型或集合类型
-            if(obj.getClass().isArray()){
+            //if(targetClass.isArray()){
+            if(type == ReflectUtil.ARRAY){
                 //2.写入元素个数
                 int length = Array.getLength(obj);
-//                out.write(NumberUtil.getByteArray(length));
                 out.writeInt(length);
                 //3. 循环写入数组中的元素
                 for(int i = 0; i < length; i++){
                     Object value = Array.get(obj, i);
-                    this.writeValue(value, obj.getClass().getComponentType(),out,context);
+                    this.writeValue(value, targetClass.getComponentType(),out,context);
                 }
             }else{
                 //先写入该类类名及该类自定义的属性，然后写入父类名及父类定义的属性
-                Class targetClass = obj.getClass();
+//                Class targetClass = obj.getClass();
                 //判断是否是基本数据类型对应的包装类型
-                if(ReflectUtil.isBaseType(targetClass)){
+                if(possibleBaseType && type == ReflectUtil.BASETYPE){
                     this.writeValue(obj, targetClass, out,context);
-                }else if(targetClass.isEnum()){
+                }else if(type == ReflectUtil.ENUM){
                     this.writeValue(obj.toString(),String.class,out,context);
                 }else{
                     //获得包含该类以及该类的所有父类的集合
@@ -119,9 +143,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                     for(Class item : superClassAndSelfList){
                         Field[] fields = ReflectUtil.getAllInstanceField(item,isCacheField);
                         //2. 写入属性个数  2字节
-//                        out.write(NumberUtil.getByteArray( ((short)fields.length) ));
-//                        out.writeShort(fields.length);
-
                        writeFieldCount(fields.length,out);
 
                         //3. 循环写入属性
@@ -147,55 +168,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             buf.writeShort(length);
         }
     }
-
-
-//    protected void write(Object obj,boolean isWriteClassName, OutputStream out,Context context) throws IOException{
-//        if(obj == null){
-//            this.writeNull(out);
-//        }else{
-//            this.writeNotNull(out);
-//            context.put(obj);
-//
-//            //1. 写入对象类型
-//            if(isWriteClassName){
-//                this.writeClassName(obj.getClass(),out,context);
-//            }
-//            //判断是否是数组类型或集合类型
-//            if(obj.getClass().isArray()){
-//                //2.写入元素个数
-//                int length = Array.getLength(obj);
-//                out.write(NumberUtil.getByteArray(length));
-//                //3. 循环写入数组中的元素
-//                for(int i = 0; i < length; i++){
-//                    Object value = Array.get(obj, i);
-//                    this.writeValue(value, obj.getClass().getComponentType(),out,context);
-//                }
-//            }else{
-//                //先写入该类类名及该类自定义的属性，然后写入父类名及父类定义的属性
-//                Class targetClass = obj.getClass();
-//                //判断是否是基本数据类型对应的包装类型
-//                if(ReflectUtil.isBaseType(targetClass)){
-//                    this.writeValue(obj, targetClass, out,context);
-//                }else if(targetClass.isEnum()){
-//                    this.writeValue(obj.toString(),String.class,out,context);
-//                }else{
-//                    //获得包含该类以及该类的所有父类的集合
-//                    List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(targetClass);
-//                    for(Class item : superClassAndSelfList){
-//                        Field[] fields = ReflectUtil.getAllInstanceField(item,isCacheField);
-//                        //2. 写入属性个数  2字节
-//                        out.write(NumberUtil.getByteArray( ((short)fields.length) ));
-//                        //3. 循环写入属性
-//                        for(Field field : fields){
-//                            context.setCurrentField(field);
-//                            this.writeField(field, obj,out,context);
-//                        }
-//                        context.setCurrentField(null);
-//                    }
-//                }
-//            }
-//        }
-//    }
 
     /**
      * 获得指定类的所有字段，将这些字段放入一个栈中。先压入该类自己定义的字段，然后依次压入上一级父类定义的字段
@@ -230,7 +202,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @param  out 输出流
      * @throws IOException
      */
-    protected void writeClassName(Class type,ByteBuf out,Context context) throws IOException{
+    protected void writeClassName(Class type,ByteBuf out,Context context){
         if(type == null){
             throw new IllegalArgumentException("type can't be null");
         }
@@ -239,7 +211,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             String className = ReflectUtil.getFlagOfBaseType(type);
             if(className == null){
                 if(context.getCurrentField() != null && context.getCurrentField().getType() == type){  //当值的实际类型和字段类型相同时，不需要写入类名，写入标识字符即可
-//                    className = BaseTypeEnum.VOID.getValue();
                     out.writeByte(Constant.CLASSNAME_SAME_WITH_FIELD);
                 }else{
                     className = type.getTypeName();
@@ -265,38 +236,36 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @param context 序列化上下文
      * @throws IOException
      */
-    protected abstract void writeField(Field field,Object obj,ByteBuf out,Context context) throws IOException;
+    protected abstract void writeField(Field field,Object obj,ByteBuf out,Context context);
 
     /**
      * 将类名写出到指定输出流
      * @param out  输出流
      * @param content  要写出的内容
      */
-    protected void writeClassName(ByteBuf out,String className) throws IOException{
+    protected void writeClassName(ByteBuf out,String className){
         byte[] array = className.getBytes();
-        //1. 写入类名长度  2字节
-//        out.writeShort(className.length() * 2);
         //2. 写入类名
         out.writeString(className,true);
     }
 
-    protected void writeStart(ByteBuf out) throws IOException{
+    protected void writeStart(ByteBuf out){
         out.writeByte(Constant.BEGIN_FLAG);
     }
 
-    protected void writeEnd(ByteBuf out) throws IOException{
+    protected void writeEnd(ByteBuf out){
         out.writeByte(Constant.END_FLAG);
     }
 
-    protected void writeNull(ByteBuf out) throws IOException{
+    protected void writeNull(ByteBuf out){
         out.writeByte(Constant.NULL_FLAG);
     }
 
-    protected void writeNotNull(ByteBuf out) throws IOException{
+    protected void writeNotNull(ByteBuf out){
         out.writeByte(Constant.NOT_NULL_FLAG);
     }
 
-    protected void writeContinue(ByteBuf out) throws IOException{
+    protected void writeContinue(ByteBuf out){
         out.writeByte(Constant.CONTINUE_FLAG);
     }
 
@@ -304,7 +273,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * 写入引用标记
      * @throws IOException
      */
-    protected void writeReference(ByteBuf out) throws IOException{
+    protected void writeReference(ByteBuf out){
         out.writeByte(Constant.REFERENCE_FLAG);
     }
 
@@ -312,7 +281,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * 写入普通标记
      * @throws IOException
      */
-    protected void writeNormal(ByteBuf out) throws IOException{
+    protected void writeNormal(ByteBuf out){
         out.writeByte(Constant.NORMAL_FLAG);
     }
 
@@ -322,7 +291,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      *
      * @throws IOException
      */
-    protected void writeString(String content,ByteBuf out) throws IOException{
+    protected void writeString(String content,ByteBuf out){
         stringWriter.write(out,content);
     }
 
@@ -352,7 +321,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @param out 输出流
      * @throws IOException
      */
-    public   void writeValue(Object value, Class type, ByteBuf out,Context context) throws IOException{
+    public  void writeValue(Object value, Class type, ByteBuf out,Context context){
         if(value == null){
             this.writeNull(out);
             return;
@@ -374,7 +343,11 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
 
             }else{
                 this.writeNormal(out);
-                this.write(value,true,out,context);
+
+
+
+
+                this.write(value,true,out,context,value.getClass() != type);
             }
         }
     }
@@ -385,74 +358,60 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
          * @param out
          * @param value
          */
-        public void write(ByteBuf out,T value) throws IOException;
+        public void write(ByteBuf out,T value);
     }
 
     private static class BooleanWrite implements ObjectWrite<Boolean> {
-        public void write(ByteBuf out,Boolean value) throws IOException{
-//            out.write( ((Boolean)value).equals(Boolean.TRUE) ? 1 : 0 );
+        public void write(ByteBuf out,Boolean value){
             out.writeBoolean(value);
         }
     }
 
     private static class ByteWrite implements ObjectWrite<Byte> {
-        public void write(ByteBuf out,Byte value) throws IOException{
-//            out.write(new byte[]{(Byte)value});
+        public void write(ByteBuf out,Byte value){
             out.writeByte(value);
         }
     }
 
     private static class CharacterWrite implements ObjectWrite<Character> {
-        public void write(ByteBuf out,Character value) throws IOException{
-//            out.write(NumberUtil.getByteArray( ((Character)value).charValue() ));
+        public void write(ByteBuf out,Character value){
             out.writeChar(value.charValue());
         }
     }
 
     private static class ShortWrite implements ObjectWrite<Short> {
-        public void write(ByteBuf out,Short value) throws IOException{
-//            out.write(NumberUtil.getByteArray((Short)value));
+        public void write(ByteBuf out,Short value){
             out.writeShort(value);
         }
     }
 
     private static class IntegerWrite implements ObjectWrite<Integer> {
-        public void write(ByteBuf out,Integer value) throws IOException{
-///           out.write(NumberUtil.getByteArray((Integer)value));
+        public void write(ByteBuf out,Integer value){
             out.writeInt(value);
         }
     }
 
     private static class LongWrite implements ObjectWrite<Long> {
-        public void write(ByteBuf out,Long value) throws IOException{
-//            out.write(NumberUtil.getByteArray((Long)value));
+        public void write(ByteBuf out,Long value){
            out.writeLong(value);
         }
     }
 
     private static class FloatWrite implements ObjectWrite<Float> {
-        public void write(ByteBuf out,Float value) throws IOException{
-//            out.write(NumberUtil.getByteArray((Float)value));
+        public void write(ByteBuf out,Float value){
             out.writeFloat(value);
         }
     }
 
     private static class DoubleWrite implements ObjectWrite<Double> {
-        public void write(ByteBuf out,Double value) throws IOException{
-//            out.write(NumberUtil.getByteArray((Double)value));
+        public void write(ByteBuf out,Double value){
             out.writeDouble(value);
         }
     }
 
     public static class StringWrite implements ObjectWrite<String> {
-        public void write(ByteBuf out,String value) throws IOException{
-            //先写入字符串长度，再写入字符串对应的字节
-//            byte[] bytes = ((String)value).getBytes();
-//            char[] content = value.toCharArray();
-////            out.write(NumberUtil.getByteArray( bytes.length));
-////            out.write(bytes);
-//            out.writeBytes(NumberUtil.getByteArray(content.length * 2,content));
-//            out.writeInt(value.length() * 2);
+        public void write(ByteBuf out,String value){
+            //写入字符串
             out.writeString(value);
         }
     }

@@ -27,7 +27,7 @@ public class CompatibleObjectOutputStream extends AbstractOutputStream {
     }
 
     @Override
-    protected void writeField(Field field, Object obj, ByteBuf buf, Context context) throws IOException {
+    protected void writeField(Field field, Object obj, ByteBuf buf, Context context){
         field.setAccessible(true);
         try {
             Object value = field.get(obj);

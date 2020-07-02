@@ -39,7 +39,7 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
      * @throws IOException
      */
     @Override
-    protected  void writeField(Field field, Object obj, ByteBuf out, Context context) throws IOException{
+    protected  void writeField(Field field, Object obj, ByteBuf out, Context context){
         if(!field.isAccessible()){
             field.setAccessible(true);
         }

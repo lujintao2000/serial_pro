@@ -129,7 +129,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
 			//循环读取属性
 			for(int i = 0; i < fields.length; i++){
-//				fields[i].setAccessible(true);
+				if(!fields[i].isAccessible()){
+					fields[i].setAccessible(true);
+				}
 				fields[i].set(obj, currentMap.get(fields[i].getName()) );
 			}
 			currentMap = (Map)currentMap.get(Builder.NEXT);
@@ -185,7 +187,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param in  包含序列化数据的输入流
 	 */
 	protected boolean start(ByteBuf in) throws IOException{
-//		return in.read() == Constant.BEGIN_FLAG;
 		return in.readByte() == (byte) Constant.BEGIN_FLAG;
 	}
 
@@ -195,7 +196,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param in  包含序列化数据的输入流
 	 */
 	protected boolean end(ByteBuf in) throws IOException{
-//		return in.read() == Constant.END_FLAG;
 		return in.readByte() == (byte) Constant.END_FLAG;
 	}
 
@@ -205,7 +205,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected  boolean isNull(ByteBuf in) throws IOException{
-//		return in.read() == Constant.NULL_FLAG;
 		return in.readByte() == (byte) Constant.NULL_FLAG;
 	}
 	
@@ -215,7 +214,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	public final short readFieldCount(ByteBuf in) throws IOException{
-//		return this.readShort(in);
 		short result = in.readByte();
 		if(result < 0){
 			result += 128;
@@ -232,7 +230,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected Short readShort(ByteBuf in) throws IOException{
-//		return (short)(in.read() * 256 + in.read());
 		return in.readShort();
 	}
 
@@ -243,11 +240,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected Integer readInt(ByteBuf in) throws IOException{
-//		byte[] array = new byte[4];
-//		for(int i = 0; i < 4;i++){
-//			array[i] = NumberUtil.convertIntToByte(in.read());
-//		}
-//		return NumberUtil.getInteger( array );
 		return in.readInt();
 	}
 
@@ -272,7 +264,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected Boolean readBoolean(ByteBuf in) throws IOException{
-//		return (in.read() == 1) ? true : false;
 		return in.readBoolean();
 	}
 
@@ -283,11 +274,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected Character readCharacter(ByteBuf in) throws IOException{
-//		byte[] array = new byte[2];
-//		in.read(array);
-//		char result = (char)(NumberUtil.converByteToInt(array[0]) * 256 + NumberUtil.converByteToInt(array[1]));
-//		return  result;
-
 		return in.readChar();
 	}
 
@@ -297,7 +283,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected Byte readByte(ByteBuf in) throws IOException{
-//		return NumberUtil.convertIntToByte(in.read());
 		return in.readByte();
 	}
 
@@ -308,22 +293,14 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected Long readLong(ByteBuf in) throws IOException{
-//		byte[] array = new byte[8];
-//		for(int i = 0; i < 8;i++){
-//			array[i] = NumberUtil.convertIntToByte(in.read());
-//		}
-//		return NumberUtil.getLong( array );
 		return in.readLong();
 	}
 
 	protected Float readFloat(ByteBuf in) throws IOException{
-//		return Float.intBitsToFloat(this.readInt(in));
 		return in.readFloat();
 	}
 
 	protected Double readDouble(ByteBuf in) throws IOException{
-//		Long num = this.readLong(in);
-//		return Double.longBitsToDouble(num);
 		return in.readDouble();
 	}
 
@@ -334,15 +311,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected String readString(ByteBuf in) throws IOException{
-		//1. 读取字符串对应字节长度
-		int length = in.readLengthOfString();
-//		byte[] array = new byte[length];
-		//读取字符串内容对应的字节数据
-//		in.read(array);
-//		in.readBytes(array);
-//		return new String(array,"unicode");
-//		return in.readCharSequence()
-		return in.readString(length);
+		return in.readString();
 	}
 
 	/**
@@ -403,9 +372,8 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		byte preLength = this.readByte(in);
 		if(preLength > 0) {
 			in.readerIndex(in.readerIndex() - 1);
-			int length = in.readLengthOfString();
 			//2. 读入类名
-			String fullClassName = ReflectUtil.getFullName(in.readString(length,true));
+			String fullClassName = ReflectUtil.getFullName(in.readString(true));
 			if (fullClassName.equals(BaseTypeEnum.VOID.getType().getTypeName())) {
 				fullClassName = context.getCurrentField().getType().getTypeName();
 			}
@@ -554,6 +522,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		context.destory();
 		return result;
 	}
+
 
 
 		/**

@@ -156,7 +156,7 @@ public class ByteBuf {
     public void writeString(String value) {
         char[] contentArray = value.toCharArray();
         ensureCapacity(contentArray.length * 2 + 4);
-        writeLengthOfString(contentArray.length * 2);
+        writeLength(contentArray.length * 2);
         for (int i = 0; i < contentArray.length; i++) {
             array[writerIndex + i * 2] = (byte) (contentArray[i] >> 8);
             array[writerIndex + i * 2 + 1] = (byte) contentArray[i];
@@ -165,11 +165,11 @@ public class ByteBuf {
     }
 
     /**
-     * 写入字符串的长度。写入内容根据length 的大小占用的字节会不同，从1字节到4字节，首字节的前2位表示该长度共用几字节表示，
+     * 写入字符串或对象的长度。写入内容根据length 的大小占用的字节会不同，从1字节到4字节，首字节的前2位表示该长度共用几字节表示，
      * 00表示1字节，01表示2字节，10表示3字节，11表示4字节
      * @param length 要写入的长度值
      */
-    public void writeLengthOfString(int length){
+    public void writeLength(int length){
         if(length <= 0x3f){  //第一字节首位 00
             array[writerIndex] = (byte)length;
             writerIndex += 1;
@@ -195,10 +195,10 @@ public class ByteBuf {
     }
 
     /**
-     * 读取字符串的长度
+     * 读取字符串或对象的长度
      * @return
      */
-    public int readLengthOfString() {
+    public int readLength() {
         int result = 0;
         byte first = readByte();
         int flag = (first & 0xc0) >> 6;
@@ -234,8 +234,7 @@ public class ByteBuf {
            try {
                byte[] content = value.getBytes("ascii");
                ensureCapacity(content.length + 4);
-//               this.writeShort(content.length);
-               this.writeLengthOfString(content.length);
+               this.writeLength(content.length);
                this.writeBytes(content);
            }catch (UnsupportedEncodingException ex){
                LOGGER.error(ex.getMessage(),ex);
@@ -395,7 +394,8 @@ public class ByteBuf {
      * @param length
      * @return
      */
-    public String readString(int length) {
+    public String readString() {
+        int length = this.readLength();
         if (this.readableBytes() < length) {
             throw new IllegalArgumentException("There are not enough data to be read.");
         }
@@ -418,10 +418,11 @@ public class ByteBuf {
      * @param isAsciiDecoding 是否用ascii将字节数组解码成字符串
      * @return
      */
-    public String readString(int length,boolean isAsciiDecoding) {
+    public String readString(boolean isAsciiDecoding) {
         if(!isAsciiDecoding){
-            return readString(length);
+            return readString();
         }
+        int length = this.readLength();
         if (this.readableBytes() < length) {
             throw new IllegalArgumentException("There are not enough data to be read.");
         }

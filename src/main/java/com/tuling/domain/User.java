@@ -12,6 +12,10 @@ public class User extends Person {
     private Integer age;
     private Object another;
 
+//    public User(){
+//
+//    }
+
     private User(String name,boolean sex,Float height, float weight){
         super(sex,height,weight);
         this.name = name;

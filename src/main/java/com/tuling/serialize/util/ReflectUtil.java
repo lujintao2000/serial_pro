@@ -1,10 +1,12 @@
 package com.tuling.serialize.util;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.tuling.serialize.BaseTypeEnum;
 import com.tuling.serialize.DefaultObjectInputStream;
 import org.apache.log4j.Logger;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -42,6 +44,18 @@ public class ReflectUtil {
     private static final Map<Class,List<Class>> superClassMap = new ConcurrentHashMap<>();
     //存储类的标识信息，标识类是数组还是枚举，还是普通类
     private static final Map<Class,Integer> typeMap = new ConcurrentHashMap<>();
+    //存储每个类的最适合创建对象的构造方法
+    private static final Map<Class,Constructor> constructorMap = new ConcurrentHashMap<>();
+
+    //存储构造方法的默认参数值
+    private static final Map<Constructor,Object[]> parameterValueMap = new ConcurrentHashMap<>();
+
+    //存储不包含无参公共构造方法的类
+    private static final Map<Class,Boolean> classWithoutZeroConstructorMap = new ConcurrentHashMap<>();
+    //存储不能够通过程序调用构造方法创建对象的类
+    private static final Map<Class,Boolean> cannotCreateObjectMap = new ConcurrentHashMap<>();
+    //存储每一种类型的默认值
+    private static final Map<Class,Object> defaultValueMap = new HashMap<>();
 
     static {
         Arrays.stream(BaseTypeEnum.values()).forEach(x -> baseTypeNameMap.put(x.getValue(), x.getType()));
@@ -63,6 +77,24 @@ public class ReflectUtil {
         classMap.put("long", long.class);
         classMap.put("float", float.class);
         classMap.put("double", double.class);
+
+        defaultValueMap.put(boolean.class,true);
+        defaultValueMap.put(Boolean.class,true);
+        defaultValueMap.put(byte.class,(byte)0);
+        defaultValueMap.put(Byte.class,(byte)0);
+        defaultValueMap.put(char.class,(char)0);
+        defaultValueMap.put(Character.class,(char)0);
+        defaultValueMap.put(short.class,(short)0);
+        defaultValueMap.put(Short.class,(short)0);
+        defaultValueMap.put(int.class,0);
+        defaultValueMap.put(Integer.class,0);
+        defaultValueMap.put(long.class, 0L);
+        defaultValueMap.put(Long.class, 0L);
+        defaultValueMap.put(float.class, 0.0f);
+        defaultValueMap.put(Float.class, 0.0f);
+        defaultValueMap.put(double.class, 0.0d);
+        defaultValueMap.put(Double.class, 0.0d);
+        defaultValueMap.put(String.class, "");
 
     }
 
@@ -233,31 +265,6 @@ public class ReflectUtil {
         return baseTypeMap.containsKey(targetClass);
     }
 
-    /**
-     * 判断指定对象是否基本类型的对象（基本类型包括原始类型的包装类和String）
-     *
-     * @param value  需要判断的对象
-     * @param type   对象所属类型
-     * @return 如果指定目标类是基本类型，返回true;否则，返回false
-     */
-    public static boolean isBaseType(Object value,Class type) {
-        //是否是基本类型
-        boolean flag = false;
-
-//        if(value.getClass() != type){
-//            if(value instanceof String || value instanceof Boolean || value instanceof Character){
-//                flag = true;
-//            }
-//            if(!flag && value instanceof Number){
-//                if(value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long || value instanceof Float || value instanceof Double){
-//                    flag = true;
-//                }
-//            }
-
-//        }
-
-       return flag;
-    }
 
     /**
      * 判断指定的类名是否是原类名的简写。这里要注意：基本数据类型的包装类在序列化流中是用标记字符表示,请参阅BaseTypeEnum
@@ -324,8 +331,9 @@ public class ReflectUtil {
      * @return
      */
     public static String getFullName(String shortNameForClass) {
-        if (isShortName(shortNameForClass)) {
-            return baseTypeNameMap.get(shortNameForClass).getTypeName();
+        Class temp = baseTypeNameMap.get(shortNameForClass);
+        if (temp != null) {
+            return temp.getTypeName();
         } else {
             return shortNameForClass;
         }
@@ -372,5 +380,174 @@ public class ReflectUtil {
             superClassMap.put(targetClass,result);
         }
         return result;
+    }
+
+    /**
+     * 获取指定类最适合创建对象的构造方法，即参数最少的构造方法
+     * @param objectClass
+     * @return
+     */
+    public static Constructor getProperConstructor(Class objectClass){
+        if(objectClass == null){
+            throw new IllegalArgumentException("The value of param named objectClass can't be null");
+        }
+        Constructor result = constructorMap.get(objectClass);
+        if(result == null){
+            result = getProperConstructor(objectClass.getDeclaredConstructors());
+            if(!result.isAccessible()){
+                result.setAccessible(true);
+            }
+            constructorMap.put(objectClass,result);
+        }
+        return result;
+    }
+
+    /**
+     * 获得指定构造方法的默认参数值
+     * @param constructor
+     * @return
+     */
+    public static Object[] getDefaultParameterValue(Constructor constructor){
+        Object[] result = parameterValueMap.get(constructor);
+        if(result == null){
+            Class[] paramTypes = constructor.getParameterTypes();
+            result = new Object[paramTypes.length];
+            for(int i = 0; i < result.length; i++){
+                result[i] = getDefaultValue(paramTypes[i]);
+            }
+            parameterValueMap.put(constructor,result);
+        }
+        return  result;
+    }
+
+    /**
+     * 判断指定类是否包含无参公共构造方法
+     * @param type
+     * @return
+     */
+    public static boolean containZeroConstructor(Class type){
+        return !classWithoutZeroConstructorMap.containsKey(type);
+    }
+
+    /**
+     * 添加没有无参构造公共方法的类
+     * @param type
+     */
+    public static void addClassWithoutZeroConstructor(Class type){
+        classWithoutZeroConstructorMap.put(type,true);
+    }
+
+    /**
+     * 创建一个objectClass类型的对象
+     * @param objectClass
+     * @return
+     */
+    public static  Object createObject(Class objectClass){
+        Object result = null;
+        if(!cannotCreateObjectMap.containsKey(objectClass)){
+            //是否通过调用无参构造方法之外的其它构造方法来创建对象
+            boolean isCreateWithAnother = false;
+            try{
+                if(containZeroConstructor(objectClass)){
+                    result = objectClass.newInstance();
+                }else{
+                    isCreateWithAnother = true;
+                }
+            }catch (Exception ex){
+                addClassWithoutZeroConstructor(objectClass);
+                isCreateWithAnother = true;
+
+            }
+            if(isCreateWithAnother){
+                try {
+                    Constructor constructor = ReflectUtil.getProperConstructor(objectClass);
+                    result = constructor.newInstance(ReflectUtil.getDefaultParameterValue(constructor));
+                }catch (Exception ex2){
+                    LOGGER.error("通过反射调用构造方法创建对象失败|" + ex2.getMessage(),ex2);
+                }
+            }
+        }
+        if(result == null){
+            cannotCreateObjectMap.put(objectClass,true);
+        }
+        return  result;
+    }
+
+    /**
+     * 从指定的构造方法列表中寻找到参数最少的构造方法
+     * @param constructors
+     * @return
+     */
+    private static Constructor getProperConstructor(Constructor[] constructors){
+        Constructor result = constructors[0];
+        if(constructors.length > 1){
+            for(int i = 1;i < constructors.length; i++){
+                if(constructors[i].getParameterCount() < result.getParameterCount()){
+                    result = constructors[i];
+                }
+            }
+
+        }
+        return result;
+    }
+
+    /**
+     * 获取指定类型参数对应的默认值
+     * @param type
+     * @return
+     */
+    private static Object getDefaultValue(Class type){
+        if(ReflectUtil.isBaseType(type)){
+//            return defaultValueMap.get(type);
+            //加缓存，通过缓存判断
+            switch (type.getSimpleName()) {
+                case "boolean":
+                case "Boolean":
+                    return true;
+                case "byte":
+                case "Byte":
+                    return (byte)0;
+                case "char":
+                case "Character":
+                    return (char)0;
+                case "short":
+                case "Short":
+                    return (short)0;
+                case "int":
+                case "Integer":
+                    return 0;
+                case "long":
+                case "Long":
+                    return 0L;
+                case "float":
+                case "Float":
+                    return 0.0f;
+                case "double":
+                case "Double":
+                    return 0.0d;
+                default:
+                    return "";
+            }
+        }else if(type.isArray()){
+            return Array.newInstance(type.getComponentType(),0);
+        }else{
+            return createObjectWithSimple(type);
+        }
+    }
+
+    /**
+     * 用简易的方式创建对象,即调用无参构造方法创建，如果创建失败，返回null
+     * @return
+     */
+    private static Object createObjectWithSimple(Class type){
+        Object result = null;
+        try {
+            if(containZeroConstructor(type)){
+                result =  type.newInstance();
+            }
+        }catch (Exception ex){
+            addClassWithoutZeroConstructor(type);
+        }
+        return  result;
     }
 }

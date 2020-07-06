@@ -200,12 +200,6 @@ public class SerializeTest {
         thirdUser.setProfession(profession);
 
 
-//        users.add(firstUser);
-//        users.add(secondUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
-//        users.add(thirdUser);
         users.add(thirdUser);
         users.add(thirdUser);
         users.add(thirdUser);
@@ -213,5 +207,44 @@ public class SerializeTest {
         users.add(thirdUser);
 
         return users;
+    }
+
+    @Test
+    public void testGetBytes() throws Exception{
+        User user = getUser();
+        ObjectOutputStream outputStream = new DefaultObjectOutputStream();
+        byte[]  content = outputStream.getBytes(user);
+        ObjectInputStream inputStream = new DefaultObjectInputStream();
+        User readUser = (User)inputStream.readObject(content);
+        Assert.assertEquals(user,readUser);
+
+    }
+
+    @Test
+    public void testGetBytesWithClass() throws Exception{
+        User user = getUser();
+        ObjectOutputStream outputStream = new DefaultObjectOutputStream();
+        byte[]  content = outputStream.getBytes(user,false);
+        ObjectInputStream inputStream = new DefaultObjectInputStream();
+        User readUser = (User)inputStream.readObject(content,User.class);
+        Assert.assertEquals(user,readUser);
+
+        outputStream = new DefaultObjectOutputStream();
+        content = outputStream.getBytes(user,true);
+        inputStream = new DefaultObjectInputStream();
+        readUser = (User)inputStream.readObject(content);
+        Assert.assertEquals(user,readUser);
+    }
+
+    private User getUser(){
+        User user = new User("wangfei", 20, 170.0f, 76.0f);
+        user.setCompany(new Company("优识云创"));
+        user.setRole(new Role("项目经理"));
+        user.setDepartment(new AboardDepartment("技术部"));
+        user.setProfession(new Profession("java工程师"));
+        user.setAnother(new Object());
+        Country country = new Country("china");
+        country.setOther(new Role("manager"));
+        return user;
     }
 }

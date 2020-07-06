@@ -3,6 +3,10 @@ package com.tuling.domain;
 public  class Person extends  Animal{
     private boolean sex;
 
+//    public Person(){
+//
+//    }
+
     protected Person(Float height, float weight) {
         this(true,height,weight);
     }

@@ -11,9 +11,9 @@ import java.io.Serializable;
 public class Profession  implements Serializable {
     private String name;
 
-    public Profession(){
-
-    }
+//    public Profession(){
+//
+//    }
 
     public Profession(String name){
         this.name = name;

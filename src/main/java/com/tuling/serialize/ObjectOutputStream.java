@@ -33,4 +33,19 @@ public interface ObjectOutputStream {
 	 */
 	public void write(Object obj, boolean isWriteClassName, OutputStream out) throws IOException;
 
+	/**
+	 * 获得指定对象对应的序列化字节
+	 * @param obj 要获取对应字节数组的对象
+	 * @return
+	 */
+	public byte[] getBytes(Object obj);
+
+	/**
+	 * 获得指定对象对应的序列化字节
+	 * @param obj 要获取对应字节数组的对象
+	 * @param isWriteClassName  序列化时是否写入对象所属类的类名
+	 * @return
+	 */
+	public byte[] getBytes(Object obj,boolean isWriteClassName);
+
 }

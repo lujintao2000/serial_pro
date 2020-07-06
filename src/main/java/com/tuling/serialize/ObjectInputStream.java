@@ -38,4 +38,30 @@ public interface ObjectInputStream {
 	 */
 	public Object readObject(Class type,InputStream in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException;
 
+	/**
+	 * 将指定的字节数组反序列化为对象
+	 * @param value
+	 * @return
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws InvalidDataFormatException
+	 * @throws InvalidAccessException
+	 * @throws ClassNotSameException
+	 * @throws BuilderNotFoundException
+	 */
+	public Object readObject(byte[] value) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException;
+
+	/**
+	 * 将指定的字节数组反序列化为对象
+	 * @param value 包含序列化数据的字节数组
+	 * @param type  反序列化的类型
+	 * @return
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws InvalidDataFormatException
+	 * @throws InvalidAccessException
+	 * @throws ClassNotSameException
+	 * @throws BuilderNotFoundException
+	 */
+	public Object readObject(byte[] value,Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException;
 }

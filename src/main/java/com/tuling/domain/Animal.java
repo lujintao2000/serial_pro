@@ -10,6 +10,10 @@ import java.io.Serializable;
     private Float height;
     private float weight;
 
+//    public Animal(){
+//
+//    }
+
      Animal(Float height, float weight){
         this.height = height;
         this.weight = weight;

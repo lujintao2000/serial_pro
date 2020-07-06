@@ -13,6 +13,10 @@ public class Country<Role> implements Serializable{
 
     private Role other;
 
+//    public Country(){
+//
+//    }
+
     public Country(Role other){
         this.other = other;
     }

@@ -77,13 +77,50 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         ByteBuf buf = new ByteBuf(256);
         write(obj,isWriteClassName,buf ,context,true);
         //写入对象长度。对象长度占用的字节随着长度的变化而变化，尽量用更少的字节存储
-        out.write(NumberUtil.getByteArray(buf.readableBytes()));
-        //writeLengthOfObject(buf.readableBytes(), out);
+//        out.write(NumberUtil.getByteArray(buf.readableBytes()));
+        writeLengthOfObject(buf.readableBytes(), out);
         //写入对象内容
         out.write(buf.fullArray());
         buf = null;
         context.destory();
     }
+
+    /**
+     * 获得指定对象对应的序列化字节
+     * @param obj
+     * @return
+     */
+    public byte[] getBytes(Object obj){
+        byte[] result = new byte[0];
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            this.write(obj, out);
+            result = out.toByteArray();
+        }catch (IOException ex){
+            LOGGER.error(ex.getMessage(),ex);
+        }
+        return result;
+    }
+
+    /**
+     * 获得指定对象对应的序列化字节
+     * @param obj 要获取对应字节数组的对象
+     * @param isWriteClassName  序列化时是否写入对象所属类的类名
+     * @return
+     */
+    public byte[] getBytes(Object obj,boolean isWriteClassName){
+        byte[] result = new byte[0];
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            this.write(obj, isWriteClassName, out);
+            result = out.toByteArray();
+        }catch (IOException ex){
+            LOGGER.error(ex.getMessage(),ex);
+        }
+        return result;
+
+    }
+
 
     /**
      * 往输出流写入对象长度
@@ -92,10 +129,13 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @throws IOException
      */
     private void writeLengthOfObject(int length,OutputStream out) throws IOException{
-        ByteBuf tempBuf = new ByteBuf();
-        //先写入临时缓冲，就是为了获取长度写入对应的字节数据
-        tempBuf.writeLength(length);
-        out.write(tempBuf.fullArray());
+        //如果length 不大于32767，则写入2字节数据，否则写入4字节数据;当写入四字节数据时，第一高位为1
+        if(length <= Short.MAX_VALUE){
+            out.write(NumberUtil.getByteArray((short)length));
+        }else{
+            out.write(NumberUtil.getByteArray(length | Integer.MIN_VALUE));
+        }
+
     }
 
     /**

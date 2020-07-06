@@ -1,5 +1,6 @@
 package com.tuling.serialize;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
@@ -251,10 +252,15 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 */
 	protected Integer readInt(InputStream in) throws IOException{
 		byte[] array = new byte[4];
-		for(int i = 0; i < 4;i++){
-			array[i] = NumberUtil.convertIntToByte(in.read());
-		}
-		return NumberUtil.getInteger( array );
+//		for(int i = 0; i < 4;i++){
+//			array[i] = NumberUtil.convertIntToByte(in.read());
+//		}
+//		return NumberUtil.getInteger( array );
+		in.read(array);
+		return array[0]  << 24 |
+				(array[1] & 0xff) << 16 |
+				(array[2] & 0xff) << 8 |
+				(array[3] & 0xff);
 	}
 
 	/**
@@ -512,9 +518,10 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		Context context = Context.create();
 
 		//读取对象长度
-		int length = this.readInt(in);
+		int length = readLengthOfObject(in);
 		byte[] objectData = new byte[length];
 		in.read(objectData);
+
 		//先将对象数据读到缓冲
 		ByteBuf buf = new ByteBuf(objectData);
 		Object result = readObject(objectClass,buf,context);
@@ -523,7 +530,18 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		return result;
 	}
 
-
+	private  int readLengthOfObject(InputStream in) throws IOException{
+		int result = 0;
+		byte[] temp = new byte[2];
+		in.read(temp);
+		result = ((temp[0] << 8) | (temp[1] & 0xff));
+		if(result < 0){
+			byte[] temp2 = new byte[2]; //0111 1111
+			in.read(temp2);
+			result = ((result & 0x7fff)  << 16) | ((temp2[0] & 0xff) << 8) | (temp2[1] & 0xff);
+		}
+		return result;
+	}
 
 		/**
          * @param type 需要反序列化对象的类型
@@ -540,22 +558,30 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		Object obj = null;
 		if(!this.isNull(in)){
 			in.readerIndex(in.readerIndex() - 1);
+			boolean isArray = false;
+			Class arrayType = null;
 			if(objectClass == null){
 				//1.读取序列化对象所对应的类名
 				String className = this.readClassName(in,context);
 				//2.判断是否是数组类型
 				if(className.endsWith("[]")){
-					Class type = ReflectUtil.get(className.substring(0,className.length() - 2));
-					objectClass = Array.newInstance(type,0).getClass();
+					isArray = true;
+					 arrayType = ReflectUtil.get(className.substring(0,className.length() - 2));
+
+//					objectClass = Array.newInstance(type,0).getClass();
 				}else
 				{
 					objectClass =  ReflectUtil.getComplexClass(className);
 				}
+			}else{
+				if(objectClass.isArray()){
+					arrayType = objectClass.getComponentType();
+				}
 			}
 
 			//2.判断是否是数组类型
-			if(objectClass.isArray()){
-				obj = readArray(context,objectClass.getComponentType(),in);
+			if(arrayType != null){
+				obj = readArray(context,arrayType,in);
 			}else
 			{
 				obj = readObjectWithOutArray(context,objectClass,in);
@@ -594,7 +620,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				obj = readValue(objectClass,in,context);
 			}else{
 				try {
-					obj = createObject(objectClass);
+					obj = ReflectUtil.createObject(objectClass);
 					if(obj != null){
 						//将当前对象放入上下文中
 						context.put(((Object) obj));
@@ -618,107 +644,42 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	}
 
 	/**
-	 * 创建一个objectClass类型的对象
-	 * @param objectClass
+	 * 将指定的字节数组反序列化为对象
+	 * @param value
 	 * @return
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws InvalidDataFormatException
+	 * @throws InvalidAccessException
+	 * @throws ClassNotSameException
+	 * @throws BuilderNotFoundException
 	 */
-	protected Object createObject(Class objectClass){
-		Object result = null;
-		try{
-			result = objectClass.newInstance();
-		}catch (Exception ex){
-			Constructor[] constructors = objectClass.getDeclaredConstructors();
-			if(constructors.length > 0){
-				Constructor constructor = getProperConstructor(constructors);
-				constructor.setAccessible(true);
-				Class[] paramTypes = constructor.getParameterTypes();
-				Object[] args = new Object[paramTypes.length];
-				for(int i = 0; i < args.length; i++){
-					args[i] = getDefaultValue(paramTypes[i]);
-				}
-				try {
-					result = constructor.newInstance(args);
-				}catch (Exception ex2){
-					LOGGER.error("通过反射调用构造方法创建对象失败|" + ex2.getMessage(),ex2);
-				}
-
-			}
-
+	public Object readObject(byte[] value) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException{
+		if(value == null || value.length == 0){
+			throw new IllegalArgumentException("Value can't be null");
 		}
-
-
-		return  result;
+		InputStream in = new ByteArrayInputStream(value);
+		return readObject(in);
 	}
 
 	/**
-	 * 从指定的构造方法列表中寻找到参数最少的构造方法
-	 * @param constructors
+	 * 将指定的字节数组反序列化为对象
+	 * @param value 包含序列化数据的字节数组
+	 * @param type  反序列化的类型
 	 * @return
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws InvalidDataFormatException
+	 * @throws InvalidAccessException
+	 * @throws ClassNotSameException
+	 * @throws BuilderNotFoundException
 	 */
-	public Constructor getProperConstructor(Constructor[] constructors){
-		Constructor result = constructors[0];
-		if(constructors.length > 1){
-			for(int i = 1;i < constructors.length; i++){
-				if(constructors[i].getParameterCount() < result.getParameterCount()){
-					result = constructors[i];
-				}
-			}
-
+	public Object readObject(byte[] value,Class type) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException{
+		if(value == null || value.length == 0){
+			throw new IllegalArgumentException("Value can't be null");
 		}
-		return result;
+		InputStream in = new ByteArrayInputStream(value);
+		return readObject(type,in);
 	}
 
-	/**
-	 * 用简易的方式创建对象,即调用无参构造方法创建，如果创建失败，返回null
-	 * @return
-	 */
-	protected Object createObjectWithSimple(Class type){
-		try {
-			return type.newInstance();
-		}catch (Exception ex){
-			return null;
-		}
-	}
-
-	/**
-	 * 获取指定类型参数对应的默认值
-	 * @param type
-	 * @return
-	 */
-	protected Object getDefaultValue(Class type){
-		if(ReflectUtil.isBaseType(type)){
-			switch (type.getSimpleName()) {
-				case "boolean":
-				case "Boolean":
-					return true;
-				case "byte":
-				case "Byte":
-					return (byte)0;
-				case "char":
-				case "Character":
-					return (char)0;
-				case "short":
-				case "Short":
-					return (short)0;
-				case "int":
-				case "Integer":
-					return 0;
-				case "long":
-				case "Long":
-					return 0L;
-				case "float":
-				case "Float":
-					return 0.0f;
-				case "double":
-				case "Double":
-					return 0.0d;
-				default:
-					return "";
-			}
-		}else if(type.isArray()){
-			return Array.newInstance(type.getComponentType(),0);
-		}else{
-			return createObjectWithSimple(type);
-		}
-	}
 }

@@ -6,6 +6,7 @@ import com.tuling.serialize.util.ReflectUtil;
 
 import javax.xml.crypto.Data;
 import java.io.*;
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -14,7 +15,11 @@ import java.util.*;
 public class Application {
 
     public static void main(String[] args) throws Exception {
-//        testIsBasicType();
+
+        testIsBasicType();
+
+
+
 //        testCharsetCost();
 
 //          byte a = (byte) 255;
@@ -22,39 +27,53 @@ public class Application {
 
 //        int length = "hello".getBytes("ascii").length;
 //        testSerialWithSerial();
-        testSerialWithJava();
-//        testUnserialWithJava();
+//        testSerialWithJava();
+//          testUnserialWithJava();
 //        testUnserialWithSerial();
     }
 
+
+
+    private static boolean testWriteLengthOfObject(int length) throws  IOException{
+//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//        AbstractOutputStream.writeLengthOfObject(length,outputStream);
+//        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+//        int readLength = AbstractObjectInputStream.readLengthOfObject(inputStream);
+//        return   length == readLength;
+        return true;
+    }
+
     private static void testIsBasicType() throws  Exception{
-        int length = 0;
+        Class temp = String.class;
+        String temp2 = "boolean";
         boolean flag = false;
-        long count = 0L;
-        String[] first = new String[3];
-        String[] second = new String[4];
-        Object obj = new Country<Role>("china");
-        Class t = obj.getClass();
-        flag = first.getClass() == second.getClass();
-        Map map = new HashMap();
-        Class key  = first.getClass();
-
-        map.put(key,true);
+        int hashCode = 0;
         long startTime = new Date().getTime();
-        for (int i = 0; i < 3000000; i++) {
-           flag = map.containsKey(key);
-//            t = obj.getClass();
-//            flag = t.isEnum();
-//            flag = ReflectUtil.isBaseType(String.class);
-//              flag = isBasicType(Country.class);
 
-//              flag = t.isInterface();
-//              flag = String.class.isPrimitive();
-//           count++;
+
+        for (int i = 0; i < 30000000; i++) {
+//            flag = temp == List.class;
+            hashCode = temp2.hashCode();
         }
         long endTime = new Date().getTime();
 
-        System.out.println("isBasicType invoke  cost " + (endTime - startTime) + "ms" + flag);
+        System.out.println("isBasicType invoke  cost " + (endTime - startTime) + "ms" + hashCode);
+    }
+
+    /**
+     * 判断该字符串是否可以采用ascii编码
+     * @param target
+     * @return
+     */
+    public static boolean isAscii(String target){
+        boolean flag = true;
+        for(char item : target.toCharArray()){
+            if(item > 127){
+                flag = false;
+                break;
+            }
+        }
+        return flag;
     }
 
     private static Object[] baseArray = new Object[]{Byte.class,Character.class,Boolean.class,Short.class,Integer.class,Long.class,Float.class,Double.class,String.class};
@@ -97,7 +116,7 @@ public class Application {
         long startTime = new Date().getTime();
         for (int i = 0; i < 600000; i++) {
             OutputStream outputStream = new ByteArrayOutputStream();
-            Serial.write(user,outputStream,false);
+            Serial.write(new Country<>("china"),outputStream,false);
 
             outputStream.close();
         }
@@ -148,7 +167,7 @@ public class Application {
         ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
 
         long startTime = new Date().getTime();
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 300000; i++) {
             ObjectInputStream in = new DefaultObjectInputStream();
             in.readObject(input);
             input.reset();

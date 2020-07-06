@@ -399,14 +399,12 @@ public class ByteBuf {
         if (this.readableBytes() < length) {
             throw new IllegalArgumentException("There are not enough data to be read.");
         }
-        byte[] content = new byte[length];
-        System.arraycopy(array, readerIndex, content, 0, length);
+        char[] content = new char[length/2];
         String result = null;
-        try {
-            result = new String(content, "unicode");
-        } catch (UnsupportedEncodingException ex) {
-            LOGGER.error("读取字符串出错|" + ex.getMessage(), ex);
+        for(int i = 0;i < content.length; i++){
+            content[i] = (char) ((array[readerIndex + 2 * i] << 8) | (array[readerIndex + 2 * i + 1] & 0xff));
         }
+        result = new String(content);
         readerIndex += length;
         return result;
     }

@@ -225,7 +225,7 @@ public class ByteBufTest {
     @Test
     public void testWriteBytes(){
         ByteBuf buf = new ByteBuf(30);
-        for(int i = 0;i < 20;i++){
+        for(int i = 0;i < 200;i++){
             buf.writeBytes("hello".getBytes());
         }
     }
@@ -329,6 +329,32 @@ public class ByteBufTest {
         writeLengthOfString(0x3fffffff);
     }
 
+    @Test
+    public void testAllWrite(){
+        ByteBuf buf = new ByteBuf(128);
+
+        for(int i = 0;i < 100000;i++){
+            buf.writeChar((char)520);
+            buf.writeChar(3020);
+            buf.writeByte((byte) 117);
+            buf.writeByte(39933);
+            buf.writeBoolean(true);
+            buf.writeShort(38838);
+            buf.writeInt(883838);
+            buf.writeLong(82828882L);
+            buf.writeFloat(28822.20f);
+            buf.writeDouble(8333883.8282d);
+            buf.writeString("你在干什么？");
+            buf.writeString("good morning",true);
+            buf.writeBytes(new byte[]{20,30,35,63,78,88,99,102,33,55,87,98,60});
+
+            buf.writeBytes(new ByteBuf(new byte[]{33,55,44,39,115,35,56,88,99}));
+            buf.writeLength(393993);
+
+        }
+
+    }
+
     public ByteBuf writeLengthOfString(int length){
         ByteBuf buf  =  new ByteBuf();
         buf.writeLength(length);
@@ -369,6 +395,8 @@ public class ByteBufTest {
         return length == readLength;
 
     }
+
+
 
     enum  TestType{
         SHORT,

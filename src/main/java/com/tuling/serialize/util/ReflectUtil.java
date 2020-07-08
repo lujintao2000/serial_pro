@@ -220,12 +220,6 @@ public class ReflectUtil {
                 })
                 .sorted((x,y) -> x.getName().compareTo(y.getName()))
                 .collect(Collectors.toList());
-//                .collect(Collectors.toList()).toArray(new Field[0]);
-//        List<Field> list = Arrays.asList(fields);
-//        list.forEach(x -> x.setAccessible(true));
-//        if(needOrder){
-     //       Collections.sort(list,(one,another) -> one.getName().compareTo(another.getName()));
-//        }
         if(!fieldMap.containsKey(type)){
             Map<String,Field> map = new HashMap<>();
             fields.parallelStream().forEach( x -> map.put(x.getName(),x) );

@@ -2,8 +2,11 @@ package com.tuling.domain;
 
 import org.msgpack.annotation.Message;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Message
-public class User extends Person {
+public class User extends Person implements Comparable<User> {
     private Company company = null;
     private Role role = null;
     private Profession profession = null;
@@ -11,6 +14,8 @@ public class User extends Person {
     private String name;
     private Integer age;
     private Object another;
+//    private final List<String> labels = new ArrayList<>();
+
 
 //    public User(){
 //
@@ -67,9 +72,11 @@ public class User extends Person {
         if(obj != null && obj instanceof  User){
             User another = (User)obj;
             if(super.equals(obj)){
-                if((this.name == another.getName() || (this.name != null && this.name.equals(another.getName()))) && this.age == another.getAge()
+                if((this.name == another.getName() || (this.name != null && this.name.equals(another.getName())))
+                        && (this.age == another.getAge() || (this.age != null && this.age.equals(another.age)))
                         && (this.company == another.getCompany() || (this.company != null && another.getCompany() != null && this.company.getName().equals(another.getCompany().getName())) )
-                        && (this.role == another.getRole() || (this.role != null && another.getRole() != null && this.role.getName().equals(another.getRole().getName())) )
+                        && (this.role == another.getRole() || (this.role != null && this.role.equals(another.role)) )
+//                        && (this.labels == another.labels || (this.labels != null && this.labels.equals(another.labels)) )
                         && (this.department == another.getDepartment() || (this.department != null && another.getDepartment() != null && this.department.getName().equals(another.getDepartment().getName())) )
                         && (this.profession == another.getProfession() || (this.profession != null && another.getProfession() != null && this.profession.getName().equals(another.getProfession().getName())) )){
                    return  true;
@@ -128,5 +135,18 @@ public class User extends Person {
 
     public void setAnother(Object another) {
         this.another = another;
+    }
+
+    public void addLabel(String label){
+//        labels.add(label);
+    }
+
+    @Override
+    public int compareTo(User another) {
+        if(another == null){
+            return 1;
+        }else{
+            return this.hashCode() - another.hashCode();
+        }
     }
 }

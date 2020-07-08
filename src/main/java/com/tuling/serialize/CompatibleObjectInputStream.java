@@ -67,7 +67,6 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
                                 this.readField(obj, objectClass, field, in,context);
                             }else{
                                 in.skip(length);
-                                in.readerIndex(in.readerIndex() + length);
                             }
                         }
                     }

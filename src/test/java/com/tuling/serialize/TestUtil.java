@@ -4,6 +4,9 @@ import org.junit.Assert;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by Administrator on 2020-06-24.
@@ -32,12 +35,24 @@ public class TestUtil {
                 }else{
                     flag = false;
                 }
-
-
             }else if(originalValue instanceof Collection){
                 flag = false;
                 if(obj != null && obj instanceof  Collection && ((Collection)originalValue).size() == ((Collection)obj).size()){
                     flag = ((Collection) obj).stream().noneMatch(x -> !((Collection)originalValue).contains(x));
+                }
+            }else if(originalValue instanceof AtomicInteger || originalValue instanceof AtomicLong || originalValue instanceof AtomicBoolean){
+                if(originalValue instanceof  AtomicInteger){
+                    if(obj != null){
+                        flag = ((AtomicInteger)originalValue).get() == ((AtomicInteger)obj).get();
+                    }
+                }else if(originalValue instanceof AtomicLong){
+                    if(obj != null){
+                        flag = ((AtomicLong)originalValue).get() == ((AtomicLong)obj).get();
+                    }
+                }else{
+                    if(obj != null){
+                        flag = ((AtomicBoolean)originalValue).get() == ((AtomicBoolean)obj).get();
+                    }
                 }
             }else{
                 flag = originalValue.equals(obj);

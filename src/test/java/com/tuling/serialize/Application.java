@@ -28,6 +28,7 @@ public class Application {
 //        int length = "hello".getBytes("ascii").length;
 //        testSerialWithSerial();
 //        testSerialWithJava();
+
 //          testUnserialWithJava();
 //        testUnserialWithSerial();
     }
@@ -44,6 +45,9 @@ public class Application {
     }
 
     private static void testIsBasicType() throws  Exception{
+        Integer a = Integer.valueOf(2000);
+
+
         Class temp = String.class;
         String temp2 = "boolean";
         boolean flag = false;
@@ -53,11 +57,13 @@ public class Application {
 
         for (int i = 0; i < 30000000; i++) {
 //            flag = temp == List.class;
-            hashCode = temp2.hashCode();
+//            hashCode = temp2.hashCode();
+//            flag = temp.isArray();
+            flag = temp.getTypeName().endsWith("[]");
         }
         long endTime = new Date().getTime();
 
-        System.out.println("isBasicType invoke  cost " + (endTime - startTime) + "ms" + hashCode);
+        System.out.println("isBasicType invoke  cost " + (endTime - startTime) + "ms" + flag);
     }
 
     /**

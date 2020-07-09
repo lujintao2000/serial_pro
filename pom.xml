@@ -30,6 +30,12 @@
             <artifactId>netty-buffer</artifactId>
             <version>4.1.50.Final</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>4.0.2</version>
+        </dependency>
     </dependencies>
 
     <build>

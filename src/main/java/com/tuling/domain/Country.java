@@ -13,9 +13,9 @@ public class Country<T> implements Serializable{
 
     private T other;
 
-//    public Country(){
-//
-//    }
+    public Country(){
+
+    }
 
     public Country(T other){
         this.other = other;

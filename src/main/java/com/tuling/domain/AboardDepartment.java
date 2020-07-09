@@ -10,9 +10,9 @@ import org.msgpack.annotation.Message;
 public class AboardDepartment extends Department {
     private Country country;
 
-//    public AboardDepartment(){
-//
-//    }
+    public AboardDepartment(){
+
+    }
 
     public AboardDepartment(String name){
         super(name);

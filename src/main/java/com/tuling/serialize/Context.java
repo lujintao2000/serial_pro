@@ -19,7 +19,10 @@ public class Context {
     private static Map<Integer, Context> contextMap = new ConcurrentHashMap<>();
     //表示在序列化时，当前与该context相关的对象的个数
     private Integer counter = 0;
-    private Map<Class,List> map = new HashMap<>();
+//    private Map<Class,List> map = new HashMap<>();
+
+    private List list = new ArrayList();
+
     //表示在一次序列化的过程中，已经往流中写入类名的类的集合
     private List<Class> classList = new ArrayList<>();
 
@@ -129,11 +132,11 @@ public class Context {
      */
     public void put(Object obj){
         if(obj != null){
-            List list = map.get(obj.getClass());
-            if(list == null){
-                list = new ArrayList();
-                map.put(obj.getClass(),list);
-            }
+//            List list = map.get(obj.getClass());
+//            if(list == null){
+//                list = new ArrayList();
+//                map.put(obj.getClass(),list);
+//            }
             list.add(obj);
         }
     }
@@ -144,7 +147,7 @@ public class Context {
      * @return   包含返回true,否则返回false
      */
     public boolean contains(Object obj){
-        return obj == null ? false : map.containsKey(obj.getClass()) && map.get(obj.getClass()).contains(obj);
+        return obj == null ? false : list.contains(obj);
     }
 
     /**
@@ -156,12 +159,13 @@ public class Context {
         if(obj == null){
             return -1;
         }
-        List list = map.get(obj.getClass());
-        if(list != null && list.contains(obj)){
-            return list.indexOf(obj);
-        }else{
-            return -1;
-        }
+//        List list = map.get(obj.getClass());
+//        if(list != null && list.contains(obj)){
+//            return list.indexOf(obj);
+//        }else{
+//            return -1;
+//        }
+        return list.indexOf(obj);
     }
 
     /**
@@ -170,13 +174,14 @@ public class Context {
      * @param index  要获取对象在集合中的序号
      * @return
      */
-    public Object get(Class type,int index){
-        List list = map.get(type);
-        if(list != null && list.size() -1 >= index){
-            return list.get(index);
-        }else{
-            return null;
-        }
+    public Object get(int index){
+//        List list = map.get(type);
+//        if(list != null && list.size() -1 >= index){
+//            return list.get(index);
+//        }else{
+//            return null;
+//        }
+        return list.get(index);
     }
 
     public Field getCurrentField() {

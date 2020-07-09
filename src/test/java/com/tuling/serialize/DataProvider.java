@@ -1,8 +1,10 @@
 package com.tuling.serialize;
 
 import com.tuling.domain.*;
+import com.tuling.serialize.util.IdGenerator;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -16,9 +18,10 @@ public class DataProvider {
         user.setRole(new Role("项目经理"));
         user.setDepartment(new AboardDepartment("技术部",new Country("china")));
         user.setProfession(new Profession("java工程师"));
-        user.setAnother(null);
+//        user.setAnother(null);
         user.addLabel("死不了");
         user.addLabel("游戏主播");
+//        user.setId(IdGenerator.getId());
         return user;
     }
 
@@ -44,10 +47,11 @@ public class DataProvider {
         thirdUser.setProfession(profession);
 
         users.add(firstUser);
+        users.add(secondUser);
+        users.add(firstUser);
+
         users.add(thirdUser);
         users.add(secondUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
         return users;
     }
 }

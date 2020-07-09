@@ -5,7 +5,7 @@ package com.tuling.serialize.exception;
  * @date 2020-06-11
  * 当反序列化加载的类和序列化用到的类的属性不相同时，抛出该异常
  */
-public class ClassNotSameException extends Exception{
+public class ClassNotSameException extends RuntimeException{
 
     public ClassNotSameException(String msg){
         super(msg);

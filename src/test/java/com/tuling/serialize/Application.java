@@ -1,8 +1,12 @@
 package com.tuling.serialize;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.tuling.domain.*;
 import com.tuling.serialize.util.ByteBuf;
 import com.tuling.serialize.util.ReflectUtil;
+import org.msgpack.MessagePack;
 
 import javax.xml.crypto.Data;
 import java.io.*;
@@ -14,6 +18,8 @@ import java.util.*;
  */
 public class Application {
 
+
+
     public static void main(String[] args) throws Exception {
 
         testIsBasicType();
@@ -22,11 +28,8 @@ public class Application {
 
 //        testCharsetCost();
 
-//          byte a = (byte) 255;
-
-
-//        int length = "hello".getBytes("ascii").length;
-//        testSerialWithSerial();
+//          testSerialWithKyro();
+//          testSerialWithSerial();
 //        testSerialWithJava();
 
 //          testUnserialWithJava();
@@ -45,21 +48,22 @@ public class Application {
     }
 
     private static void testIsBasicType() throws  Exception{
-        Integer a = Integer.valueOf(2000);
-
 
         Class temp = String.class;
         String temp2 = "boolean";
-        boolean flag = false;
+        boolean flag = BaseTypeEnum.BOOLEAN instanceof Enum;
         int hashCode = 0;
+        int a = 4;
+        String[] array = new String[0];
+        Class parentClass = array.getClass().getSuperclass();
         long startTime = new Date().getTime();
 
 
-        for (int i = 0; i < 30000000; i++) {
+        for (int i = 0; i < 90000000; i++) {
 //            flag = temp == List.class;
 //            hashCode = temp2.hashCode();
 //            flag = temp.isArray();
-            flag = temp.getTypeName().endsWith("[]");
+            flag = 3 == a;
         }
         long endTime = new Date().getTime();
 
@@ -106,23 +110,39 @@ public class Application {
         System.out.println("serial serialization cost " + (endTime - startTime) + "ms" + length);
     }
 
-    private static void testSerialWithSerial() throws Exception{
-//        Byte t;
-//        Boolean t2;
-//        Character t3;
-//        Double t3;
-//        Float t5;
-//        Long t6;
-//        Short t7;
-//        Integer t8;
-//        String t9;
-
-
+    private static void testSerialWithKyro() throws Exception{
         User user = DataProvider.getUser();
+        List<User> users = DataProvider.getUsers();
+        Role role = new Role("项目经理");
         long startTime = new Date().getTime();
+        Kryo kryo = new Kryo();
+//        kryo.register(User.class);
+        for (int i = 0; i < 100000; i++) {
+
+//            kryo.register(User.class);
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            Output output = new Output(outputStream);
+            kryo.writeObject(output, users);
+            output.close();
+            System.out.println("");
+//            Object m =   kryo.readObject(new Input(new ByteArrayInputStream(outputStream.toByteArray())),User.class);
+//            System.out.println(m);
+        }
+        long endTime = new Date().getTime();
+
+        System.out.println("kyro serialization cost " + (endTime - startTime) + "ms");
+
+    }
+
+    private static void testSerialWithSerial() throws Exception{
+        User user = DataProvider.getUser();
+        List<User> users = DataProvider.getUsers();
+        long startTime = new Date().getTime();
+        DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
         for (int i = 0; i < 600000; i++) {
             OutputStream outputStream = new ByteArrayOutputStream();
-            Serial.write(new Country<>("china"),outputStream,false);
+//            Serial.write(DataProvider.getUser(),outputStream,false);
+            objectOutputStream.write(users,false,outputStream);
 
             outputStream.close();
         }

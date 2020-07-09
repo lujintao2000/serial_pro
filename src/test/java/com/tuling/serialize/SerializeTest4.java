@@ -19,11 +19,11 @@ public class SerializeTest4 extends BaseTest{
     @Override
     protected void test(Object originalValue) throws Exception {
 //        ByteArrayOutputStream output = new ByteArrayOutputStream();
-//        OutputStream output = new FileOutputStream("e:\\list.obj");
-//
-//        ObjectOutputStream out = new CompatibleObjectOutputStream();
-//        out.write(originalValue, output);
-//        output.close();
+        OutputStream output = new FileOutputStream("e:\\list.obj");
+
+        ObjectOutputStream out = new CompatibleObjectOutputStream();
+        out.write(originalValue, output);
+        output.close();
 
 
 //        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());

@@ -47,6 +47,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         writerMap.put(double.class,new DoubleWrite());
         writerMap.put(Double.class, new DoubleWrite());
         writerMap.put(String.class, new StringWrite());
+//        writerMap.put(Enum.class, new EnumWrite());
     }
 
     public AbstractOutputStream(){
@@ -77,7 +78,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         ByteBuf buf = new ByteBuf(256);
         write(obj,isWriteClassName,buf ,context,true);
         //写入对象长度。对象长度占用的字节随着长度的变化而变化，尽量用更少的字节存储
-//        out.write(NumberUtil.getByteArray(buf.readableBytes()));
         writeLengthOfObject(buf.readableBytes(), out);
         //写入对象内容
         out.write(buf.fullArray());
@@ -152,6 +152,8 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             this.writeNull(out);
         }else{
             context.put(obj);
+
+
             Class targetClass = obj.getClass();
             int type = ReflectUtil.getTypeOfClass(targetClass);
             //1. 写入对象类型
@@ -159,11 +161,10 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                 this.writeClassName(targetClass,out,context);
             }
             //判断是否是数组类型或集合类型
-            //if(targetClass.isArray()){
             if(type == ReflectUtil.ARRAY){
                 //2.写入元素个数
                 int length = Array.getLength(obj);
-                out.writeInt(length);
+                out.writeScalableInt(length);
                 //3. 循环写入数组中的元素
                 for(int i = 0; i < length; i++){
                     Object value = Array.get(obj, i);
@@ -171,37 +172,37 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
                 }
             }else{
                 //先写入该类类名及该类自定义的属性，然后写入父类名及父类定义的属性
-//                Class targetClass = obj.getClass();
                 //判断是否是基本数据类型对应的包装类型
                 if(possibleBaseType && type == ReflectUtil.BASETYPE){
                     this.writeValue(obj, targetClass, out,context);
                 }else if(type == ReflectUtil.ENUM){
                     this.writeValue(obj.toString(),String.class,out,context);
                 }else{
-                    //获得包含该类以及该类的所有父类的集合
-                    List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(targetClass);
-                    for(Class item : superClassAndSelfList){
-                        Field[] fields = ReflectUtil.getAllInstanceField(item,isCacheField);
-                        //2. 写入属性个数  2字节
-                       writeFieldCount(fields.length,out);
+                        //获得包含该类以及该类的所有父类的集合
+                        List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(targetClass);
+                        for(Class item : superClassAndSelfList){
+                            Field[] fields = ReflectUtil.getAllInstanceField(item,isCacheField);
+                            //2. 写入属性个数  2字节
+                            writeLengthOrIndex(fields.length,out);
 
-                        //3. 循环写入属性
-                        for(Field field : fields){
-                            context.setCurrentField(field);
-                            this.writeField(field, obj,out,context);
+                            //3. 循环写入属性
+                            for(Field field : fields){
+                                context.setCurrentField(field);
+                                this.writeField(field, obj,out,context);
+                            }
+                            context.setCurrentField(null);
                         }
-                        context.setCurrentField(null);
-                    }
+
                 }
             }
         }
     }
 
     /**
-     * 写入字段个数
+     * 写入对象索引、类索引或字段长度
      * @param length  字段个数
      */
-    protected final void writeFieldCount(int length,ByteBuf buf){
+    protected final void writeLengthOrIndex(int length,ByteBuf buf){
         if(length <= 127){
             buf.writeByte(length - 128);
         }else{
@@ -264,7 +265,9 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         }else{
             //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
             out.writeByte(Constant.CLASSNAME_REFERENCE);
-            out.writeShort(index);
+//            out.writeShort(index);
+            writeLengthOrIndex(index,out);
+
         }
     }
 
@@ -284,7 +287,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @param content  要写出的内容
      */
     protected void writeClassName(ByteBuf out,String className){
-        byte[] array = className.getBytes();
         //2. 写入类名
         out.writeString(className,true);
     }
@@ -378,15 +380,9 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             int index = context.getIndex(value);
             if(index >= 0){
                 this.writeReference(out);
-                this.writeClassName(value.getClass(),out,context);
-                out.writeShort(index);
-
+                  out.writeScalableInt(index);
             }else{
                 this.writeNormal(out);
-
-
-
-
                 this.write(value,true,out,context,value.getClass() != type);
             }
         }
@@ -453,6 +449,13 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         public void write(ByteBuf out,String value){
             //写入字符串
             out.writeString(value);
+        }
+    }
+
+    public static class EnumWrite implements ObjectWrite<Enum> {
+        public void write(ByteBuf out,Enum value){
+            //写入字符串
+            out.writeString(value.toString());
         }
     }
 }

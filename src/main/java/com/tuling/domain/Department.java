@@ -12,9 +12,9 @@ import java.io.Serializable;
 @Message
 public class Department  implements Serializable {
 
-//    public Department(){
-//
-//    }
+    public Department(){
+
+    }
 
     public Department(String name){
         this.name = name;

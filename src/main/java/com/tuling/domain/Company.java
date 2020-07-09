@@ -11,9 +11,9 @@ public class Company implements Serializable{
 
 	private User user;
 
-//	public Company(){
-//
-//	}
+	public Company(){
+
+	}
 	
 	public Company(String name){
 		this.name = name;

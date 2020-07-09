@@ -26,21 +26,13 @@ public abstract class BaseTest {
         test(1f);
         test(1d);
         test("world");
-        test(new BigInteger("200000"));
-        test(new AtomicInteger(20));
+//        test(new BigInteger("200000"));
+//        test(new AtomicInteger(20));
     }
 
     @Test
     public void testDomain() throws Exception{
-        User user = new User("wangfei", 20, 170.0f, 76.0f);
-        user.setCompany(new Company("优识云创"));
-        user.setRole(new Role("项目经理"));
-        user.setDepartment(new AboardDepartment("技术部",new Country("china")));
-        user.setProfession(new Profession("java工程师"));
-        user.setAnother(null);
-        user.addLabel("死不了");
-        user.addLabel("游戏主播");
-        test(user);
+        test(DataProvider.getUser());
     }
 
     @Test

@@ -167,7 +167,7 @@ public class ReflectUtil {
             if (fieldMap.containsKey(targetClass)) {
                 result = fieldMap.get(targetClass).values().toArray(new Field[0]);
             } else {
-                result = getFields(targetClass,false);
+                result = getFields(targetClass);
                 Map<String,Field> map = new HashMap<>();
                 for(Field item : result){
                     map.put(item.getName(),item);
@@ -175,7 +175,7 @@ public class ReflectUtil {
                 fieldMap.put(targetClass, map);
             }
         } else {
-            result = getFields(targetClass,false);
+            result = getFields(targetClass);
         }
         return result;
     }
@@ -194,11 +194,11 @@ public class ReflectUtil {
             if (orderedFieldMap.containsKey(targetClass)) {
                 result = orderedFieldMap.get(targetClass);
             } else {
-                 result = getFields(targetClass,true);
+                 result = getFields(targetClass);
                 orderedFieldMap.put(targetClass, result);
             }
         } else {
-            result = getFields(targetClass,true);
+            result = getFields(targetClass);
         }
         return result;
     }
@@ -207,10 +207,9 @@ public class ReflectUtil {
      * 获得指定类的所有实例字段,包括父类的字段，数组中排在前的是当前类的字段，然后是父类的字段
      *
      * @param type
-     * @param needOrder 是否需要按属性名排序
      * @return
      */
-    private static Field[] getFields(Class type,boolean needOrder) {
+    private static Field[] getFields(Class type) {
         List<Field> fields = Arrays.asList(type.getDeclaredFields())
                 .stream()
                 .filter(x -> !Modifier.isStatic(x.getModifiers()))
@@ -340,11 +339,6 @@ public class ReflectUtil {
      * @return 数据类型的标识字符串
      */
     public static String getFlagOfBaseType(Class type) {
-//        if (isBaseType(type)) {
-//            return BaseTypeEnum.get(type).getValue();
-//        } else {
-//            return type.getTypeName();
-//        }
         BaseTypeEnum baseTypeEnum = BaseTypeEnum.get(type);
         if(baseTypeEnum != null){
             return baseTypeEnum.getValue();
@@ -492,7 +486,6 @@ public class ReflectUtil {
      */
     private static Object getDefaultValue(Class type){
         if(ReflectUtil.isBaseType(type)){
-//            return defaultValueMap.get(type);
             //加缓存，通过缓存判断
             switch (type.getSimpleName()) {
                 case "boolean":

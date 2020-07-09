@@ -156,7 +156,7 @@ public class ByteBuf {
     public void writeString(String value) {
         char[] contentArray = value.toCharArray();
         ensureCapacity(contentArray.length * 2 + 4);
-        writeLength(contentArray.length * 2);
+        writeScalableInt(contentArray.length * 2);
         for (int i = 0; i < contentArray.length; i++) {
             array[writerIndex + i * 2] = (byte) (contentArray[i] >> 8);
             array[writerIndex + i * 2 + 1] = (byte) contentArray[i];
@@ -169,7 +169,8 @@ public class ByteBuf {
      * 00表示1字节，01表示2字节，10表示3字节，11表示4字节
      * @param length 要写入的长度值
      */
-    public void writeLength(int length){
+    public void writeScalableInt(int length){
+        ensureCapacity(4);
         if(length <= 0x3f){  //第一字节首位 00
             array[writerIndex] = (byte)length;
             writerIndex += 1;
@@ -195,10 +196,10 @@ public class ByteBuf {
     }
 
     /**
-     * 读取字符串或对象的长度
+     * 读取可伸缩的int型整数
      * @return
      */
-    public int readLength() {
+    public int readScalableInt() {
         int result = 0;
         byte first = readByte();
         int flag = (first & 0xc0) >> 6;
@@ -230,16 +231,14 @@ public class ByteBuf {
      */
     public void writeString(String value,boolean isAsciiEncoding) {
        if(isAsciiEncoding){
-
-           try {
-               byte[] content = value.getBytes("ascii");
-               ensureCapacity(content.length + 4);
-               this.writeLength(content.length);
-               this.writeBytes(content);
-           }catch (UnsupportedEncodingException ex){
-               LOGGER.error(ex.getMessage(),ex);
-               throw new RuntimeException("Write field name with value " + value + " failed.The value contains some character which ascii not support.");
+           char[] contentArray = value.toCharArray();
+           int length = contentArray.length;
+           ensureCapacity(length  + 4);
+           writeScalableInt(length);
+           for (int i = 0; i < length; i++) {
+               array[writerIndex + i ] = (byte) contentArray[i];
            }
+           writerIndex += length;
        }else{
            writeString(value);
        }
@@ -395,7 +394,7 @@ public class ByteBuf {
      * @return
      */
     public String readString() {
-        int length = this.readLength();
+        int length = this.readScalableInt();
         if (this.readableBytes() < length) {
             throw new IllegalArgumentException("There are not enough data to be read.");
         }
@@ -420,21 +419,16 @@ public class ByteBuf {
         if(!isAsciiDecoding){
             return readString();
         }
-        int length = this.readLength();
+        int length = this.readScalableInt();
         if (this.readableBytes() < length) {
             throw new IllegalArgumentException("There are not enough data to be read.");
         }
-        byte[] content = new byte[length];
-        System.arraycopy(array, readerIndex, content, 0, length);
-        String result = null;
-        try {
-            result = new String(content, "ascii");
-        } catch (UnsupportedEncodingException ex) {
-            LOGGER.error("读取字符串出错|" + ex.getMessage(), ex);
-            throw new RuntimeException(ex);
+        char[] content = new char[length];
+        for(int i = 0;i < content.length; i++){
+            content[i] = (char) array[readerIndex + i];
         }
         readerIndex += length;
-        return result;
+        return  new String(content);
     }
 
     /**

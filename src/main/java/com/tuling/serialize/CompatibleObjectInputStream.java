@@ -32,31 +32,31 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
     @Override
     protected Object readValue(Object obj, Class objectClass, Context context, ByteBuf in) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException {
         //存放字段的值，key为字段名称
-        Map<String,Object> valueMap = new HashMap<>();
-        Map<String,Object> currentMap = valueMap;
+//        Map<String,Object> valueMap = new HashMap<>();
+//        Map<String,Object> currentMap = valueMap;
         List<Class> selfAndSuperList = ReflectUtil.getSelfAndSuperClass(objectClass);
         int count = 0;
         for(Class currentType : selfAndSuperList){
-                short fieldCount = this.readFieldCount(in);
+                short fieldCount = this.readLengthOrIndex(in);
                     //循环读取属性
-                    if(obj == null){
-                        for(int i = 0; i < fieldCount; i++){
-                            String fieldName = this.readString(in);
-                            //读取该字段值的长度
-                            int length = this.readInt(in);
-                            Field field = ReflectUtil.getField(currentType,fieldName);
-                            if(field != null){
-                                context.setCurrentField(field);
-                                this.readField(currentMap, field,in,context);
-                            }
-                        }
-                        count++;
-                        if(count < selfAndSuperList.size()){
-                            Map<String,Object> tempMap = currentMap;
-                            currentMap = new HashMap<String,Object>();
-                            tempMap.put(com.tuling.serialize.Builder.NEXT,currentMap);
-                        }
-                    }else{
+//                    if(obj == null){
+//                        for(int i = 0; i < fieldCount; i++){
+//                            String fieldName = this.readString(in);
+//                            //读取该字段值的长度
+//                            int length = this.readInt(in);
+//                            Field field = ReflectUtil.getField(currentType,fieldName);
+//                            if(field != null){
+//                                context.setCurrentField(field);
+//                                this.readField(currentMap, field,in,context);
+//                            }
+//                        }
+//                        count++;
+//                        if(count < selfAndSuperList.size()){
+//                            Map<String,Object> tempMap = currentMap;
+//                            currentMap = new HashMap<String,Object>();
+//                            tempMap.put(com.tuling.serialize.Builder.NEXT,currentMap);
+//                        }
+//                    }else{
                         for(int i = 0; i < fieldCount; i++){
                             String fieldName = this.readString(in);
                             //读取该字段值的长度
@@ -69,15 +69,15 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
                                 in.skip(length);
                             }
                         }
-                    }
+//                    }
 
         }
         context.setCurrentField(null);
-        if(obj == null){
-            return valueMap;
-        }else{
+//        if(obj == null){
+//            return valueMap;
+//        }else{
             return obj;
-        }
+//        }
     }
 
 }

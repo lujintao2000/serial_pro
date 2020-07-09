@@ -35,7 +35,7 @@ public class BuilderUtil {
                     LOGGER.error("Can't instantiate " + x, ex);
                 }
                 if(builder != null){
-                    map.put(builder.getType(), builder);
+                   // map.put(x.get, builder);
                 }
 
             });

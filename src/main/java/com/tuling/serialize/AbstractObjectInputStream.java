@@ -105,16 +105,16 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		Map<String,Object> map = new HashMap<>();
 		map = (Map)readValue(obj,objectClass,context,in);
 		Builder builder = BuilderUtil.get(objectClass);
-		obj = builder.create(map);
-		if(!builder.isFinish()){
-			if(obj instanceof Collection){
-				finishCollection((Collection) obj,map);
-			}else if(obj instanceof Map){
-				finishMap((Map)obj,map);
-			}else{
-				finishObject(obj,map);
-			}
-		}
+		obj = builder.newInstance();
+//		if(!builder.isFinish()){
+//			if(obj instanceof Collection){
+//				finishCollection((Collection) obj,map);
+//			}else if(obj instanceof Map){
+//				finishMap((Map)obj,map);
+//			}else{
+//				finishObject(obj,map);
+//			}
+//		}
 		return obj;
 	}
 
@@ -123,53 +123,53 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @param obj 要赋值的对象
 	 * @param valueMap  存储值的Map
 	 */
-	protected Object finishObject(Object obj,Map<String,Object> valueMap) throws IllegalAccessException{
-		Map<String,Object> currentMap = valueMap;
-		List<Class> superAndSelfClassList = ReflectUtil.getSelfAndSuperClass(obj.getClass());
-		for(Class currentType : superAndSelfClassList){
-			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
-			//循环读取属性
-			for(int i = 0; i < fields.length; i++){
-				if(!fields[i].isAccessible()){
-					fields[i].setAccessible(true);
-				}
-				fields[i].set(obj, currentMap.get(fields[i].getName()) );
-			}
-			currentMap = (Map)currentMap.get(Builder.NEXT);
-		}
-		return obj;
-	}
+//	protected Object finishObject(Object obj,Map<String,Object> valueMap) throws IllegalAccessException{
+//		Map<String,Object> currentMap = valueMap;
+//		List<Class> superAndSelfClassList = ReflectUtil.getSelfAndSuperClass(obj.getClass());
+//		for(Class currentType : superAndSelfClassList){
+//			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
+//			//循环读取属性
+//			for(int i = 0; i < fields.length; i++){
+//				if(!fields[i].isAccessible()){
+//					fields[i].setAccessible(true);
+//				}
+//				fields[i].set(obj, currentMap.get(fields[i].getName()) );
+//			}
+////			currentMap = (Map)currentMap.get(Builder.NEXT);
+//		}
+//		return obj;
+//	}
 
 	/**
 	 * 完成集合元素的装载
 	 * @param obj 要设值的集合对象
 	 * @param valueMap  存储值的Map
 	 */
-	protected void finishCollection(Collection obj,Map<String,Object> valueMap) throws IllegalAccessException{
-		if (valueMap != null && valueMap.size() > 0) {
-			List list = (List) valueMap.get(Builder.LIST);
-			if (list != null) {
-				if(obj.size() > 0){
-					obj.clear();
-				}
-				obj.addAll(list);
-			}
-		}
-	}
+//	protected void finishCollection(Collection obj,Map<String,Object> valueMap) throws IllegalAccessException{
+//		if (valueMap != null && valueMap.size() > 0) {
+//			List list = (List) valueMap.get(Builder.LIST);
+//			if (list != null) {
+//				if(obj.size() > 0){
+//					obj.clear();
+//				}
+//				obj.addAll(list);
+//			}
+//		}
+//	}
 
 	/**
 	 * 完成集合元素的装载
 	 * @param obj 要设值的集合对象
 	 * @param valueMap  存储值的Map
 	 */
-	protected void finishMap(Map obj,Map<String,Object> valueMap) throws IllegalAccessException{
-		if (valueMap != null && valueMap.size() > 0) {
-			List<Entry> list = (List) valueMap.get(Builder.LIST);
-			if (list != null) {
-				list.stream().forEach(x -> obj.put(x.getKey(), x.getValue()));
-			}
-		}
-	}
+//	protected void finishMap(Map obj,Map<String,Object> valueMap) throws IllegalAccessException{
+//		if (valueMap != null && valueMap.size() > 0) {
+//			List<Entry> list = (List) valueMap.get(Builder.LIST);
+//			if (list != null) {
+//				list.stream().forEach(x -> obj.put(x.getKey(), x.getValue()));
+//			}
+//		}
+//	}
 
 	/**
 	 * 读取值，将值存入指定的对象中,如果obj为空,则将读取的值存入Map
@@ -210,11 +210,11 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	}
 	
 	/**
-	 * 读取属性总个数
+	 * 读取属性总个数或对象索引、类索引
 	 * @param in  包含序列化数据的输入流
 	 * @throws IOException
 	 */
-	public final short readFieldCount(ByteBuf in) throws IOException{
+	public final short readLengthOrIndex(ByteBuf in) throws IOException{
 		short result = in.readByte();
 		if(result < 0){
 			result += 128;
@@ -252,10 +252,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 */
 	protected Integer readInt(InputStream in) throws IOException{
 		byte[] array = new byte[4];
-//		for(int i = 0; i < 4;i++){
-//			array[i] = NumberUtil.convertIntToByte(in.read());
-//		}
-//		return NumberUtil.getInteger( array );
 		in.read(array);
 		return array[0]  << 24 |
 				(array[1] & 0xff) << 16 |
@@ -387,7 +383,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			return fullClassName;
 		}else if(preLength == Constant.CLASSNAME_REFERENCE){
 			//读取引用序号
-			short index = this.readShort(in);
+			short index = this.readLengthOrIndex(in);
 			return context.getClassName(index);
 		}else{
 			String className = context.getCurrentField().getType().getTypeName();
@@ -404,8 +400,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected int readArrayLength(ByteBuf in) throws IOException{
-//		return this.readInt(in);
-		return in.readInt();
+		return in.readScalableInt();
 	}
 
 	/**
@@ -415,8 +410,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected  int readCollectionSize(ByteBuf in) throws IOException{
-//		return this.readInt(in);
-		return in.readInt();
+		return in.readScalableInt();
 	}
 
 	/**
@@ -426,8 +420,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected  int readMapSize(ByteBuf in) throws IOException{
-//		return this.readInt(in);
-		return in.readInt();
+		return in.readScalableInt();
 	}
 
 	/**
@@ -437,7 +430,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 */
 	protected boolean isReference(ByteBuf in) throws IOException{
-		//return in.read() == Constant.REFERENCE_FLAG;
 		return in.readByte() == (byte) Constant.REFERENCE_FLAG;
 	}
 
@@ -477,21 +469,13 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				Method method = type.getMethod("valueOf",String.class);
 				value = method.invoke(null,name);
 			} catch (Exception e) {
-
+				LOGGER.error("Can't find enum element " + name + "",e);
 			}
 		}
 		else{
 			if(isReference(in)){
-
-				String className = this.readClassName(in,context);
-				int index = this.readShort(in);
-				Class valueType = null;
-				if(className.endsWith("[]")){
-					valueType = Array.newInstance(ReflectUtil.get(className.substring(0,className.length() - 2)),0).getClass();
-				}else{
-					valueType = ReflectUtil.get(className);
-				}
-				value = context.get(valueType, index);
+				int index = in.readScalableInt();
+				value = context.get(index);
 			}else{
 				value = this.readObject(null,in,context);
 			}
@@ -558,17 +542,13 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		Object obj = null;
 		if(!this.isNull(in)){
 			in.readerIndex(in.readerIndex() - 1);
-			boolean isArray = false;
 			Class arrayType = null;
 			if(objectClass == null){
 				//1.读取序列化对象所对应的类名
 				String className = this.readClassName(in,context);
 				//2.判断是否是数组类型
 				if(className.endsWith("[]")){
-					isArray = true;
 					 arrayType = ReflectUtil.get(className.substring(0,className.length() - 2));
-
-//					objectClass = Array.newInstance(type,0).getClass();
 				}else
 				{
 					objectClass =  ReflectUtil.getComplexClass(className);
@@ -618,18 +598,21 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		try {
 			if(ReflectUtil.isBaseType(objectClass) || objectClass.isEnum()){
 				obj = readValue(objectClass,in,context);
+				context.put(obj);
 			}else{
 				try {
 					obj = ReflectUtil.createObject(objectClass);
+					if(obj == null){
+						if(BuilderUtil.isSpecifyBuilder(objectClass)){
+							obj =  BuilderUtil.get(objectClass).newInstance();
+						}else{
+							throw new BuilderNotFoundException(objectClass);
+						}
+					}
 					if(obj != null){
 						//将当前对象放入上下文中
-						context.put(((Object) obj));
-						readValue(obj,objectClass,context,in);
-					}else if(!BuilderUtil.isSpecifyBuilder(objectClass)){
-						throw new BuilderNotFoundException(objectClass);
-					}else{
-						obj = readObjectWithAnother(objectClass,context,in);
 						context.put(obj);
+						readValue(obj,objectClass,context,in);
 					}
 				}catch (Exception e) {
 					LOGGER.error(e.getCause(), e);

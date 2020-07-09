@@ -3,7 +3,7 @@ package com.tuling.serialize.exception;
 /**
  * Created by Administrator on 2020-06-16.
  */
-public class BuilderNotFoundException extends Exception{
+public class BuilderNotFoundException extends RuntimeException{
 
     public BuilderNotFoundException(String msg){
         super(msg);

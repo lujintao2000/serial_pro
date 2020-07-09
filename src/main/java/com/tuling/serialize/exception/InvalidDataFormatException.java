@@ -6,7 +6,7 @@ package com.tuling.serialize.exception;
  * @date 2017-04-20
  *
  */
-public class InvalidDataFormatException extends Exception{
+public class InvalidDataFormatException extends RuntimeException{
 
 	public InvalidDataFormatException(Exception ex){
 		super(ex);

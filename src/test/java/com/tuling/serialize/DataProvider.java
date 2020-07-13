@@ -12,8 +12,8 @@ public class DataProvider {
 
     public static List getList(){
         List<Object> list = new ArrayList<>();
-        list.add(3);
-        list.add(5);
+//        list.add(3);
+//        list.add(5);
 //        list.add(8);
 //        list.add(10);
 //        list.add(11);
@@ -21,9 +21,9 @@ public class DataProvider {
 //        list.add(13);
 //        list.add(14);
 //        list.add("");
-//        for(int i = 0; i < 10000;i++){
-//            list.add(i);
-//        }
+        for(int i = 0; i < 10000;i++){
+            list.add(i);
+        }
         return list;
     }
 

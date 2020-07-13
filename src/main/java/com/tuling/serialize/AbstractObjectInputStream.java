@@ -535,7 +535,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		if(objectRead != null){
 			value = objectRead.read(in,type);
 		}else if(type.isEnum()){
-			String name = in.readString();
+			String name = in.readString(true);
 			try {
 				Method method = type.getMethod("valueOf",String.class);
 				value = method.invoke(null,name);
@@ -724,8 +724,16 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 						context.put(obj);
 						if(obj instanceof Collection){
 							int size = readLengthOrIndex(in);
+							Class currentType = Object.class;
 							for(int i = 0;i < size; i++){
-								((Collection)obj).add(readObject(null,in,context));
+								if(hasWriteClassName(in)){
+									String className = readClassName(in,context);
+									currentType = ReflectUtil.getComplexClass(className);
+								}else{
+									in.decreaseReaderIndex(1);
+								}
+
+								((Collection)obj).add(readValue(currentType,in,context));
 
 							}
 						}else{
@@ -743,6 +751,14 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			throw e;
 		}
 		return  obj;
+	}
+
+	/**
+	 * 缓冲中接下来的数据是否是类名数据
+	 * @return
+	 */
+	private boolean hasWriteClassName(ByteBuf in){
+		return in.readByte() == Constant.WRITE_CLASS_NAME_FLAG;
 	}
 
 	/**

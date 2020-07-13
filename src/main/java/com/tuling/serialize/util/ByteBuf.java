@@ -48,6 +48,10 @@ public class ByteBuf {
         this.readerIndex = index;
     }
 
+    public void decreaseReaderIndex(int decrease){
+        this.readerIndex -= decrease;
+    }
+
     public int readerIndex() {
         return this.readerIndex;
     }

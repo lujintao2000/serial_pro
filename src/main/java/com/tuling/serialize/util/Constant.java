@@ -10,10 +10,13 @@ public class Constant {
     //代表写对象结束
     public static final int END_FLAG = 126;
     //代表写入了NULL
-    public static final byte NULL_FLAG = -2;
+    public static final byte NULL_FLAG = -1;  //0x1111 1111
 
     //代表写入了非空
-    public static final int NOT_NULL_FLAG = 124;
+    public static final int NOT_NULL_FLAG = 124; // 0x0111 1111
+
+    //代表写入了类名
+    public static final byte WRITE_CLASS_NAME_FLAG = -2;
     //代表写入了CONTINUE,循环还要进行
     public static final int CONTINUE_FLAG = 123;
     //代表当前要写入的值是之前已经写入流中的对象的引用

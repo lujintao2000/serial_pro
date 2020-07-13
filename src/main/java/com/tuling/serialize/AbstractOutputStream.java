@@ -174,17 +174,20 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             }else{
                 //先写入该类类名及该类自定义的属性，然后写入父类名及父类定义的属性
                 //判断是否是基本数据类型对应的包装类型
-                if(isBaseType){
+                if(isBaseType || type == ReflectUtil.ENUM){
                     this.writeValue(obj, targetClass, out,context);
-                }else if(type == ReflectUtil.ENUM){
-                    this.writeValue(obj.toString(),String.class,out,context);
                 }
                 else if(obj instanceof Collection){
-//                    int length = ((Collection)obj).size();
                     this.writeLengthOrIndex(((Collection)obj).size(),out);
+                    Class currentType = Integer.class;
+                    boolean isFirst = true;
                     for(Object item : (Collection)obj){
-                        this.write(item,true,out,context,true);
-//                        this.writeValue(obj, targetClass, out,context);
+                        if(item != null && item.getClass() != currentType){
+                            currentType = item.getClass();
+                            startWriteClassName(out);
+                            writeClassName(item, currentType,out,context,ReflectUtil.isBaseType(currentType));
+                        }
+                        this.writeValue(item, currentType, out,context);
                     }
                 }
                 else{
@@ -365,6 +368,14 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         out.writeByte(Constant.NOT_NULL_FLAG);
     }
 
+    /**
+     * 标识即将要在缓冲中写入类名
+     * @param out
+     */
+    protected void startWriteClassName(ByteBuf out){
+        out.writeByte(Constant.WRITE_CLASS_NAME_FLAG);
+    }
+
     protected void writeContinue(ByteBuf out){
         out.writeByte(Constant.CONTINUE_FLAG);
     }
@@ -433,7 +444,10 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
         ObjectWrite objectWrite = writerMap.get(type);
         if(objectWrite != null){
             objectWrite.write(out,value);
-        }else{
+        }else if(type.isEnum()){
+            out.writeString(value.toString(),true);
+        }
+        else{
             //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
             int index = context.getIndex(value);
             if(index >= 0){

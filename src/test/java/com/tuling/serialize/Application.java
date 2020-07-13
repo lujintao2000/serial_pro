@@ -29,8 +29,8 @@ public class Application {
 
 //        testCharsetCost();
 
-          testSerialWithKyro();
-//          testSerialWithSerial();
+//          testSerialWithKyro();
+          testSerialWithSerial();
 //        testSerialWithJava();
 
 //          testUnserialWithJava();
@@ -60,13 +60,14 @@ public class Application {
         long startTime = new Date().getTime();
 
 
-        for (int i = 0; i < 600000000; i++) {
+        for (int i = 0; i < 60000000; i++) {
 //            flag = temp == List.class;
 //            hashCode = temp2.hashCode();
 //            flag = temp.isArray();
 //            flag = ReflectUtil.isBaseType(User.class);
 //            hashCode = User.class.hashCode();
-            flag = "" instanceof String;
+//            flag = "" instanceof String;
+            array.getClass();
         }
         long endTime = new Date().getTime();
 
@@ -123,16 +124,16 @@ public class Application {
         long startTime = new Date().getTime();
 
 //        kryo.register(User.class);
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 100; i++) {
             Kryo kryo = new Kryo();
 //            kryo.register(User.class);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Output output = new Output(outputStream);
-            kryo.writeObject(output, user);
+            kryo.writeObject(output, obj);
             output.close();
-            System.out.println("");
-            Object m = kryo.readObject(new Input(new ByteArrayInputStream(outputStream.toByteArray())), User.class);
-            System.out.println(m);
+//            System.out.println("");
+//            Object m = kryo.readObject(new Input(new ByteArrayInputStream(outputStream.toByteArray())), User.class);
+//            System.out.println(m);
         }
         long endTime = new Date().getTime();
 
@@ -166,11 +167,11 @@ public class Application {
         Set set = DataProvider.getSet();
         long startTime = new Date().getTime();
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 100; i++) {
             DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
             OutputStream outputStream = new ByteArrayOutputStream();
 //            Serial.write(DataProvider.getUser(),outputStream,false);
-            objectOutputStream.write(user, false, outputStream);
+            objectOutputStream.write(obj, false, outputStream);
 
             outputStream.close();
         }

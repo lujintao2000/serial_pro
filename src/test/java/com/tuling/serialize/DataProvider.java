@@ -3,14 +3,45 @@ package com.tuling.serialize;
 import com.tuling.domain.*;
 import com.tuling.serialize.util.IdGenerator;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by Administrator on 2020-06-24.
  */
 public class DataProvider {
+
+    public static List getList(){
+        List<Object> list = new ArrayList<>();
+        list.add(3);
+        list.add(5);
+//        list.add(8);
+//        list.add(10);
+//        list.add(11);
+//        list.add(12);
+//        list.add(13);
+//        list.add(14);
+//        list.add("");
+//        for(int i = 0; i < 10000;i++){
+//            list.add(i);
+//        }
+        return list;
+    }
+
+    public static Set getSet(){
+        Set<Integer> set = new TreeSet<>();
+//        list.add(3);
+//        list.add(5);
+//        list.add(8);
+//        list.add(10);
+//        list.add(11);
+//        list.add(12);
+//        list.add(13);
+//        list.add(14);
+        for(int i = 0; i < 10000;i++){
+            set.add(i);
+        }
+        return set;
+    }
 
     public static User getUser(){
         User user = new User("wangfei", 20, 170.0f, 76.0f);

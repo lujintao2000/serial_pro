@@ -64,7 +64,7 @@ public class ByteBufTest {
         base(TestType.SHORT,384);
         base(TestType.SHORT,385);
         base(TestType.SHORT,23000);
-        base(TestType.SHORT,-188);
+        base(TestType.SHORT,0xffff7fff);
         base(TestType.SHORT,-539);
         base(TestType.SHORT,0);
         base(TestType.SHORT,-1);

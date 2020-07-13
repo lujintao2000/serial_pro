@@ -32,6 +32,8 @@ public class Context {
     private Field currentField = null;
     //标识
     private Integer  id;
+    //当前要读取的值类型是否是枚举类型
+    private boolean isEnum;
 
     public Context(){
         id = IdGenerator.getId();

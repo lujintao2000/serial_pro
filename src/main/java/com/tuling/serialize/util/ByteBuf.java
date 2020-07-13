@@ -106,15 +106,15 @@ public class ByteBuf {
      * @param a
      */
     public void writeChar(int value) {
-        writeShort(value);
+        writeShort((int) value);
     }
 
 
     public void writeShort(int value) {
         ensureCapacity(2);
 
-        array[writerIndex + 0] = (byte) (value >> 8);
-        array[writerIndex + 1] = (byte) value;
+        array[writerIndex + 0] = (byte) (value >> 8);      //   1111 1111  1111 1111 0111 1111 1111 1111
+        array[writerIndex + 1] = (byte) value;    //0xff ff 7f ff
         writerIndex += 2;
     }
 

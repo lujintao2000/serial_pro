@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 import com.sun.corba.se.impl.ior.OldJIDLObjectKeyTemplate;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.tuling.domain.User;
 import com.tuling.serialize.exception.*;
 import com.tuling.serialize.util.*;
@@ -24,8 +25,36 @@ import org.apache.log4j.Logger;
 public abstract class AbstractObjectInputStream implements ObjectInputStream{
 
 	private static final Logger LOGGER = Logger.getLogger(AbstractObjectInputStream.class);
-	protected static final ThreadLocal<Context> threadLocal = new ThreadLocal();
+	private static final Map<Class,ObjectRead> readMap = new HashMap<>();
+	private static final String BOOLEAN_NAME = Boolean.class.getTypeName();
+	private static final String BYTE_NAME = Byte.class.getTypeName();
+	private static final String CHARACTER_NAME = Character.class.getTypeName();
+	private static final String SHORT_NAME = Short.class.getTypeName();
+	private static final String INTEGER_NAME = Integer.class.getTypeName();
+	private static final String LONG_NAME = Long.class.getTypeName();
+	private static final String FLOAT_NAME = Float.class.getTypeName();
+	private static final String DOUBLE_NAME = Double.class.getTypeName();
+	private static final String STRING_NAME = String.class.getTypeName();
 
+	static{
+		readMap.put(boolean.class,new BooleanRead());
+		readMap.put(Boolean.class,new BooleanRead());
+		readMap.put(byte.class,new ByteRead());
+		readMap.put(Byte.class,new ByteRead());
+		readMap.put(char.class,new CharacterRead());
+		readMap.put(Character.class, new CharacterRead());
+		readMap.put(short.class,new ShortRead());
+		readMap.put(Short.class, new ShortRead());
+		readMap.put(int.class,new IntegerRead());
+		readMap.put(Integer.class, new IntegerRead());
+		readMap.put(long.class,new LongRead());
+		readMap.put(Long.class, new LongRead());
+		readMap.put(float.class,new FloatRead());
+		readMap.put(Float.class, new FloatRead());
+		readMap.put(double.class,new DoubleRead());
+		readMap.put(Double.class, new DoubleRead());
+		readMap.put(String.class, new StringRead());
+	}
 
 	//是否缓存类的字段信息
 	protected boolean isCacheField = true;
@@ -376,22 +405,79 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			in.readerIndex(in.readerIndex() - 1);
 			//2. 读入类名
 			String fullClassName = ReflectUtil.getFullName(in.readString(true));
-			if (fullClassName.equals(BaseTypeEnum.VOID.getType().getTypeName())) {
-				fullClassName = context.getCurrentField().getType().getTypeName();
-			}
 			context.addClassName(fullClassName);
 			return fullClassName;
-		}else if(preLength == Constant.CLASSNAME_REFERENCE){
-			//读取引用序号
-			short index = this.readLengthOrIndex(in);
-			return context.getClassName(index);
-		}else{
+//		}else if(preLength == Constant.CLASSNAME_REFERENCE){
+//			//读取引用序号
+//			short index = this.readLengthOrIndex(in);
+//			return context.getClassName(index);
+//		}else{
+//			//字段值的类型和字段类型相同
+//			String className = context.getCurrentField().getType().getTypeName();
+//			context.addClassName(className);
+//			return className;
+//		}
+		}else if(preLength == Constant.CLASSNAME_SAME_WITH_FIELD){
+			//字段值的类型和字段类型相同
 			String className = context.getCurrentField().getType().getTypeName();
 			context.addClassName(className);
 			return className;
+		}else if(preLength > (byte)0xbf){
+			//类型是基本类型
+			switch (preLength){
+				case Constant.BOOLEAN:
+					return BOOLEAN_NAME;
+				case Constant.BYTE:
+					return BYTE_NAME;
+				case Constant.CHARACTER:
+					return CHARACTER_NAME;
+				case Constant.SHORT:
+					return SHORT_NAME;
+				case Constant.INTEGER:
+					return INTEGER_NAME;
+				case Constant.LONG:
+					return LONG_NAME;
+				case Constant.FLOAT:
+					return FLOAT_NAME;
+				case Constant.DOUBLE:
+					return DOUBLE_NAME;
+				default:
+					return STRING_NAME;
+			}
+		}else{
+			//类名引用了先前已经缓存的类名
+			//读取引用序号
+			short index = this.readReferenceIndex(in,preLength);
+			return context.getClassName(index);
+
 		}
 	}
 
+	/**
+	 * 读入引用的类序号
+	 * @param in
+	 * @param firstByte 已经读取的字节
+	 * @return
+	 */
+	public static short readReferenceIndex(ByteBuf in,byte firstByte){
+//		if(index <= 31){  //1000 0000  0001 1111
+//			byte temp = (byte) (Constant.CLASSNAME_REFERENCE & index);
+//			out.writeByte(temp);
+//		}else{// 1010 0000
+//			out.writeShort( (Constant.CLASSNAME_REFERENCE_OVER_FLOW << 8) & index );
+//		}
+		short result = 0;
+		if(firstByte < (byte) 0xa0){   //index <= 31
+			result = (short) (firstByte & 0x1f);
+		}else{
+			byte secondByte = in.readByte();
+			result = (short) (((firstByte & 0x1f) << 8) | (secondByte & 0xff));
+		}
+
+
+
+		return result;
+	}
 
 	/**
 	 * 读取数组长度
@@ -445,31 +531,16 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			return null;
 		}
 		Object value = null;
-		if(type == boolean.class || type == Boolean.class){
-			value = this.readBoolean(in);
-		}else if(type == char.class || type == Character.class){
-			value = this.readCharacter(in);
-		}else if(type == byte.class || type == Byte.class){
-			value = this.readByte(in);
-		}else if(type == short.class || type == Short.class){
-			value = this.readShort(in);
-		}else if(type == int.class || type == Integer.class){
-			value = this.readInt(in);
-		}else if(type == long.class || type == Long.class){
-			value = this.readLong(in);
-		}else if(type == float.class || type == Float.class){
-			value = this.readFloat(in);
-		}else if(type == double.class || type == Double.class){
-			value = this.readDouble(in);
-		}else if(type == String.class){
-			value = this.readString(in);
+		ObjectRead objectRead = readMap.get(type);
+		if(objectRead != null){
+			value = objectRead.read(in,type);
 		}else if(type.isEnum()){
-			String name = this.readString(in);
+			String name = in.readString();
 			try {
 				Method method = type.getMethod("valueOf",String.class);
 				value = method.invoke(null,name);
 			} catch (Exception e) {
-				LOGGER.error("Can't find enum element " + name + "",e);
+				LOGGER.error("Can't find enum element with name " + name + "",e);
 			}
 		}
 		else{
@@ -480,6 +551,43 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				value = this.readObject(null,in,context);
 			}
 		}
+
+//		if(type == boolean.class || type == Boolean.class){
+//			value = this.readBoolean(in);
+//		}else if(type == char.class || type == Character.class){
+//			value = this.readCharacter(in);
+//		}else if(type == byte.class || type == Byte.class){
+//			value = this.readByte(in);
+//		}else if(type == short.class || type == Short.class){
+//			value = this.readShort(in);
+//		}else if(type == int.class || type == Integer.class){
+//			value = this.readInt(in);
+//		}else if(type == long.class || type == Long.class){
+//			value = this.readLong(in);
+//		}else if(type == float.class || type == Float.class){
+//			value = this.readFloat(in);
+//		}else if(type == double.class || type == Double.class){
+//			value = this.readDouble(in);
+//		}else if(type == String.class){
+//			value = this.readString(in);
+//		}
+//		else if(type.isEnum()){
+//			String name = this.readString(in);
+//			try {
+//				Method method = type.getMethod("valueOf",String.class);
+//				value = method.invoke(null,name);
+//			} catch (Exception e) {
+//				LOGGER.error("Can't find enum element " + name + "",e);
+//			}
+//		}
+//		else{
+//			if(isReference(in)){
+//				int index = in.readScalableInt();
+//				value = context.get(index);
+//			}else{
+//				value = this.readObject(null,in,context);
+//			}
+//		}
 		return value;
 	}
 
@@ -596,7 +704,9 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	protected Object readObjectWithOutArray(Context context,Class objectClass,ByteBuf in) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
 		Object obj = null;
 		try {
-			if(ReflectUtil.isBaseType(objectClass) || objectClass.isEnum()){
+			int type = ReflectUtil.getTypeOfClass(objectClass);
+//			if(ReflectUtil.isBaseType(objectClass) || objectClass.isEnum()){
+			if(type == ReflectUtil.BASETYPE || type == ReflectUtil.ENUM){
 				obj = readValue(objectClass,in,context);
 				context.put(obj);
 			}else{
@@ -612,7 +722,16 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 					if(obj != null){
 						//将当前对象放入上下文中
 						context.put(obj);
-						readValue(obj,objectClass,context,in);
+						if(obj instanceof Collection){
+							int size = readLengthOrIndex(in);
+							for(int i = 0;i < size; i++){
+								((Collection)obj).add(readObject(null,in,context));
+
+							}
+						}else{
+							readValue(obj,objectClass,context,in);
+						}
+
 					}
 				}catch (Exception e) {
 					LOGGER.error(e.getCause(), e);
@@ -665,4 +784,74 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		return readObject(type,in);
 	}
 
+	private static interface ObjectRead<T>{
+		public T read(ByteBuf in,Class type);
+	}
+
+	private static class BooleanRead implements ObjectRead<Boolean>{
+		public Boolean read(ByteBuf in,Class type){
+			return in.readBoolean();
+		}
+	}
+
+	private static class ByteRead implements ObjectRead<Byte>{
+		public Byte read(ByteBuf in,Class type){
+			return in.readByte();
+		}
+	}
+
+	private static class CharacterRead implements ObjectRead<Character>{
+		public Character read(ByteBuf in,Class type){
+			return in.readChar();
+		}
+	}
+
+	private static class ShortRead implements ObjectRead<Short>{
+		public Short read(ByteBuf in,Class type){
+			return in.readShort();
+		}
+	}
+
+	private static class IntegerRead implements ObjectRead<Integer>{
+		public Integer read(ByteBuf in,Class type){
+			return in.readInt();
+		}
+	}
+
+	private static class LongRead implements ObjectRead<Long>{
+		public Long read(ByteBuf in,Class type){
+			return in.readLong();
+		}
+	}
+
+	private static class FloatRead implements ObjectRead<Float>{
+		public Float read(ByteBuf in,Class type){
+			return in.readFloat();
+		}
+	}
+
+	private static class DoubleRead implements ObjectRead<Double>{
+		public Double read(ByteBuf in,Class type){
+			return in.readDouble();
+		}
+	}
+
+	private static class StringRead implements ObjectRead<String>{
+		public String read(ByteBuf in,Class type){
+			return in.readString();
+		}
+	}
+
+//	private static class EnumRead implements ObjectRead<Enum>{
+//		public Enum read(ByteBuf in,Class type){
+//			String name = in.readString();
+//			try {
+//				Method method = type.getMethod("valueOf",String.class);
+//				return (Enum) method.invoke(null,name);
+//			} catch (Exception e) {
+//				LOGGER.error("Can't find enum element with name " + name + "",e);
+//				return null;
+//			}
+//		}
+//	}
 }

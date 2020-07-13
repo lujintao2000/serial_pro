@@ -42,4 +42,20 @@ public class SerializeTest2 extends  BaseTest{
         Assert.assertEquals(TestUtil.isEqual(originalValue,obj),true);
     }
 
+
+    @Test
+    public void testAllBaseType() throws Exception{
+        test(1);
+        test(true);
+        test('A');
+        test((byte)10);
+        test((short)10);
+        test(1L);
+        test(1f);
+        test(1d);
+        test("world");
+//        test(new BigInteger("200000"));
+//        test(new AtomicInteger(20));
+    }
+
 }

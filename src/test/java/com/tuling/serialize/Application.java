@@ -19,26 +19,27 @@ import java.util.*;
 public class Application {
 
 
-
     public static void main(String[] args) throws Exception {
-
-        testIsBasicType();
-
+//        int t = 0x3fffffff;
+//        System.out.println(t);
+//        System.out.println(Integer.MAX_VALUE);
+//        int a = Integer.MAX_VALUE << 1;
+//        testIsBasicType();
 
 
 //        testCharsetCost();
 
-//          testSerialWithKyro();
+          testSerialWithKyro();
 //          testSerialWithSerial();
 //        testSerialWithJava();
 
 //          testUnserialWithJava();
+//        testUnSerialWithKyro();
 //        testUnserialWithSerial();
     }
 
 
-
-    private static boolean testWriteLengthOfObject(int length) throws  IOException{
+    private static boolean testWriteLengthOfObject(int length) throws IOException {
 //        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 //        AbstractOutputStream.writeLengthOfObject(length,outputStream);
 //        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
@@ -47,7 +48,7 @@ public class Application {
         return true;
     }
 
-    private static void testIsBasicType() throws  Exception{
+    private static void testIsBasicType() throws Exception {
 
         Class temp = String.class;
         String temp2 = "boolean";
@@ -59,11 +60,13 @@ public class Application {
         long startTime = new Date().getTime();
 
 
-        for (int i = 0; i < 90000000; i++) {
+        for (int i = 0; i < 600000000; i++) {
 //            flag = temp == List.class;
 //            hashCode = temp2.hashCode();
 //            flag = temp.isArray();
-            flag = 3 == a;
+//            flag = ReflectUtil.isBaseType(User.class);
+//            hashCode = User.class.hashCode();
+            flag = "" instanceof String;
         }
         long endTime = new Date().getTime();
 
@@ -72,13 +75,14 @@ public class Application {
 
     /**
      * 判断该字符串是否可以采用ascii编码
+     *
      * @param target
      * @return
      */
-    public static boolean isAscii(String target){
+    public static boolean isAscii(String target) {
         boolean flag = true;
-        for(char item : target.toCharArray()){
-            if(item > 127){
+        for (char item : target.toCharArray()) {
+            if (item > 127) {
                 flag = false;
                 break;
             }
@@ -86,12 +90,12 @@ public class Application {
         return flag;
     }
 
-    private static Object[] baseArray = new Object[]{Byte.class,Character.class,Boolean.class,Short.class,Integer.class,Long.class,Float.class,Double.class,String.class};
+    private static Object[] baseArray = new Object[]{Byte.class, Character.class, Boolean.class, Short.class, Integer.class, Long.class, Float.class, Double.class, String.class};
 
-    public static boolean isBasicType(Class type){
+    public static boolean isBasicType(Class type) {
         boolean flag = false;
-        for(int i = 0;i < 9;i++){
-            if(type == baseArray[i]){
+        for (int i = 0; i < 9; i++) {
+            if (type == baseArray[i]) {
                 flag = true;
                 break;
             }
@@ -99,7 +103,7 @@ public class Application {
         return flag;
     }
 
-    private static void testCharsetCost() throws  Exception{
+    private static void testCharsetCost() throws Exception {
         int length = 0;
         long startTime = new Date().getTime();
         for (int i = 0; i < 10000000; i++) {
@@ -110,23 +114,25 @@ public class Application {
         System.out.println("serial serialization cost " + (endTime - startTime) + "ms" + length);
     }
 
-    private static void testSerialWithKyro() throws Exception{
+    private static void testSerialWithKyro() throws Exception {
         User user = DataProvider.getUser();
         List<User> users = DataProvider.getUsers();
+        Object obj = DataProvider.getList();
+        Set set = DataProvider.getSet();
         Role role = new Role("项目经理");
         long startTime = new Date().getTime();
-        Kryo kryo = new Kryo();
-//        kryo.register(User.class);
-        for (int i = 0; i < 100000; i++) {
 
+//        kryo.register(User.class);
+        for (int i = 0; i < 30; i++) {
+            Kryo kryo = new Kryo();
 //            kryo.register(User.class);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Output output = new Output(outputStream);
-            kryo.writeObject(output, users);
+            kryo.writeObject(output, user);
             output.close();
             System.out.println("");
-//            Object m =   kryo.readObject(new Input(new ByteArrayInputStream(outputStream.toByteArray())),User.class);
-//            System.out.println(m);
+            Object m = kryo.readObject(new Input(new ByteArrayInputStream(outputStream.toByteArray())), User.class);
+            System.out.println(m);
         }
         long endTime = new Date().getTime();
 
@@ -134,15 +140,37 @@ public class Application {
 
     }
 
-    private static void testSerialWithSerial() throws Exception{
+    private static void testUnSerialWithKyro() throws Exception {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        Kryo kryo2 = new Kryo();
+        Output output = new Output(outputStream);
+        kryo2.writeObject(output, DataProvider.getUser());
+        output.close();
+
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+        long startTime = new Date().getTime();
+        Kryo kryo = new Kryo();
+        for (int i = 0; i < 600000; i++) {
+            kryo.readObject(new Input(inputStream), User.class);
+            inputStream.reset();
+        }
+        long endTime = new Date().getTime();
+        System.out.println("kyro unserialization cost " + (endTime - startTime) + "ms");
+    }
+
+    private static void testSerialWithSerial() throws Exception {
         User user = DataProvider.getUser();
         List<User> users = DataProvider.getUsers();
+        Object obj = DataProvider.getList();
+        Set set = DataProvider.getSet();
         long startTime = new Date().getTime();
-        DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
-        for (int i = 0; i < 600000; i++) {
+
+        for (int i = 0; i < 30; i++) {
+            DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
             OutputStream outputStream = new ByteArrayOutputStream();
 //            Serial.write(DataProvider.getUser(),outputStream,false);
-            objectOutputStream.write(users,false,outputStream);
+            objectOutputStream.write(user, false, outputStream);
 
             outputStream.close();
         }
@@ -151,7 +179,26 @@ public class Application {
         System.out.println("serial serialization cost " + (endTime - startTime) + "ms");
     }
 
-    private static void testSerialWithJava() throws Exception{
+
+    private static void testUnserialWithSerial() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ObjectOutputStream out = new DefaultObjectOutputStream();
+        out.write(DataProvider.getUser(), output);
+        output.close();
+
+        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+
+        long startTime = new Date().getTime();
+        ObjectInputStream in = new DefaultObjectInputStream();
+        for (int i = 0; i < 600000; i++) {
+            in.readObject(input);
+            input.reset();
+        }
+        long endTime = new Date().getTime();
+        System.out.println("serial unserialization cost " + (endTime - startTime) + "ms");
+    }
+
+    private static void testSerialWithJava() throws Exception {
         User user = DataProvider.getUser();
         long startTime = new Date().getTime();
         for (int i = 0; i < 600000; i++) {
@@ -173,7 +220,7 @@ public class Application {
         ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
 //        java.io.ObjectInputStream in = new java.io.ObjectInputStream(input);
         long startTime = new Date().getTime();
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 600000; i++) {
             java.io.ObjectInputStream in = new java.io.ObjectInputStream(input);
             in.readObject();
             input.reset();
@@ -184,23 +231,6 @@ public class Application {
 
     }
 
-    private static void testUnserialWithSerial() throws Exception {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ObjectOutputStream out = new DefaultObjectOutputStream( );
-        out.write(DataProvider.getUser(),output);
-        output.close();
-
-        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-
-        long startTime = new Date().getTime();
-        for (int i = 0; i < 300000; i++) {
-            ObjectInputStream in = new DefaultObjectInputStream();
-            in.readObject(input);
-            input.reset();
-        }
-        long endTime = new Date().getTime();
-        System.out.println("serial unserialization cost " + (endTime - startTime) + "ms");
-    }
 
     private static List<User> getUsers() {
         List<User> users = new ArrayList<>();
@@ -231,7 +261,7 @@ public class Application {
         users.add(thirdUser);
         users.add(thirdUser);
 
-        return Arrays.asList(firstUser,secondUser,thirdUser,thirdUser,thirdUser,thirdUser);
+        return Arrays.asList(firstUser, secondUser, thirdUser, thirdUser, thirdUser, thirdUser);
     }
 
 

@@ -156,9 +156,10 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
 
             Class targetClass = obj.getClass();
             int type = ReflectUtil.getTypeOfClass(targetClass);
+            boolean isBaseType = possibleBaseType && type == ReflectUtil.BASETYPE;
             //1. 写入对象类型
             if(isWriteClassName){
-                this.writeClassName(targetClass,out,context);
+                this.writeClassName(obj,targetClass,out,context,isBaseType);
             }
             //判断是否是数组类型或集合类型
             if(type == ReflectUtil.ARRAY){
@@ -173,11 +174,21 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             }else{
                 //先写入该类类名及该类自定义的属性，然后写入父类名及父类定义的属性
                 //判断是否是基本数据类型对应的包装类型
-                if(possibleBaseType && type == ReflectUtil.BASETYPE){
+                if(isBaseType){
                     this.writeValue(obj, targetClass, out,context);
                 }else if(type == ReflectUtil.ENUM){
                     this.writeValue(obj.toString(),String.class,out,context);
-                }else{
+                }
+                else if(obj instanceof Collection){
+//                    int length = ((Collection)obj).size();
+                    this.writeLengthOrIndex(((Collection)obj).size(),out);
+                    for(Object item : (Collection)obj){
+                        this.write(item,true,out,context,true);
+//                        this.writeValue(obj, targetClass, out,context);
+                    }
+                }
+                else{
+
                         //获得包含该类以及该类的所有父类的集合
                         List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(targetClass);
                         for(Class item : superClassAndSelfList){
@@ -243,31 +254,55 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
      * @param  out 输出流
      * @throws IOException
      */
-    protected void writeClassName(Class type,ByteBuf out,Context context){
+    protected void writeClassName(Object obj,Class type,ByteBuf out,Context context,boolean isBaseType){
         if(type == null){
             throw new IllegalArgumentException("type can't be null");
         }
-        int index = context.getIndex(type);
-        if(index < 0){
-            String className = ReflectUtil.getFlagOfBaseType(type);
-            if(className == null){
+        if(isBaseType){
+            writeBaseType(obj,out,type);
+        }else{
+            int index = context.getIndex(type);
+            if(index < 0){
+//            String className = ReflectUtil.getFlagOfBaseType(type);
+//            if(className == null){
+                String className = null;
                 if(context.getCurrentField() != null && context.getCurrentField().getType() == type){  //当值的实际类型和字段类型相同时，不需要写入类名，写入标识字符即可
                     out.writeByte(Constant.CLASSNAME_SAME_WITH_FIELD);
                 }else{
                     className = type.getTypeName();
                 }
-            }
-            if(className != null){
-                //写入类名
-                this.writeClassName(out,className);
-            }
-            context.addClass(type);
-        }else{
-            //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
-            out.writeByte(Constant.CLASSNAME_REFERENCE);
-//            out.writeShort(index);
-            writeLengthOrIndex(index,out);
+//            }
+                if(className != null){
+                    //写入类名
+                    this.writeClassName(out,className);
+                }
+                context.addClass(type);
+            }else{
+                //长度0表示该类的类名之前已写入流中，这里写入的只是对该类名的引用序号
+//                out.writeByte(Constant.CLASSNAME_REFERENCE);
+//                writeLengthOrIndex(index,out);
+                writeReferenceIndex(index, out);
 
+            }
+        }
+
+    }
+
+    /***
+     * 往缓冲中写入对类名的引用序号
+     * @param out
+     * @param index
+     */
+    public static void writeReferenceIndex(int index, ByteBuf out){
+//        out.writeByte(Constant.CLASSNAME_REFERENCE);
+//        writeLengthOrIndex(index,out);
+        //100 0 0000
+        //当index 小于等于31时，只写入一字节，字节的高三位是100;当index大于31时，写入2字节，字节的高三位是101
+        if(index <= 31){  //1000 0000
+            byte temp = (byte) (Constant.CLASSNAME_REFERENCE | index);
+            out.writeByte(temp);
+        }else{// 1010 0000
+            out.writeShort( (Constant.CLASSNAME_REFERENCE_OVER_FLOW << 8) | index );
         }
     }
 
@@ -289,6 +324,29 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
     protected void writeClassName(ByteBuf out,String className){
         //2. 写入类名
         out.writeString(className,true);
+    }
+
+    public static void writeBaseType(Object obj,ByteBuf out,Class type){
+        int baseType = Constant.STRING;
+        if(obj instanceof Boolean){
+            baseType = Constant.BOOLEAN;
+        }else if(obj instanceof Byte){
+            baseType = Constant.BYTE;
+        }else if(obj instanceof Character){
+            baseType = Constant.CHARACTER;
+        }else if(obj instanceof Short){
+            baseType = Constant.SHORT;
+        }else if(obj instanceof Integer){
+            baseType = Constant.INTEGER;
+        }else if(obj instanceof Long){
+            baseType = Constant.LONG;
+        }else if(obj instanceof Float){
+            baseType = Constant.FLOAT;
+        }else if(obj instanceof Double){
+            baseType = Constant.DOUBLE;
+        }
+        //1100 0000
+        out.writeByte(baseType);
     }
 
     protected void writeStart(ByteBuf out){
@@ -380,7 +438,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
             int index = context.getIndex(value);
             if(index >= 0){
                 this.writeReference(out);
-                  out.writeScalableInt(index);
+                out.writeScalableInt(index);
             }else{
                 this.writeNormal(out);
                 this.write(value,true,out,context,value.getClass() != type);
@@ -423,7 +481,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
 
     private static class IntegerWrite implements ObjectWrite<Integer> {
         public void write(ByteBuf out,Integer value){
-            out.writeInt(value);
+                out.writeInt(value);
         }
     }
 
@@ -454,8 +512,8 @@ public abstract class AbstractOutputStream implements ObjectOutputStream{
 
     public static class EnumWrite implements ObjectWrite<Enum> {
         public void write(ByteBuf out,Enum value){
-            //写入字符串
-            out.writeString(value.toString());
+            //写入枚举名称
+            out.writeString(value.name());
         }
     }
 }

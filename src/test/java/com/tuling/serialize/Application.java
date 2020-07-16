@@ -20,10 +20,7 @@ public class Application {
 
 
     public static void main(String[] args) throws Exception {
-//        int t = 0x3fffffff;
-//        System.out.println(t);
-//        System.out.println(Integer.MAX_VALUE);
-//        int a = Integer.MAX_VALUE << 1;
+          System.out.println(0xff800000L);
 //        testIsBasicType();
 
 
@@ -129,11 +126,11 @@ public class Application {
 //            kryo.register(User.class);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Output output = new Output(outputStream);
-            kryo.writeObject(output, obj);
+            kryo.writeObject(output, users);
             output.close();
-//            System.out.println("");
-//            Object m = kryo.readObject(new Input(new ByteArrayInputStream(outputStream.toByteArray())), User.class);
-//            System.out.println(m);
+            System.out.println("");
+            Object m = kryo.readObject(new Input(new ByteArrayInputStream(outputStream.toByteArray())), User.class);
+            System.out.println(m);
         }
         long endTime = new Date().getTime();
 
@@ -171,7 +168,7 @@ public class Application {
             DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
             OutputStream outputStream = new ByteArrayOutputStream();
 //            Serial.write(DataProvider.getUser(),outputStream,false);
-            objectOutputStream.write(obj, false, outputStream);
+            objectOutputStream.write(users, false, outputStream);
 
             outputStream.close();
         }

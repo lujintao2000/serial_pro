@@ -230,12 +230,12 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	}
 
 	/**
-	 * 判断当前要读取的值是否为空
-	 * @param in  包含序列化数据的输入流
+	 * 判断当前的值是否为空标识
+	 * @param value  需要判断的值
 	 * @throws IOException
 	 */
-	protected  boolean isNull(ByteBuf in) throws IOException{
-		return in.readByte() == (byte) Constant.NULL_FLAG;
+	protected  boolean isNull(Byte value) throws IOException{
+		return value == (byte) Constant.NULL_FLAG;
 	}
 	
 	/**
@@ -527,13 +527,16 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 */
 	protected Object readValue(Class type,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
-		if(isNull(in)){
+		byte firstByte = this.readByte(in);
+		if(isNull(firstByte)){
 			return null;
 		}
+		//需要读取数据的字节长度
+		int length = ((firstByte >> 1) & (byte)3) + 1;
 		Object value = null;
 		ObjectRead objectRead = readMap.get(type);
 		if(objectRead != null){
-			value = objectRead.read(in,type);
+			value = objectRead.read(in,type,length);
 		}else if(type.isEnum()){
 			String name = in.readString(true);
 			try {
@@ -648,7 +651,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
          */
 	public Object  readObject(Class objectClass,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException{
 		Object obj = null;
-		if(!this.isNull(in)){
+		if(!this.isNull(in.readByte())){
 			in.readerIndex(in.readerIndex() - 1);
 			Class arrayType = null;
 			if(objectClass == null){
@@ -801,59 +804,59 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	}
 
 	private static interface ObjectRead<T>{
-		public T read(ByteBuf in,Class type);
+		public T read(ByteBuf in,Class type,int length);
 	}
 
 	private static class BooleanRead implements ObjectRead<Boolean>{
-		public Boolean read(ByteBuf in,Class type){
+		public Boolean read(ByteBuf in,Class type,int length){
 			return in.readBoolean();
 		}
 	}
 
 	private static class ByteRead implements ObjectRead<Byte>{
-		public Byte read(ByteBuf in,Class type){
+		public Byte read(ByteBuf in,Class type,int length){
 			return in.readByte();
 		}
 	}
 
 	private static class CharacterRead implements ObjectRead<Character>{
-		public Character read(ByteBuf in,Class type){
-			return in.readChar();
+		public Character read(ByteBuf in,Class type,int length){
+			return in.readChar(length);
 		}
 	}
 
 	private static class ShortRead implements ObjectRead<Short>{
-		public Short read(ByteBuf in,Class type){
-			return in.readShort();
+		public Short read(ByteBuf in,Class type,int length){
+			return in.readShort(length);
 		}
 	}
 
 	private static class IntegerRead implements ObjectRead<Integer>{
-		public Integer read(ByteBuf in,Class type){
-			return in.readInt();
+		public Integer read(ByteBuf in,Class type,int length){
+			return in.readInt(length);
 		}
 	}
 
 	private static class LongRead implements ObjectRead<Long>{
-		public Long read(ByteBuf in,Class type){
-			return in.readLong();
+		public Long read(ByteBuf in,Class type,int length){
+			return in.readLong(length);
 		}
 	}
 
 	private static class FloatRead implements ObjectRead<Float>{
-		public Float read(ByteBuf in,Class type){
+		public Float read(ByteBuf in,Class type,int length){
 			return in.readFloat();
 		}
 	}
 
 	private static class DoubleRead implements ObjectRead<Double>{
-		public Double read(ByteBuf in,Class type){
+		public Double read(ByteBuf in,Class type,int length){
 			return in.readDouble();
 		}
 	}
 
 	private static class StringRead implements ObjectRead<String>{
-		public String read(ByteBuf in,Class type){
+		public String read(ByteBuf in,Class type,int length){
 			return in.readString();
 		}
 	}

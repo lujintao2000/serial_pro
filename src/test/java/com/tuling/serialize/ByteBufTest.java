@@ -87,6 +87,9 @@ public class ByteBufTest {
 
         base(TestType.INT,-188);
         base(TestType.INT,-539);
+        base(TestType.INT,-117);
+        base(TestType.INT,-18);
+        base(TestType.INT,-703993);
         base(TestType.INT,0);
         base(TestType.INT,Long.MAX_VALUE);
         base(TestType.INT,Long.MIN_VALUE);
@@ -170,9 +173,10 @@ public class ByteBufTest {
 
     @Test
     public void testChar(){
-        base(TestType.CHAR,null,(char)127);
-        base(TestType.CHAR,null,(char)256);
-        base(TestType.CHAR,null,(char)3333);
+//        base(TestType.CHAR,null,(char)127);
+//        base(TestType.CHAR,null,(char)256);
+//        base(TestType.CHAR,null,(char)3333);
+        base(TestType.CHAR,null,(char)(Short.MAX_VALUE + 1));
     }
 
     @Test
@@ -433,6 +437,189 @@ public class ByteBufTest {
         Assert.assertTrue(isReadLengthEqualWriteLength(0x3fffffff - 200));
     }
 
+    @Test
+    public void testWriteCharWithLength(){
+        testWriteCharWithLengthBase((char) 0,1);
+        testWriteCharWithLengthBase((char)1,1);
+        testWriteCharWithLengthBase((char)-1,1);
+        testWriteCharWithLengthBase((char)(Byte.MAX_VALUE - 1), 1);
+        testWriteCharWithLengthBase((char)Byte.MAX_VALUE,1);
+        testWriteCharWithLengthBase((char)(Byte.MAX_VALUE + 1),2);
+
+        testWriteCharWithLengthBase((char)(Byte.MIN_VALUE - 1),2);
+        testWriteCharWithLengthBase((char)Byte.MIN_VALUE,1);
+        testWriteCharWithLengthBase((char)(Byte.MIN_VALUE + 1),1);
+
+        testWriteCharWithLengthBase((char)(Short.MAX_VALUE - 1),2);
+        testWriteCharWithLengthBase((char)Short.MAX_VALUE,2 );
+
+        testWriteCharWithLengthBase((char)Short.MIN_VALUE,2);
+        testWriteCharWithLengthBase((char)(Short.MIN_VALUE + 1), 2);
+
+    }
+
+    @Test
+    public void testWriteShortWithLength(){
+        testWriteShortWithLengthBase((short) 0,1);
+        testWriteShortWithLengthBase((short)1,1);
+        testWriteShortWithLengthBase((short)-1,1);
+        testWriteShortWithLengthBase((short)(Byte.MAX_VALUE - 1), 1);
+        testWriteShortWithLengthBase((short)Byte.MAX_VALUE,1);
+        testWriteShortWithLengthBase((short)(Byte.MAX_VALUE + 1),2);
+
+        testWriteShortWithLengthBase((short)(Byte.MIN_VALUE - 1),2);
+        testWriteShortWithLengthBase((short)Byte.MIN_VALUE,1);
+        testWriteShortWithLengthBase((short)(Byte.MIN_VALUE + 1),1);
+
+        testWriteShortWithLengthBase((short)(Short.MAX_VALUE - 1),2);
+        testWriteShortWithLengthBase((short)Short.MAX_VALUE,2 );
+
+        testWriteShortWithLengthBase((short)Short.MIN_VALUE,2);
+        testWriteShortWithLengthBase((short)(Short.MIN_VALUE + 1), 2);
+    }
+
+    @Test
+    public void testWriteIntWithLength(){
+        testWriteIntWithLengthBase(0,1);
+        testWriteIntWithLengthBase(1,1);
+        testWriteIntWithLengthBase(-1,1);
+        testWriteIntWithLengthBase(Byte.MAX_VALUE - 1, 1);
+        testWriteIntWithLengthBase(Byte.MAX_VALUE,1);
+        testWriteIntWithLengthBase(Byte.MAX_VALUE + 1,2);
+
+        testWriteIntWithLengthBase(Byte.MIN_VALUE - 1,2);
+        testWriteIntWithLengthBase(Byte.MIN_VALUE,1);
+        testWriteIntWithLengthBase(Byte.MIN_VALUE + 1,1);
+
+        testWriteIntWithLengthBase(Short.MAX_VALUE - 1,2);
+        testWriteIntWithLengthBase(Short.MAX_VALUE,2 );
+        testWriteIntWithLengthBase(Short.MAX_VALUE + 1,3);
+
+        testWriteIntWithLengthBase(Short.MIN_VALUE,2);
+        testWriteIntWithLengthBase(Short.MIN_VALUE - 1, 3);
+        testWriteIntWithLengthBase(Short.MIN_VALUE + 1, 2);
+
+        testWriteIntWithLengthBase(0x7fffff - 1,3);
+        testWriteIntWithLengthBase(0x7fffff,3);
+        testWriteIntWithLengthBase(0x7fffff + 1,4);
+
+
+        testWriteIntWithLengthBase(0xff800000 - 1,4);
+        testWriteIntWithLengthBase(0xff800000,3);
+        testWriteIntWithLengthBase(0xff800000 + 1,3);
+
+        testWriteIntWithLengthBase(Integer.MAX_VALUE,4);
+        testWriteIntWithLengthBase(Integer.MIN_VALUE,4);
+
+    }
+
+    @Test
+    public void testWriteLongWithLength(){
+        testWriteLongWithLengthBase(0,1);
+        testWriteLongWithLengthBase(1,1);
+        testWriteLongWithLengthBase(-1,1);
+        testWriteLongWithLengthBase(Byte.MAX_VALUE - 1, 1);
+        testWriteLongWithLengthBase(Byte.MAX_VALUE,1);
+        testWriteLongWithLengthBase(Byte.MAX_VALUE + 1,2);
+
+        testWriteLongWithLengthBase(Byte.MIN_VALUE - 1,2);
+        testWriteLongWithLengthBase(Byte.MIN_VALUE,1);
+        testWriteLongWithLengthBase(Byte.MIN_VALUE + 1,1);
+
+        testWriteLongWithLengthBase(Short.MAX_VALUE - 1,2);
+        testWriteLongWithLengthBase(Short.MAX_VALUE,2 );
+        testWriteLongWithLengthBase(Short.MAX_VALUE + 1,3);
+
+        testWriteLongWithLengthBase(Short.MIN_VALUE,2);
+        testWriteLongWithLengthBase(Short.MIN_VALUE - 1, 3);
+        testWriteLongWithLengthBase(Short.MIN_VALUE + 1, 2);
+
+        testWriteLongWithLengthBase(0x7fffff - 1,3);
+        testWriteLongWithLengthBase(0x7fffff,3);
+        testWriteLongWithLengthBase(0x7fffff + 1,4);
+
+
+        testWriteLongWithLengthBase(0xff800000 - 1,4);
+        testWriteLongWithLengthBase(0xff800000,3);
+        testWriteLongWithLengthBase(0xff800000 + 1,3);
+
+        testWriteLongWithLengthBase((long)Integer.MAX_VALUE - 1,4);
+        testWriteLongWithLengthBase(Integer.MAX_VALUE,4);
+        testWriteLongWithLengthBase((long)Integer.MAX_VALUE + 1,5);
+
+        testWriteLongWithLengthBase((long)Integer.MIN_VALUE + 1,4);
+        testWriteLongWithLengthBase(Integer.MIN_VALUE,4);
+        testWriteLongWithLengthBase((long)Integer.MIN_VALUE - 1,5);
+
+        testWriteLongWithLengthBase(0x7fffffffffL - 1,5);
+        testWriteLongWithLengthBase(0x7fffffffffL,5);
+        testWriteLongWithLengthBase(0x7fffffffffL + 1,6);
+
+
+        testWriteLongWithLengthBase(0xffffff8000000000L - 1,6);
+        testWriteLongWithLengthBase(0xffffff8000000000L,5);
+        testWriteLongWithLengthBase(0xffffff8000000000L + 1,5);
+
+        testWriteLongWithLengthBase(0x7fffffffffffL - 1,6);
+        testWriteLongWithLengthBase(0x7fffffffffffL,6);
+        testWriteLongWithLengthBase(0x7fffffffffffL + 1,7);
+
+
+        testWriteLongWithLengthBase(0xffff800000000000L - 1,7);
+        testWriteLongWithLengthBase(0xffff800000000000L,6);
+        testWriteLongWithLengthBase(0xffff800000000000L + 1,6);
+
+        testWriteLongWithLengthBase(0x7fffffffffffffL - 1,7);
+        testWriteLongWithLengthBase(0x7fffffffffffffL,7);
+        testWriteLongWithLengthBase(0x7fffffffffffffL + 1,8);
+
+
+        testWriteLongWithLengthBase(0xff80000000000000L - 1,8);
+        testWriteLongWithLengthBase(0xff80000000000000L,7);
+        testWriteLongWithLengthBase(0xff80000000000000L + 1,7);
+
+        testWriteLongWithLengthBase(Long.MAX_VALUE,8);
+        testWriteLongWithLengthBase(Long.MIN_VALUE,8);
+    }
+
+    public  void testWriteIntWithLengthBase(int value,int expectedLength){
+        ByteBuf buf = new ByteBuf();
+        int length = getLength(value);
+        buf.writeInt(value,length);
+        Assert.assertTrue(expectedLength == length);
+        int readValue = buf.readInt(length);
+        Assert.assertTrue(readValue == value);
+    }
+
+    public  void testWriteCharWithLengthBase(char value,int expectedLength){
+        ByteBuf buf = new ByteBuf();
+        int length = getLength(value);
+        buf.writeChar(value,length);
+        Assert.assertTrue(expectedLength == length);
+        char readValue = buf.readChar(length);
+        Assert.assertTrue(readValue == value);
+    }
+
+    public  void testWriteShortWithLengthBase(short value,int expectedLength){
+        ByteBuf buf = new ByteBuf();
+        int length = getLength(value);
+        buf.writeShort(value,length);
+        Assert.assertTrue(expectedLength == length);
+        short readValue = buf.readShort(length);
+        Assert.assertTrue(readValue == value);
+    }
+
+    public  void testWriteLongWithLengthBase(long value,int expectedLength){
+        ByteBuf buf = new ByteBuf();
+        int length = getLength(value);
+        buf.writeLong(value,length);
+        Assert.assertTrue(expectedLength == length);
+        long readValue = buf.readLong(length);
+        Assert.assertTrue(readValue == value);
+    }
+
+
+
     public boolean isReadLengthEqualWriteLength(int length){
         ByteBuf buf  =  new ByteBuf();
         buf.writeScalableInt(length);
@@ -441,7 +628,112 @@ public class ByteBufTest {
 
     }
 
+    /**
+     * 获得指定的char最少可以用几字节表示
+     * @param value
+     * @return
+     */
+    private int getLength(char value){
+        short shortValue = (short)value;
+        return getLength(shortValue);
+    }
 
+    /**
+     * 获得指定的short型整数最少可以用几字节表示
+     * @param value
+     * @return
+     */
+    private int getLength(short value){
+        return ((value >= 0 && value <= Byte.MAX_VALUE) || (value < 0  && value >= Byte.MIN_VALUE)) ? 1 : 2;
+    }
+
+    /**
+     * 获得指定的long型整数最少可以用几字节表示
+     * @param value
+     * @return
+     */
+    private int getLength(long value){
+        int length = 8;
+        long longValue = (Long)value;
+        if(longValue >= 0){
+            if(longValue >> 55 ==  0){
+                length -= 1;
+                if(longValue >> 47 == 0){
+                    length -= 1;
+                    if(longValue >> 39 == 0){
+                        length -= 1;
+                        if(longValue >> 31 == 0){
+                            length -= 1;
+                            if(longValue >> 23 ==  0){
+                                length -= 1;
+                                if(longValue >> 15 == 0){
+                                    length -= 1;
+                                    if(longValue >> 7 == 0){ // 0x00 ff
+                                        length -= 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }else{
+            if(longValue >> 55 ==  -1){
+                length -= 1;
+                if(longValue >> 47 == -1){
+                    length -= 1;
+                    if(longValue >> 39 == -1){
+                        length -= 1;
+                        if(longValue >> 31 == -1){
+                            length -= 1;
+                            if(longValue >> 23 == -1){
+                                length -= 1;
+                                if(longValue >> 15 == -1){
+                                    length -= 1;
+                                    if(longValue >> 7 == -1){ // 0x00 ff
+                                        length -= 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return length;
+    }
+
+    /**
+     * 获得指定的整数最少可以用几字节表示
+     * @param value
+     * @return
+     */
+    private int getLength(int value){
+        int length = 4;
+        int intValue = (Integer)value;
+        if(intValue >= 0){
+            if(intValue >> 23 ==  0){
+                length -= 1;
+                if(intValue >> 15 == 0){
+                    length -= 1;
+                    if(intValue >> 7 == 0){ // 0x00 ff
+                        length -= 1;
+                    }
+                }
+            }
+        }else{
+            if(intValue >> 23 ==  -1){
+                length -= 1;
+                if(intValue >> 15 == -1){
+                    length -= 1;
+                    if(intValue >> 7 == -1){
+                        length -= 1;
+                    }
+                }
+            }
+        }
+        return  length;
+    }
 
     enum  TestType{
         SHORT,

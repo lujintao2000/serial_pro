@@ -113,22 +113,73 @@ public class ByteBuf {
         writeShort((int) value);
     }
 
+    /**
+     * 采用变长方式写入char型数据
+     * @param value   要写入的值
+     * @param length  要写入的字节数
+     */
+    public void writeChar(int value,int length) {
+        writeShort(value,length);
+    }
 
     public void writeShort(int value) {
         ensureCapacity(2);
 
-        array[writerIndex + 0] = (byte) (value >> 8);      //   1111 1111  1111 1111 0111 1111 1111 1111
-        array[writerIndex + 1] = (byte) value;    //0xff ff 7f ff
+        array[writerIndex] = (byte) (value >> 8);
+        array[writerIndex + 1] = (byte) value;
         writerIndex += 2;
+    }
+
+    /**
+     * 采用变长方式写入short型数据
+     * @param value   要写入的值
+     * @param length  要写入的字节数
+     */
+    public void writeShort(int value,int length) {
+        ensureCapacity(length);
+        if(length == 1){
+           array[writerIndex]  = (byte) value;
+        }else{
+            array[writerIndex] = (byte) (value >> 8);
+            array[writerIndex + 1] = (byte) value;
+        }
+        writerIndex += length;
     }
 
     public void writeInt(int value) {
         ensureCapacity(4);
-        array[writerIndex + 0] = (byte) (value >> 24);
+        array[writerIndex] = (byte) (value >> 24);
         array[writerIndex + 1] = (byte) (value >> 16);
         array[writerIndex + 2] = (byte) (value >> 8);
         array[writerIndex + 3] = (byte) value;
         writerIndex += 4;
+    }
+
+    /**
+     *
+     * 采用变长方式写入int型数据
+     * @param value   要写入的值
+     * @param length  要写入的字节数
+     */
+    public void writeInt(int value,int length) {
+        ensureCapacity(length);
+        if(length == 1){
+            array[writerIndex] = (byte) value;
+        }else if(length == 2){
+            array[writerIndex] = (byte) (value >> 8);
+            array[writerIndex + 1] = (byte) value;
+        }else if(length == 3){
+            array[writerIndex] = (byte) (value >> 16);
+            array[writerIndex + 1] = (byte) (value >> 8);
+            array[writerIndex + 2] = (byte) value;
+        }else{
+            array[writerIndex] = (byte) (value >> 24);
+            array[writerIndex + 1] = (byte) (value >> 16);
+            array[writerIndex + 2] = (byte) (value >> 8);
+            array[writerIndex + 3] = (byte) value;
+        }
+        writerIndex += length;
+
     }
 
     public void writeLong(long value) {
@@ -142,6 +193,65 @@ public class ByteBuf {
         array[writerIndex + 6] = (byte) (value >>> 8);
         array[writerIndex + 7] = (byte) value;
         writerIndex += 8;
+    }
+
+    /**
+     *
+     * 采用变长方式写入long型数据
+     * @param value   要写入的值
+     * @param length  要写入的字节数
+     */
+    public void writeLong(long value,int length) {
+        ensureCapacity(length);
+        if(length == 1){
+            array[writerIndex] = (byte) value;
+        }else if(length == 2){
+            array[writerIndex] = (byte) (value >> 8);
+            array[writerIndex + 1] = (byte) value;
+        }else if(length == 3){
+            array[writerIndex] = (byte) (value >> 16);
+            array[writerIndex + 1] = (byte) (value >> 8);
+            array[writerIndex + 2] = (byte) value;
+        }else if(length == 4){
+            array[writerIndex] = (byte) (value >> 24);
+            array[writerIndex + 1] = (byte) (value >> 16);
+            array[writerIndex + 2] = (byte) (value >> 8);
+            array[writerIndex + 3] = (byte) value;
+        }else if(length == 5){
+            array[writerIndex] = (byte) (value >> 32);
+            array[writerIndex + 1] = (byte) (value >> 24);
+            array[writerIndex + 2] = (byte) (value >> 16);
+            array[writerIndex + 3] = (byte) (value >> 8);
+            array[writerIndex + 4] = (byte) value;
+        }else if(length == 6){
+            array[writerIndex] = (byte) (value >> 40);
+            array[writerIndex + 1] = (byte) (value >> 32);
+            array[writerIndex + 2] = (byte) (value >> 24);
+            array[writerIndex + 3] = (byte) (value >> 16);
+            array[writerIndex + 4] = (byte) (value >> 8);
+            array[writerIndex + 5] = (byte) value;
+        }
+        else if(length == 7){
+            array[writerIndex] = (byte) (value >> 48);
+            array[writerIndex + 1] = (byte) (value >> 40);
+            array[writerIndex + 2] = (byte) (value >> 32);
+            array[writerIndex + 3] = (byte) (value >> 24);
+            array[writerIndex + 4] = (byte) (value >> 16);
+            array[writerIndex + 5] = (byte) (value >> 8);
+            array[writerIndex + 6] = (byte) value;
+        }
+        else{
+            array[writerIndex] = (byte) (value >>> 56);
+            array[writerIndex + 1] = (byte) (value >>> 48);
+            array[writerIndex + 2] = (byte) (value >>> 40);
+            array[writerIndex + 3] = (byte) (value >>> 32);
+            array[writerIndex + 4] = (byte) (value >>> 24);
+            array[writerIndex + 5] = (byte) (value >>> 16);
+            array[writerIndex + 6] = (byte) (value >>> 8);
+            array[writerIndex + 7] = (byte) value;
+        }
+        writerIndex += length;
+
     }
 
     public void writeFloat(float value) {
@@ -338,6 +448,15 @@ public class ByteBuf {
     }
 
     /**
+     * 从缓冲中读取一个字符
+     * @param length 需要读取的字节长度
+     * @return
+     */
+    public char readChar(int length) {
+        return (char)readShort(length);
+    }
+
+    /**
      * 从缓冲中读取一个短整形整数
      *
      * @return
@@ -349,6 +468,23 @@ public class ByteBuf {
         }
         result = (short) ((array[readerIndex] << 8) | (array[readerIndex + 1] & 0xff));
         readerIndex += 2;
+        return result;
+    }
+
+    /**
+     * 从缓冲中读取一个短整形整数
+     * @param  length  整数占用的字节数
+     * @return
+     */
+    public short readShort(int length) {
+        readCheck(length);
+        short result = 0;
+        if(length == 1){
+            result = array[readerIndex];
+        }else{
+            result = (short) ((array[readerIndex] << 8) | (array[readerIndex + 1] & 0xff));
+        }
+        readerIndex += length;
         return result;
     }
 
@@ -366,6 +502,28 @@ public class ByteBuf {
                 (array[readerIndex++] & 0xff) << 16 |
                 (array[readerIndex++] & 0xff) << 8 |
                 (array[readerIndex++] & 0xff);
+    }
+
+    /**
+     * 从缓冲中读取一个整数
+     * @param length 要读取的字节数
+     * @return
+     */
+    public int readInt(int length) {
+        int result = 0;
+        readCheck(length);
+        if(length == 1){
+            result = array[readerIndex];
+        }else if(length == 2){
+            result = array[readerIndex] << 8 | (array[readerIndex + 1] & 0xff);
+        }else if(length == 3){
+            result = array[readerIndex] << 16 | (array[readerIndex + 1] & 0xff) << 8 | (array[readerIndex + 2] & 0xff);
+        }else{
+            result = array[readerIndex] << 24 | (array[readerIndex + 1] & 0xff) << 16 | (array[readerIndex + 2] & 0xff) << 8 | (array[readerIndex + 3] & 0xff);
+        }
+
+        readerIndex += length;
+        return result;
     }
 
     /**
@@ -388,6 +546,59 @@ public class ByteBuf {
                 ((long)(array[readerIndex + 6] & 0xff) << 8) |
                 (array[readerIndex + 7] & 0xff);
         readerIndex += 8;
+        return result;
+    }
+
+    /**
+     * 从缓冲中读取一个长整形整数
+     * @param length 需要读取的字节数
+     * @return
+     */
+    public long readLong(int length) {
+        readCheck(length);
+        long result = 0;
+        if(length == 1){
+            result = array[readerIndex];
+        }else if(length == 2){
+            result = array[readerIndex] << 8 | (array[readerIndex + 1] & 0xff);
+        }else if(length == 3){
+            result = array[readerIndex] << 16 | (array[readerIndex + 1] & 0xff) << 8 | (array[readerIndex + 2] & 0xff);
+        }else if(length == 4){
+            result = array[readerIndex] << 24 | (array[readerIndex + 1] & 0xff) << 16 | (array[readerIndex + 2] & 0xff) << 8 | (array[readerIndex + 3] & 0xff);
+        }else if(length == 5){
+            result = ((long)array[readerIndex] << 32) |
+                    ((long)(array[readerIndex + 1] & 0xff) << 24) |
+                    ((long)(array[readerIndex + 2] & 0xff) << 16) |
+                    ((long)(array[readerIndex + 3] & 0xff) << 8) |
+                    (long)(array[readerIndex + 4] & 0xff);
+        }else if(length == 6){
+            result = ((long)array[readerIndex] << 40) |
+                    ((long)(array[readerIndex + 1] & 0xff) << 32) |
+                    ((long)(array[readerIndex + 2] & 0xff) << 24) |
+                    ((long)(array[readerIndex + 3] & 0xff) << 16) |
+                    ((long)(array[readerIndex + 4] & 0xff) << 8) |
+                    (long)(array[readerIndex + 5] & 0xff);
+        }else if(length == 7){
+            result = ((long)array[readerIndex] << 48) |
+                    ((long)(array[readerIndex + 1] & 0xff) << 40) |
+                    ((long)(array[readerIndex + 2] & 0xff) << 32) |
+                    ((long)(array[readerIndex + 3] & 0xff) << 24) |
+                    ((long)(array[readerIndex + 4] & 0xff) << 16) |
+                    ((long)(array[readerIndex + 5] & 0xff) << 8) |
+                    (long)(array[readerIndex + 6] & 0xff);
+        }else{
+            result = ((long)array[readerIndex] << 56) |
+                    ((long)(array[readerIndex + 1] & 0xff) << 48) |
+                    ((long)(array[readerIndex + 2] & 0xff) << 40) |
+                    ((long)(array[readerIndex + 3] & 0xff) << 32) |
+                    ((long)(array[readerIndex + 4] & 0xff) << 24) |
+                    ((long)(array[readerIndex + 5] & 0xff) << 16) |
+                    ((long)(array[readerIndex + 6] & 0xff) << 8) |
+                    (array[readerIndex + 7] & 0xff);
+        }
+
+
+        this.readerIndex += length;
         return result;
     }
 
@@ -486,6 +697,16 @@ public class ByteBuf {
     private void ensureCapacity(int increaseCapacity) {
         if (increaseCapacity + writerIndex > array.length) {
             grow(increaseCapacity);
+        }
+    }
+
+    /**
+     * 读取数据的时候进行检查，检查是否有足够的数据可读
+     * @param length 需要读取的数据长度
+     */
+    private void readCheck(int length){
+        if (this.readableBytes() < length) {
+            throw new IllegalArgumentException("There are not enough data to be read.");
         }
     }
 

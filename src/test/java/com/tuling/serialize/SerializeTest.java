@@ -52,13 +52,13 @@ public class SerializeTest extends BaseTest{
 
     @Test
     public void testList()  throws Exception{
-        List<BaseTypeEnum> list = new ArrayList<>();
-        list.add(BaseTypeEnum.BOOLEAN);
-        list.add(BaseTypeEnum.BYTE);
-        list.add(BaseTypeEnum.BOOLEAN);
-        list.add(BaseTypeEnum.BOOLEAN);
-        list.add(BaseTypeEnum.BOOLEAN);
-        test(list);
+//        List<BaseTypeEnum> list = new ArrayList<>();
+//        list.add(BaseTypeEnum.BOOLEAN);
+//        list.add(BaseTypeEnum.BYTE);
+//        list.add(BaseTypeEnum.BOOLEAN);
+//        list.add(BaseTypeEnum.BOOLEAN);
+//        list.add(BaseTypeEnum.BOOLEAN);
+//        test(list);
 
         List<Integer> list2 = new LinkedList<>();
         list2.add(1);
@@ -110,5 +110,15 @@ public class SerializeTest extends BaseTest{
         byte firstByte = buf.readByte();
         int readIndex = AbstractObjectInputStream.readReferenceIndex(buf,firstByte);
         Assert.assertTrue(index == readIndex);
+    }
+
+    @Test
+    public void testLengthOfInt() throws Exception{
+        test(1);
+        test(128);
+        test(128);
+        test(128);
+        test(128);
+
     }
 }

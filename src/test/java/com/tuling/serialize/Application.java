@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.tuling.domain.*;
+import com.tuling.serialize.util.BuilderUtil;
 import com.tuling.serialize.util.ByteBuf;
 import com.tuling.serialize.util.NumberUtil;
 import com.tuling.serialize.util.ReflectUtil;
@@ -23,12 +24,13 @@ public class Application {
 
     public static void main(String[] args) throws Exception {
           System.out.println(0xff800000L);
+        BuilderUtil.isSpecifyBuilder(int.class);
 //        testIsBasicType();
 
 
 //        testCharsetCost();
 
-          testSerialWithKyro();
+//          testSerialWithKyro();
 //          testSerialWithSerial();
 //        testSerialWithJava();
 

@@ -5,6 +5,8 @@ import com.tuling.serialize.Builder;
 import org.apache.log4j.Logger;
 
 import java.io.File;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,11 +37,22 @@ public class BuilderUtil {
                     LOGGER.error("Can't instantiate " + x, ex);
                 }
                 if(builder != null){
-                   // map.put(x.get, builder);
+                     map.put(getParameterType(x), builder);
                 }
 
             });
         }
+    }
+
+    /**
+     * 获得指定Builder类的参数类型
+     * @param target
+     * @return
+     */
+    private static Class getParameterType(Class<Builder> target){
+        Type[] types = target.getGenericInterfaces();
+        ParameterizedType type = (ParameterizedType)types[0];
+        return (Class) type.getActualTypeArguments()[0];
     }
 
     /**

@@ -5,12 +5,14 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.tuling.domain.*;
 import com.tuling.serialize.util.ByteBuf;
+import com.tuling.serialize.util.NumberUtil;
 import com.tuling.serialize.util.ReflectUtil;
 import org.msgpack.MessagePack;
 
 import javax.xml.crypto.Data;
 import java.io.*;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -26,8 +28,8 @@ public class Application {
 
 //        testCharsetCost();
 
-//          testSerialWithKyro();
-          testSerialWithSerial();
+          testSerialWithKyro();
+//          testSerialWithSerial();
 //        testSerialWithJava();
 
 //          testUnserialWithJava();
@@ -46,29 +48,34 @@ public class Application {
     }
 
     private static void testIsBasicType() throws Exception {
+        boolean flag = Object.class.isAssignableFrom(int.class);
+        Class temp = int.class.getSuperclass();
 
-        Class temp = String.class;
-        String temp2 = "boolean";
-        boolean flag = BaseTypeEnum.BOOLEAN instanceof Enum;
         int hashCode = 0;
         int a = 4;
-        String[] array = new String[0];
-        Class parentClass = array.getClass().getSuperclass();
+        String[] content = new String[]{};
+        Object[] array = DataProvider.getList().toArray();
+        array = content;
+        Object t = 5;
+        long result = 0L;
+        User user = new User();
+        Method method = User.class.getDeclaredMethod("getAge",null);
         long startTime = new Date().getTime();
 
-
-        for (int i = 0; i < 60000000; i++) {
-//            flag = temp == List.class;
-//            hashCode = temp2.hashCode();
-//            flag = temp.isArray();
-//            flag = ReflectUtil.isBaseType(User.class);
-//            hashCode = User.class.hashCode();
-//            flag = "" instanceof String;
-            array.getClass();
+        for(int j = 0;j < 80000000; j++){
+//            user.getAge();
+//            flag = t instanceof String;
+//            ByteBuf buf = new ByteBuf(256);
+//            for(int i = 0; i < 10000; i++){
+////                buf.writeLong(800,2);
+//                buf.writeByte(127);
+//            }
+            method.invoke(user,null);
         }
+
         long endTime = new Date().getTime();
 
-        System.out.println("isBasicType invoke  cost " + (endTime - startTime) + "ms" + flag);
+        System.out.println("isBasicType invoke  cost " + (endTime - startTime) + "ms" + result);
     }
 
     /**
@@ -117,20 +124,21 @@ public class Application {
         List<User> users = DataProvider.getUsers();
         Object obj = DataProvider.getList();
         Set set = DataProvider.getSet();
+        Object[] array = DataProvider.getArray();
+        Map map = DataProvider.getMap();
         Role role = new Role("项目经理");
         long startTime = new Date().getTime();
-
+        Kryo kryo = new Kryo();
 //        kryo.register(User.class);
-        for (int i = 0; i < 100; i++) {
-            Kryo kryo = new Kryo();
+        for (int i = 0; i < 400; i++) {
+
 //            kryo.register(User.class);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Output output = new Output(outputStream);
-            kryo.writeObject(output, users);
+            kryo.writeObject(output, map);
             output.close();
-            System.out.println("");
-            Object m = kryo.readObject(new Input(new ByteArrayInputStream(outputStream.toByteArray())), User.class);
-            System.out.println(m);
+//            System.out.println("");
+
         }
         long endTime = new Date().getTime();
 
@@ -162,13 +170,16 @@ public class Application {
         List<User> users = DataProvider.getUsers();
         Object obj = DataProvider.getList();
         Set set = DataProvider.getSet();
-        long startTime = new Date().getTime();
+        Object[] array = DataProvider.getArray();
+        Map map = DataProvider.getMap();
 
-        for (int i = 0; i < 100; i++) {
-            DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
+        long startTime = new Date().getTime();
+        DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
+        for (int i = 0; i < 400; i++) {
+
             OutputStream outputStream = new ByteArrayOutputStream();
 //            Serial.write(DataProvider.getUser(),outputStream,false);
-            objectOutputStream.write(users, false, outputStream);
+            objectOutputStream.write(map, false, outputStream);
 
             outputStream.close();
         }

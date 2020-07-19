@@ -2,6 +2,7 @@ package com.tuling.serialize;
 
 import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import com.tuling.serialize.util.ByteBuf;
+import com.tuling.serialize.util.NumberUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -584,7 +585,7 @@ public class ByteBufTest {
 
     public  void testWriteIntWithLengthBase(int value,int expectedLength){
         ByteBuf buf = new ByteBuf();
-        int length = getLength(value);
+        int length = NumberUtil.getLength(value);
         buf.writeInt(value,length);
         Assert.assertTrue(expectedLength == length);
         int readValue = buf.readInt(length);
@@ -593,7 +594,7 @@ public class ByteBufTest {
 
     public  void testWriteCharWithLengthBase(char value,int expectedLength){
         ByteBuf buf = new ByteBuf();
-        int length = getLength(value);
+        int length = NumberUtil.getLength(value);
         buf.writeChar(value,length);
         Assert.assertTrue(expectedLength == length);
         char readValue = buf.readChar(length);
@@ -602,7 +603,7 @@ public class ByteBufTest {
 
     public  void testWriteShortWithLengthBase(short value,int expectedLength){
         ByteBuf buf = new ByteBuf();
-        int length = getLength(value);
+        int length = NumberUtil.getLength(value);
         buf.writeShort(value,length);
         Assert.assertTrue(expectedLength == length);
         short readValue = buf.readShort(length);
@@ -611,7 +612,7 @@ public class ByteBufTest {
 
     public  void testWriteLongWithLengthBase(long value,int expectedLength){
         ByteBuf buf = new ByteBuf();
-        int length = getLength(value);
+        int length = NumberUtil.getLength(value);
         buf.writeLong(value,length);
         Assert.assertTrue(expectedLength == length);
         long readValue = buf.readLong(length);
@@ -628,112 +629,7 @@ public class ByteBufTest {
 
     }
 
-    /**
-     * 获得指定的char最少可以用几字节表示
-     * @param value
-     * @return
-     */
-    private int getLength(char value){
-        short shortValue = (short)value;
-        return getLength(shortValue);
-    }
 
-    /**
-     * 获得指定的short型整数最少可以用几字节表示
-     * @param value
-     * @return
-     */
-    private int getLength(short value){
-        return ((value >= 0 && value <= Byte.MAX_VALUE) || (value < 0  && value >= Byte.MIN_VALUE)) ? 1 : 2;
-    }
-
-    /**
-     * 获得指定的long型整数最少可以用几字节表示
-     * @param value
-     * @return
-     */
-    private int getLength(long value){
-        int length = 8;
-        long longValue = (Long)value;
-        if(longValue >= 0){
-            if(longValue >> 55 ==  0){
-                length -= 1;
-                if(longValue >> 47 == 0){
-                    length -= 1;
-                    if(longValue >> 39 == 0){
-                        length -= 1;
-                        if(longValue >> 31 == 0){
-                            length -= 1;
-                            if(longValue >> 23 ==  0){
-                                length -= 1;
-                                if(longValue >> 15 == 0){
-                                    length -= 1;
-                                    if(longValue >> 7 == 0){ // 0x00 ff
-                                        length -= 1;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }else{
-            if(longValue >> 55 ==  -1){
-                length -= 1;
-                if(longValue >> 47 == -1){
-                    length -= 1;
-                    if(longValue >> 39 == -1){
-                        length -= 1;
-                        if(longValue >> 31 == -1){
-                            length -= 1;
-                            if(longValue >> 23 == -1){
-                                length -= 1;
-                                if(longValue >> 15 == -1){
-                                    length -= 1;
-                                    if(longValue >> 7 == -1){ // 0x00 ff
-                                        length -= 1;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return length;
-    }
-
-    /**
-     * 获得指定的整数最少可以用几字节表示
-     * @param value
-     * @return
-     */
-    private int getLength(int value){
-        int length = 4;
-        int intValue = (Integer)value;
-        if(intValue >= 0){
-            if(intValue >> 23 ==  0){
-                length -= 1;
-                if(intValue >> 15 == 0){
-                    length -= 1;
-                    if(intValue >> 7 == 0){ // 0x00 ff
-                        length -= 1;
-                    }
-                }
-            }
-        }else{
-            if(intValue >> 23 ==  -1){
-                length -= 1;
-                if(intValue >> 15 == -1){
-                    length -= 1;
-                    if(intValue >> 7 == -1){
-                        length -= 1;
-                    }
-                }
-            }
-        }
-        return  length;
-    }
 
     enum  TestType{
         SHORT,

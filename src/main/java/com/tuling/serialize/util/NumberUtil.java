@@ -180,10 +180,94 @@ public class NumberUtil {
 		 return (byte)((num > 127) ? (num - 256) : num);
 	 }
 
-	 public static void main(String[] args){
-		 int a = -128;
-		 byte[] array = NumberUtil.getByteArray(a);
-		 int b = NumberUtil.getInteger(array);
-		 System.out.println(b);
-	 }
+	/**
+	 * 获得指定的char最少可以用几字节表示
+	 * @param value
+	 * @return
+	 */
+	public static int getLength(char value){
+		short shortValue = (short)value;
+		return getLength(shortValue);
+	}
+
+	/**
+	 * 获得指定的short型整数最少可以用几字节表示
+	 * @param value
+	 * @return
+	 */
+	public static int getLength(short value){
+		return ((value >= 0 && value <= Byte.MAX_VALUE) || (value < 0  && value >= Byte.MIN_VALUE)) ? 1 : 2;
+	}
+
+	/**
+	 * 获得指定的long型整数最少可以用几字节表示
+	 * @param value
+	 * @return
+	 */
+	public static int getLength(long value){
+		int length = 8;
+		long longValue = (Long)value;
+		if(longValue >= 0){
+			if(longValue >> 7 == 0){
+				length = 1;
+			}else if(longValue >> 15 == 0){
+				length = 2;
+			}else if(longValue >> 23 == 0){
+				length = 3;
+			}else if(longValue >> 31 == 0){
+				length = 4;
+			}else if(longValue >> 39 == 0){
+				length = 5;
+			}else if(longValue >> 47 == 0){
+				length = 6;
+			}else if(longValue >> 55 == 0){
+				length = 7;
+			}
+		}else{
+			if(longValue >> 7 == -1){
+				length = 1;
+			}else if(longValue >> 15 == -1){
+				length = 2;
+			}else if(longValue >> 23 == -1){
+				length = 3;
+			}else if(longValue >> 31 == -1){
+				length = 4;
+			}else if(longValue >> 39 == -1){
+				length = 5;
+			}else if(longValue >> 47 == -1){
+				length = 6;
+			}else if(longValue >> 55 == -1){
+				length = 7;
+			}
+		}
+		return length;
+	}
+
+	/**
+	 * 获得指定的整数最少可以用几字节表示
+	 * @param value
+	 * @return
+	 */
+	public static int getLength(int value){
+		int length = 4;
+		int intValue = (Integer)value;
+		if(intValue >= 0){
+			if(intValue >> 7 == 0){
+				length = 1;
+			}else if(intValue >> 15 == 0){
+				length = 2;
+			}else if(intValue >> 23 == 0){
+				length = 3;
+			}
+		}else{
+			if(intValue >> 7 == -1){
+				length = 1;
+			}else if(intValue >> 15 == -1){
+				length = 2;
+			}else if(intValue >> 23 == -1){
+				length = 3;
+			}
+		}
+		return  length;
+	}
 }

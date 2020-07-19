@@ -35,7 +35,7 @@ public class CompatibleObjectOutputStream extends AbstractOutputStream {
             writeString(field.getName(),buf);
             //先将值写入一个临时缓冲
             ByteBuf tempBuf = new ByteBuf(Constant.DEFAULT_BUFFER_SIZE_OF_FIELD);
-            this.writeValue(value, field.getType(),tempBuf,context);
+            this.writeValue(value,field.getType(), tempBuf,context);
             //2. 写入属性值的字节长度
             buf.writeInt(tempBuf.readableBytes());
             //3. 写入属性值

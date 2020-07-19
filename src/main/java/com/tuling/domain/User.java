@@ -12,8 +12,9 @@ public class User extends Person implements Comparable<User> {
     private Role role = null;
     private Profession profession = null;
     private Department department = null;
-    private String name;
-    private Integer age;
+    private Object name;
+    private Object age;
+    private Nation nation;
 //    private Integer id;
 //    private Object another;
    private final List<String> labels = new ArrayList<>();
@@ -47,7 +48,7 @@ public class User extends Person implements Comparable<User> {
     }
 
     public String getName() {
-        return name;
+        return (String)name;
     }
 
     public void setName(String name) {
@@ -55,7 +56,7 @@ public class User extends Person implements Comparable<User> {
     }
 
     public Integer getAge() {
-        return age;
+        return (Integer) age;
     }
 
     public void setAge(Integer age) {
@@ -80,7 +81,7 @@ public class User extends Person implements Comparable<User> {
                         && (this.age == another.getAge() || (this.age != null && this.age.equals(another.age)))
                         && (this.company == another.getCompany() || (this.company != null && another.getCompany() != null && this.company.getName().equals(another.getCompany().getName())) )
                         && (this.role == another.getRole() || (this.role != null && this.role.equals(another.role)) )
-//                        && (this.id == another.id || (this.id != null && this.id.equals(another.id)))
+                        && (this.nation == another.nation || (this.nation != null && this.nation.equals(another.nation)))
                         && (this.labels == another.labels || (this.labels != null && this.labels.equals(another.labels)) )
                         && (this.department == another.getDepartment() || (this.department != null && another.getDepartment() != null && this.department.getName().equals(another.getDepartment().getName())) )
                         && (this.profession == another.getProfession() || (this.profession != null && another.getProfession() != null && this.profession.getName().equals(another.getProfession().getName())) )){
@@ -136,7 +137,15 @@ public class User extends Person implements Comparable<User> {
         this.department = department;
     }
 
-//    public Object getAnother() {
+    public Nation getNation() {
+        return nation;
+    }
+
+    public void setNation(Nation nation) {
+        this.nation = nation;
+    }
+
+    //    public Object getAnother() {
 //        return another;
 //    }
 //

@@ -12,35 +12,37 @@ public class DataProvider {
 
     public static List getList(){
         List<Object> list = new ArrayList<>();
-//        list.add(3);
-//        list.add(5);
-//        list.add(8);
-//        list.add(10);
-//        list.add(11);
-//        list.add(12);
-//        list.add(13);
-//        list.add(14);
-//        list.add("");
-        for(int i = 0; i < 10000;i++){
-            list.add(i);
+        for(int i = 0; i < 1;i++){
+            for(int j = 0;j < 10000;j++){
+                list.add((long)j);
+            }
+
         }
         return list;
     }
 
     public static Set getSet(){
         Set<Integer> set = new TreeSet<>();
-//        list.add(3);
-//        list.add(5);
-//        list.add(8);
-//        list.add(10);
-//        list.add(11);
-//        list.add(12);
-//        list.add(13);
-//        list.add(14);
         for(int i = 0; i < 10000;i++){
             set.add(i);
         }
         return set;
+    }
+
+    public static Object[] getArray(){
+        Object[] result = new Object[10000];
+        for(int i = 0; i < 10000;i++){
+            result[i] = i;
+        }
+        return result;
+    }
+
+    public static Map getMap(){
+        Map map = new TreeMap();
+        for(int i = 0; i < 10000;i++){
+           map.put("hello" + i,i);
+        }
+        return map;
     }
 
     public static User getUser(){
@@ -49,6 +51,7 @@ public class DataProvider {
         user.setRole(new Role("项目经理"));
         user.setDepartment(new AboardDepartment("技术部",new Country("china")));
         user.setProfession(new Profession("java工程师"));
+        user.setNation(Nation.HANZU);
 //        user.setAnother(null);
         user.addLabel("死不了");
         user.addLabel("游戏主播");

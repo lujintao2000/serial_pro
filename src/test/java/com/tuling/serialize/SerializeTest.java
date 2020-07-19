@@ -50,35 +50,6 @@ public class SerializeTest extends BaseTest{
 
     }
 
-    @Test
-    public void testList()  throws Exception{
-//        List<BaseTypeEnum> list = new ArrayList<>();
-//        list.add(BaseTypeEnum.BOOLEAN);
-//        list.add(BaseTypeEnum.BYTE);
-//        list.add(BaseTypeEnum.BOOLEAN);
-//        list.add(BaseTypeEnum.BOOLEAN);
-//        list.add(BaseTypeEnum.BOOLEAN);
-//        test(list);
-
-        List<Integer> list2 = new LinkedList<>();
-        list2.add(1);
-        list2.add(3);
-        list2.add(5);
-        list2.add(null);
-        list2.add(4);
-        test(list2);
-//        test(Arrays.asList(1,2,3,null,5));
-    }
-
-    @Test
-    public void testEnum() throws Exception{
-        test(BaseTypeEnum.CHARACTER);
-    }
-
-    @Test
-    public void testDomain() throws Exception{
-        test(DataProvider.getUser());
-    }
 
     @Test
     public void testWriteReferenceIndex(){
@@ -120,5 +91,11 @@ public class SerializeTest extends BaseTest{
         test(128);
         test(128);
 
+    }
+
+    @Test
+    public void testArray() throws Exception{
+        int[] array = new int[]{1,2,3};
+        test(array);
     }
 }

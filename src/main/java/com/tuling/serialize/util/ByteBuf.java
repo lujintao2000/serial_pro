@@ -19,7 +19,7 @@ public class ByteBuf {
     //记录最后一次写位置
     private int writerIndex;
     //当数组扩容的时候，每次增加的大小
-    private int increaseSize;
+//    private int increaseSize;
 
     public ByteBuf() {
         this(Constant.DEFAULT_BUFFER_SIZE);
@@ -27,12 +27,6 @@ public class ByteBuf {
 
     public ByteBuf(int initialSize) {
         array = new byte[initialSize];
-        increaseSize = initialSize;
-    }
-
-    public ByteBuf(int initialSize,int increaseSize) {
-        array = new byte[initialSize];
-        this.increaseSize = increaseSize;
     }
 
     public ByteBuf(byte[] array) {
@@ -40,7 +34,6 @@ public class ByteBuf {
             throw new IllegalArgumentException("array can't be null");
         }
         this.array = array;
-        increaseSize = array.length;
         this.writerIndex = array.length;
     }
 
@@ -720,6 +713,6 @@ public class ByteBuf {
     }
 
     private int getNewCapacity(int increaseCapacity) {
-        return array.length + increaseCapacity + increaseSize ;
+        return (array.length + increaseCapacity) * 2;
     }
 }

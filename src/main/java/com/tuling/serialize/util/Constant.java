@@ -13,26 +13,42 @@ public class Constant {
     public static final byte NULL_FLAG = -1;  //0x1111 1111
 
     //代表写入了非空
-    public static final int NOT_NULL_FLAG = 127; // 0x0111 1111
+    public static final int NOT_NULL_FLAG = 0; // 0x0111 1111
 
     //代表写入了类名
     public static final byte WRITE_CLASS_NAME_FLAG = 63;  //0x0011 1111
 
     //char,short,int,long,boolean
-    //在writeValue的时候，数据表示为 0x01 000 00 0,其中前两位01表示非空，紧接着的3位 表示数据类型，再后2节表示数据长度，最后一位备用
+    //在writeValue的时候，数据表示为 0x01 000 00 0,其中第1位0表示非空，紧接着的4位表示数据类型，再后3节表示数据长度
 
-    //在writeValue写入的第一字节中，标识boolean类型数据的字节表示(后3位为0)
-    public static final byte BOOLEAN_FLAG = 0x40;  // 0x01 000 00 0
-    //在writeValue写入的第一字节中，标识char类型数据的字节表示(后3位为0)
-    public static final byte CHAR_FLAG = 0x48;    //   0x01 00 1 00 0
-    //在writeValue写入的第一字节中，标识short类型数据的字节表示(后3位为0)
-    public static final byte SHORT_FLAG = 0x50;   //   0x01 01 0 00 0
-    //在writeValue写入的第一字节中，标识int类型数据的字节表示(后3位为0)
-    public static final byte INT_FLAG = 0x58;     //   0x01 01 1 00 0
-    //在writeValue写入的第一字节中，标识long类型数据的字节表示(后3位为0)
-    public static final byte LONG_FLAG = 0x60;    //   0x01 10 0 00 0
-    //在writeValue写入的第一字节中，标识非boolean,char,short,int,long类型数据的字节表示(后3位为0)
-    public static final byte OTHER_FLAG = 0x68;    //   0x01 10 1 00 0
+    //在writeValue写入的第一字节中，标识boolean类型数据的字节表示(后2位为0)
+    public static final byte BOOLEAN_FLAG = 0x08;  // 0x0 0001 000
+    //在writeValue写入的第一字节中，标识char类型数据的字节表示(后2位为0)
+    public static final byte CHAR_FLAG = 0x10;    //  0x0 0010 000
+    //在writeValue写入的第一字节中，标识short类型数据的字节表示(后2位为0)
+    public static final byte SHORT_FLAG = 0x18;   //  0x0 0011 000
+    //在writeValue写入的第一字节中，标识int类型数据的字节表示(后2位为0)
+    public static final byte INT_FLAG = 0x20;     //  0x0 0100 000
+    //在writeValue写入的第一字节中，标识long类型数据的字节表示(后2位为0)
+    public static final byte LONG_FLAG = 0x28;    //  0x0 0101 000
+
+    //在writeValue写入的第一字节中，标识long类型数据的字节表示(后2位为0)
+    public static final byte BYTE_FLAG = 0x30;    //  0x0 0110 000
+
+    //在writeValue写入的第一字节中，标识long类型数据的字节表示(后2位为0)
+    public static final byte FLOAT_FLAG = 0x38;    //  0x0 0111 000
+
+    //在writeValue写入的第一字节中，标识long类型数据的字节表示(后2位为0)
+    public static final byte DOUBLE_FLAG = 0x40;    // 0x0 1000 000
+
+    //在writeValue写入的第一字节中，标识String类型数据的字节表示(后2位为0)
+    public static final byte STRING_FLAG = 0x48;    // 0x0 1001 000
+
+    //在writeValue写入的第一字节中，标识Enum类型数据的字节表示(后2位为0)
+    public static final byte ENUM_FLAG = 0x50;      //  0x0 1010 000
+
+    //在writeValue写入的第一字节中，标识非boolean,char,short,int,long类型数据的字节表示(后2位为0)
+    public static final byte OTHER_FLAG = 0x58;     // 0x0 1011 000
     //代表写入了CONTINUE,循环还要进行
     public static final int CONTINUE_FLAG = 123;
     //代表当前要写入的值是之前已经写入流中的对象的引用

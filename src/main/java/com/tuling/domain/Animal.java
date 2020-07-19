@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Created by Administrator on 2020-06-08.
  */
-  class Animal implements Serializable {
+ public class Animal implements Serializable {
 
     private Float height;
     private float weight;
@@ -14,7 +14,12 @@ import java.io.Serializable;
 
     }
 
-     Animal(Float height, float weight){
+     public Animal(Float height, float weight){
+        this.height = height;
+        this.weight = weight;
+    }
+
+    public Animal(Float height, float weight,String name,int age){
         this.height = height;
         this.weight = weight;
     }

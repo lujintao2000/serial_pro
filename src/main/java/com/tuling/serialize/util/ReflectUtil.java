@@ -101,7 +101,7 @@ public class ReflectUtil {
     /**
      * 获取类的分类信息,看它是数组，还是枚举，还是基本类型或是普通类型
      * 0表示普通类型，1表示数组类型，2表示枚举类型，3表示基本类型（包括String）
-     * @param target
+     * @param target  要获取分类信息的类
      * @return
      */
     public static int getTypeOfClass(Class target){
@@ -111,12 +111,40 @@ public class ReflectUtil {
         Integer result = typeMap.get(target);
 
         if(result == null){
-            if(target.isArray()){
+            if(isBaseType(target)){
+                result = BASETYPE;
+            }else if(target.isArray()){
                 result = ARRAY;
             }else if(target.isEnum()){
                 result = ENUM;
-            }else if(isBaseType(target)){
+            }else{
+                result = GENERAL;
+            }
+            typeMap.put(target,result);
+        }
+        return result;
+    }
+
+    /**
+     * 获取类的分类信息,看它是数组，还是枚举，还是基本类型或是普通类型
+     * 0表示普通类型，1表示数组类型，2表示枚举类型，3表示基本类型（包括String）
+     * @param target   要获取分类信息的类
+     * @param obj      该类的一个对象
+     * @return
+     */
+    public static int getTypeOfClass(Class target,Object obj){
+        if(target == null || obj == null){
+            throw new IllegalArgumentException("target cat't be null");
+        }
+        Integer result = typeMap.get(target);
+
+        if(result == null){
+            if(isBaseType(target)){
                 result = BASETYPE;
+            }else if(obj instanceof Enum){
+                result = ENUM;
+            }else if(target.isArray()){
+                result = ARRAY;
             }else{
                 result = GENERAL;
             }

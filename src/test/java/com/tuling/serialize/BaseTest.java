@@ -42,15 +42,11 @@ public abstract class BaseTest {
 
     @Test
     public void testArrayBase() throws Exception{
-        int[] array = new int[]{1,2,3};
+        int[] array = new int[]{1,2,3,4,5};
         test(array);
     }
 
-    @Test
-    public void testArray() throws Exception{
-        Integer[] array = new Integer[]{1,2,3};
-        test(array);
-    }
+
 
     @Test
     public void testEnum() throws Exception{
@@ -122,10 +118,13 @@ public abstract class BaseTest {
 
     @Test
     public void testMap() throws Exception{
-        Map<String, Object> map = new HashMap();
+        Map map = new HashMap();
         map.put(null, null);
         map.put("company",new Company(""));
         map.put("user", new User("wangfei", null, null, 76.0f));
+        map.put(new Company(""),"");
+        map.put(5,6);
+        map.put(new User("wangfei", null, null, 76.0f),5);
         test(map);
         map = new TreeMap<>();
         map.put("name","xiaohua");

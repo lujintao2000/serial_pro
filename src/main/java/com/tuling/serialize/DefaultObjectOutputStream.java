@@ -46,7 +46,7 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
         try {
             Object value = field.get(obj);
             //写入属性值
-            this.writeValue(value, field.getType(),out,context);
+            this.writeValue(value,field.getType(),out,context);
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {

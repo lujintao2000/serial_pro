@@ -81,11 +81,14 @@ public class DataProvider {
         thirdUser.setProfession(profession);
 
         users.add(firstUser);
-        users.add(secondUser);
-        users.add(firstUser);
-
-        users.add(thirdUser);
-        users.add(secondUser);
+        for(int i = 0; i < 1000;i++){
+            users.add(firstUser);
+        }
+//        users.add(secondUser);
+//        users.add(firstUser);
+//
+//        users.add(thirdUser);
+//        users.add(secondUser);
         return users;
     }
 }

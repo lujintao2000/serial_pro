@@ -30,8 +30,8 @@ public class Application {
 
 //        testCharsetCost();
 
-//          testSerialWithKyro();
-//          testSerialWithSerial();
+          testSerialWithKyro();
+          testSerialWithSerial();
 //        testSerialWithJava();
 
 //          testUnserialWithJava();
@@ -131,13 +131,14 @@ public class Application {
         Role role = new Role("项目经理");
         long startTime = new Date().getTime();
         Kryo kryo = new Kryo();
-//        kryo.register(User.class);
-        for (int i = 0; i < 400; i++) {
+        kryo.register(User.class);
+//        kryo.register(Map.class);
+        for (int i = 0; i < 1; i++) {
 
 //            kryo.register(User.class);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Output output = new Output(outputStream);
-            kryo.writeObject(output, map);
+            kryo.writeObject(output, users);
             output.close();
 //            System.out.println("");
 
@@ -177,11 +178,11 @@ public class Application {
 
         long startTime = new Date().getTime();
         DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
-        for (int i = 0; i < 400; i++) {
+        for (int i = 0; i < 1; i++) {
 
             OutputStream outputStream = new ByteArrayOutputStream();
 //            Serial.write(DataProvider.getUser(),outputStream,false);
-            objectOutputStream.write(map, false, outputStream);
+            objectOutputStream.write(users, false, outputStream);
 
             outputStream.close();
         }

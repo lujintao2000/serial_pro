@@ -507,16 +507,12 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
         if (type == null) {
             type = value.getClass();
         }
-        int length = this.writeFirst(value, type, out);
-
         ObjectWrite objectWrite = writerMap.get(type);
         if (objectWrite != null) {
+            int length = this.getLength(value);
+            out.writeByte(length);
             objectWrite.write(out, value, length);
-        }
-//        else if (type.isEnum()) {
-//            out.writeString(value.toString(), true);
-//        }
-        else {
+        }else {
             //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
             int index = context.getIndex(value);
             if (index >= 0) {
@@ -530,40 +526,12 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
     }
 
     /**
-     * 当值不为空时，writeValue()方法调用时写入的第一个字节，该字节的格式为:  0x{01}(非空标识) {000}(类型标识) {00}(数据长度) {0}(仅当类型为boolean型时有用，存储boolean的值)
-     *
+     * 获取要写入对象在序列化流中占用的字节数
      * @param value 要写入的值
-     * @param out
      * @return 要写入数据的长度，0表示不确定
      */
-    private int writeFirst(Object value, Class type, ByteBuf out) {
-//        byte content = Constant.OTHER_FLAG;
-        int length = value instanceof Integer ? NumberUtil.getLength((Integer) value) : (value instanceof Long ? NumberUtil.getLength((Long) value) : 0);
-//        if (value instanceof Character) {
-//            //类型标识
-////            byte typeFlag = 0;
-//            if (value instanceof Integer) {
-////                typeFlag = Constant.INT_FLAG;
-//                length = NumberUtil.getLength((Integer) value);
-//            } else if (value instanceof Long) {
-////                typeFlag = Constant.LONG_FLAG;
-//                length = NumberUtil.getLength((Long) value);
-//            }else  if (value instanceof Character) {
-////                typeFlag = Constant.CHAR_FLAG;
-//                length = NumberUtil.getLength((Character) value);
-//            } else if (value instanceof Short) {
-////                typeFlag = Constant.SHORT_FLAG;
-//                //数据的存储长度
-//                length = NumberUtil.getLength((Short) value);
-//            }
-//
-////            if (typeFlag != 0) {
-////                content = (byte) (typeFlag | length);
-////            }
-//
-//        }
-        out.writeByte(length);
-        return length;
+    private int getLength(Object value) {
+        return value instanceof Integer ? NumberUtil.getLength((Integer) value) : (value instanceof Long ? NumberUtil.getLength((Long) value) : 0);
     }
 
     private static interface ObjectWrite<T> {

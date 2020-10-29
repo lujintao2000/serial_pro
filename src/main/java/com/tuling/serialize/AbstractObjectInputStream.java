@@ -241,7 +241,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 
 	/**
 	 * 判断是否是对象读取的结束位置
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
 	 */
 	protected boolean end(ByteBuf in) throws IOException{
 		return in.readByte() == (byte) Constant.END_FLAG;
@@ -249,16 +249,16 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 
 	/**
 	 * 判断当前的值是否为空标识
-	 * @param value  需要判断的值
+	 * @param in  包含序列化数据的缓冲
 	 * @throws IOException
 	 */
-	protected  boolean isNull(Byte value) throws IOException{
-		return value == (byte) Constant.NULL_FLAG;
+	protected  boolean isNull(ByteBuf in) throws IOException{
+		return in.readByte() == (byte) Constant.NULL_FLAG;
 	}
 	
 	/**
 	 * 读取属性总个数或对象索引、类索引
-	 * @param in  包含序列化数据的输入流
+	 * @param in  包含序列化数据的缓冲
 	 * @throws IOException
 	 */
 	public final short readLengthOrIndex(ByteBuf in) throws IOException{
@@ -526,15 +526,19 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 */
 	protected Object readValue(Class type,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
-		byte firstByte = this.readByte(in);
-		if(isNull(firstByte)){
+//		byte firstByte = this.readByte(in);
+		if(isNull(in)){
 			return null;
+		}else{
+			in.readerIndex(in.readerIndex() - 1);
 		}
-		//需要读取数据的字节长度
-		int length = firstByte;
+
 		Object value = null;
+		//只有基本类型、String和枚举类型有对应的ObjectRead实现类
 		ObjectRead objectRead = readMap.get(type);
 		if(objectRead != null){
+			//需要读取数据的字节长度
+			int length = this.readByte(in);
 			value = objectRead.read(in,type,length);
 		}else{
 			if(isReference(in)){
@@ -645,7 +649,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
          */
 	public Object  readObject(Class objectClass,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException , ClassNotSameException,BuilderNotFoundException{
 		Object obj = null;
-		if(!this.isNull(in.readByte())){
+		if(!this.isNull(in)){
 			in.readerIndex(in.readerIndex() - 1);
 			Class arrayType = null;
 			if(objectClass == null){

@@ -6,7 +6,7 @@ import org.junit.Test;
 import java.io.*;
 
 /**
- * Created by Administrator on 2020-06-24.
+ * Created by ljt on 2020-06-24.
  */
 public class SerialTest {
 

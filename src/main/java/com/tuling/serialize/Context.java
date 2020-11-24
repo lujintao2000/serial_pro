@@ -4,7 +4,6 @@ import com.tuling.serialize.util.IdGenerator;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2020-06-07
  */
 public class Context {
+
+    private static final IdGenerator idGenerator = new IdGenerator();
     //存储当前所有的context对象,键为context的id
     private static Map<Integer, Context> contextMap = new ConcurrentHashMap<>();
     //表示在序列化时，当前与该context相关的对象的个数
@@ -26,8 +27,8 @@ public class Context {
     //表示在一次序列化的过程中，已经往流中写入类名的类的集合
     private List<Class> classList = new ArrayList<>();
 
-    //表示在一次反序列化的过程中，已经读取过完整类名的类的集合
-    private List<String> hasReadClassNameList = new ArrayList<>();
+    //表示在一次反序列化的过程中，已经读取过的类的集合
+    private List<Class> hasReadClassList = new ArrayList<>();
     //表示当前正在读取或写入的字段
     private Field currentField = null;
     //标识
@@ -36,12 +37,11 @@ public class Context {
     private boolean isEnum;
 
     public Context(){
-        id = IdGenerator.getId();
+        id = idGenerator.getId();
     }
 
     /**
-     * 获取一个新的context对象
-     * @param id
+     * 创建一个新的context对象
      * @return
      */
     public static Context create(){
@@ -52,7 +52,6 @@ public class Context {
 
     /**
      * 销毁当前context
-     * @param id
      */
     public void destory(){
           contextMap.remove(this.id);
@@ -67,7 +66,7 @@ public class Context {
     }
 
     /**
-     * 添加新类
+     * 序列化的时候添加新类
      * @param item
      */
     public void addClass(Class item){
@@ -75,7 +74,7 @@ public class Context {
     }
 
     /**
-     * 判断指定的类是否已存在于上下文中
+     * 判断指定的类是否已存在于序列化上下文
      * @param target
      * @return
      */
@@ -84,7 +83,7 @@ public class Context {
     }
 
     /**
-     * 获取指定类在上下文已写入类集合中的序号
+     * 获取指定类在序列化上下文已写入类集合中的序号
      * @param target
      * @return
      */
@@ -93,22 +92,22 @@ public class Context {
     }
 
     /**
-     * 往已读取类名集合中添加一个新类名
-     * @param item
+     * 往已读取类集合中添加一个新类,方法调用发生在反序列化
+     * @param type
      */
-    public void addClassName(String className){
-        if(!hasReadClassNameList.contains(className)){
-            hasReadClassNameList.add(className);
+    public void addReadClass(Class type){
+        if(!hasReadClassList.contains(type)){
+            hasReadClassList.add(type);
         }
     }
 
     /**
-     * 从已读取类名集合中获取指定序号对应的类名
-     * @param int index
+     * 从已读取类名集合中获取指定序号对应的类
+     * @param index 类的序号
      * @return
      */
-    public String getClassName(int index){
-        return hasReadClassNameList.get(index);
+    public Class getClass(int index){
+        return hasReadClassList.get(index);
     }
 
     /**
@@ -158,31 +157,23 @@ public class Context {
      * @return  对象在序列上下文存储同类型元素集合中的序号
      */
     public int getIndex(Object obj){
-        if(obj == null){
-            return -1;
+        int result = -1;
+        if(obj != null){
+            for(int i = 0; i < list.size(); i++){
+                if(list.get(i) == obj){
+                    result = i;
+                }
+            }
         }
-//        List list = map.get(obj.getClass());
-//        if(list != null && list.contains(obj)){
-//            return list.indexOf(obj);
-//        }else{
-//            return -1;
-//        }
-        return list.indexOf(obj);
+        return result;
     }
 
     /**
      * 从反序列化上下文中获取指定类型、指定引用序号的元素
-     * @param type   要获取对象的类型
      * @param index  要获取对象在集合中的序号
      * @return
      */
     public Object get(int index){
-//        List list = map.get(type);
-//        if(list != null && list.size() -1 >= index){
-//            return list.get(index);
-//        }else{
-//            return null;
-//        }
         return list.get(index);
     }
 

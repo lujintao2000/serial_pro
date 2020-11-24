@@ -65,7 +65,7 @@ public class User extends Person implements Comparable<User> {
 
     public void setCompany(Company company){
         this.company = company;
-        this.company.setUser(this);
+//        this.company.setUser(this);
     }
 
     public Company getCompany(){
@@ -84,7 +84,8 @@ public class User extends Person implements Comparable<User> {
                         && (this.nation == another.nation || (this.nation != null && this.nation.equals(another.nation)))
                         && (this.labels == another.labels || (this.labels != null && this.labels.equals(another.labels)) )
                         && (this.department == another.getDepartment() || (this.department != null && another.getDepartment() != null && this.department.getName().equals(another.getDepartment().getName())) )
-                        && (this.profession == another.getProfession() || (this.profession != null && another.getProfession() != null && this.profession.getName().equals(another.getProfession().getName())) )){
+                        && (this.profession == another.getProfession() || (this.profession != null && another.getProfession() != null && this.profession.getName().equals(another.getProfession().getName())) )
+                        ){
                    return  true;
                 }
             }
@@ -169,4 +170,5 @@ public class User extends Person implements Comparable<User> {
             return this.hashCode() - another.hashCode();
         }
     }
+
 }

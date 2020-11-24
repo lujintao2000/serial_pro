@@ -7,13 +7,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @date 2020-06-25
  */
 public class IdGenerator {
-    private static final AtomicInteger counter = new AtomicInteger(0);
+    private final AtomicInteger counter;
+
+    public IdGenerator(){
+        counter = new AtomicInteger(1);
+    }
+
+    public IdGenerator(int initial){
+        counter = new AtomicInteger(initial);
+    }
 
     /**
      * 获得一个ID
      * @return
      */
-    public static int getId(){
+    public  int getId(){
         return counter.getAndIncrement();
     }
 

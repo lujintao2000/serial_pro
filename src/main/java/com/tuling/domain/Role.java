@@ -9,6 +9,7 @@ import java.io.Serializable;
  */
 @Message
 public class Role  implements Serializable {
+    private Role role = null;
     private String name;
 
     public Role(){
@@ -19,18 +20,20 @@ public class Role  implements Serializable {
         this.name = name;
     }
 
-    public String getName() {
-        return name;
-    }
+
+//    public String getName() {
+//        return name;
+//    }
 
     public void setName(String name) {
         this.name = name;
+        role = this;
     }
 
     @Override
     public boolean equals(Object obj){
         if(obj != null && obj instanceof  Role){
-            if((this.name == null && ((Role)obj).getName() == null) || (this.name != null && this.name.equals(((Role)obj).getName()))){
+            if((this.name == null && ((Role)obj).name == null) || (this.name != null && this.name.equals(((Role)obj).name))){
                 return true;
             }
         }

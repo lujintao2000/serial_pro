@@ -32,7 +32,7 @@ public abstract class BaseTest {
 
     @Test
     public void testDomain() throws Exception{
-        test(DataProvider.getUser());
+        test(DataProvider.getRole());
     }
 
     @Test
@@ -44,6 +44,7 @@ public abstract class BaseTest {
     public void testArrayBase() throws Exception{
         int[] array = new int[]{1,2,3,4,5};
         test(array);
+
     }
 
 
@@ -119,19 +120,21 @@ public abstract class BaseTest {
     @Test
     public void testMap() throws Exception{
         Map map = new HashMap();
-        map.put(null, null);
-        map.put("company",new Company(""));
-        map.put("user", new User("wangfei", null, null, 76.0f));
-        map.put(new Company(""),"");
-        map.put(5,6);
-        map.put(new User("wangfei", null, null, 76.0f),5);
-        test(map);
-        map = new TreeMap<>();
-        map.put("name","xiaohua");
-        map.put("age",20);
-        map.put("sex","female");
-        map.put("user", new User("wangfei", null, null, 76.0f));
-        test(map);
+        map.put("name","xiaowang");
+
+//        map.put(null, null);
+//        map.put("company",new Company(""));
+//        map.put("user", new User("wangfei", null, null, 76.0f));
+//        map.put(new Company(""),"");
+//        map.put(5,6);
+//        map.put(new User("wangfei", null, null, 76.0f),5);
+        test(Collections.unmodifiableMap(map));
+//        map = new TreeMap<>();
+//        map.put("name","xiaohua");
+//        map.put("age",20);
+//        map.put("sex","female");
+//        map.put("user", new User("wangfei", null, null, 76.0f));
+//        test(map);
     }
 
 

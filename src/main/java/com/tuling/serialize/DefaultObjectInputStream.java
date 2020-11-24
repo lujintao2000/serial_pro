@@ -95,9 +95,6 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	 */
 	@Override
 	protected Object readValue(Object obj,Class objectClass,Context context,ByteBuf in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException{
-		//存放字段的值，key为字段名称
-//		Map<String,Object> valueMap = new HashMap<>();
-//		Map<String,Object> currentMap = valueMap;
 		List<Class> selfAndSuperList = ReflectUtil.getSelfAndSuperClass(objectClass);
 		int count = 0;
 		for(Class currentType : selfAndSuperList){
@@ -106,32 +103,14 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 			if(fieldCount != fields.length){
 				throw new ClassNotSameException("属性个数不一致");
 			}
-
-			//循环读取属性
-//			if(obj == null){
-//				for(int i = 0; i < fieldCount; i++){
-//					context.setCurrentField(fields[i]);
-//					this.readField(currentMap, fields[i],in,context);
-//				}
-//				count++;
-//				if(count < selfAndSuperList.size()){
-//					Map<String,Object> tempMap = currentMap;
-//					currentMap = new HashMap<String,Object>();
-//					tempMap.put(com.tuling.serialize.Builder.NEXT,currentMap);
-//				}
-//			}else{
-				for(int i = 0; i < fieldCount; i++){
-					context.setCurrentField(fields[i]);
-					this.readField(obj,objectClass,fields[i],in,context);
-				}
-//			}
+			for(int i = 0; i < fieldCount; i++){
+				context.setCurrentField(fields[i]);
+				this.readField(obj,objectClass,fields[i],in,context);
+			}
 		}
 		context.setCurrentField(null);
-//		if(obj == null){
-//			return valueMap;
-//		}else{
-			return obj;
-//		}
+		return obj;
+
 	}
 
 }

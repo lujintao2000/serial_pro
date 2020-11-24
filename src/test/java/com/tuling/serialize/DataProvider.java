@@ -45,6 +45,28 @@ public class DataProvider {
         return map;
     }
 
+    public static Role getRole(){
+       Role role = new Role();
+       role.setName("manager");
+       return role;
+    }
+
+    public static Department getDepartment(){
+        return new AboardDepartment("开发部",new Country("china"));
+    }
+
+
+    public static Employee getEmployee(){
+        Employee employee = new Employee();
+        Object T;
+        employee.setRole(new Role("architecture"));
+//        employee.setCompany(new Company("优识云创信息技术有限公司"));
+        employee.setName("小花");
+        employee.addLabel("dog");
+        employee.addLabel("cat");
+        return employee;
+    }
+
     public static User getUser(){
         User user = new User("wangfei", 20, 170.0f, 76.0f);
         user.setCompany(new Company("优识云创"));

@@ -4,16 +4,14 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.tuling.domain.*;
-import com.tuling.serialize.util.BuilderUtil;
-import com.tuling.serialize.util.ByteBuf;
-import com.tuling.serialize.util.NumberUtil;
-import com.tuling.serialize.util.ReflectUtil;
+import com.tuling.serialize.util.*;
 import org.msgpack.MessagePack;
 
 import javax.xml.crypto.Data;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -23,31 +21,75 @@ public class Application {
 
 
     public static void main(String[] args) throws Exception {
-          System.out.println(0xff800000L);
-        BuilderUtil.isSpecifyBuilder(int.class);
-//        testIsBasicType();
 
+            String[] a = new String[]{};
+            String[] b = new String[]{"aa"};
+            System.out.println(Collections.unmodifiableMap(new HashMap<>()).getClass());
+//            Class t =  Class.forName("java.util.Collections$UnmodifiableMap");
+//
+//            testMap();
+            testUnSerialWithKyro();
+            testUnserialWithSerial();
 
-//        testCharsetCost();
-
-          testSerialWithKyro();
-          testSerialWithSerial();
-//        testSerialWithJava();
-
-//          testUnserialWithJava();
-//        testUnSerialWithKyro();
-//        testUnserialWithSerial();
     }
 
+    private static void testMap() throws Exception{
+        Map<Integer,String> map = new HashMap();
+        map.put(1,"ss");
+        map.put(2,"bb");
+        List<String> list = new ArrayList();
+        list.add("aa");
+        list.add("bb");
+        ReflectUtil.add(Role.class,2);
+        ByteBuf buf = new ByteBuf();
+//        buf.writeByte(Constant.CLASSNAME_SAME_WITH_FIELD);
+        buf.writeScalableInt(3);
+        buf.writeString("com.tuling.domain.Role",true);
+        String content = "";
+        Class result = null;
+        Class arrayType = null;
+        Class objectClass = null;
+        Context context = new Context();
+        context.setCurrentField(Employee.class.getDeclaredField("role"));
+        String className = "com.tuling.domain.Role";
+        int index = 0;
+        boolean flag = true;
+        long startTime = new Date().getTime();
+        for (int i = 0; i < 6000000; i++) {
+            byte preLength = buf.readByte();
+            if(preLength > 0) {
+                buf.decreaseReaderIndex(1);
+                //根据类标识获取与之对应的类；如果存在对应的类，就跳过类名数据读取；否则，读取类名数据，然后读取的类与标识绑定
+                //读取类标识
+                int classId = buf.readScalableInt();
+                result = ReflectUtil.getClassById(classId);
+                if(result != null){
+                    //跳过类名数据   对于基本类型，要跳过的字节长度不一样
+                    buf.skipNextString();
+                }
+                else{
+                    //2. 读入类名
+                    String fullClassName = buf.readString(true);
+                    if(fullClassName.endsWith("[]")){
+                         arrayType  = ReflectUtil.get(fullClassName.substring(0,fullClassName.length() - 2));
+                        result = Array.newInstance(arrayType, 0).getClass();
+                    }else{
+                        result = ReflectUtil.getComplexClass(fullClassName);
+                    }
+                    ReflectUtil.add(result,classId);
+                }
+            }else if(preLength == Constant.CLASSNAME_SAME_WITH_FIELD){
+                //字段值的类型和字段类型相同
+                result = context.getCurrentField().getType();
+            }
+            buf.readerIndex(0);
 
-    private static boolean testWriteLengthOfObject(int length) throws IOException {
-//        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//        AbstractOutputStream.writeLengthOfObject(length,outputStream);
-//        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
-//        int readLength = AbstractObjectInputStream.readLengthOfObject(inputStream);
-//        return   length == readLength;
-        return true;
+        }
+        long endTime = new Date().getTime();
+        System.out.println(" cost " + (endTime - startTime) + "ms" + className + index);
+
     }
+
 
     private static void testIsBasicType() throws Exception {
         boolean flag = Object.class.isAssignableFrom(int.class);
@@ -153,19 +195,41 @@ public class Application {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Kryo kryo2 = new Kryo();
         Output output = new Output(outputStream);
-        kryo2.writeObject(output, DataProvider.getUser());
+        kryo2.writeClassAndObject(output, DataProvider.getUser());
         output.close();
+
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
 
         long startTime = new Date().getTime();
         Kryo kryo = new Kryo();
         for (int i = 0; i < 600000; i++) {
-            kryo.readObject(new Input(inputStream), User.class);
+            Object t = kryo.readClassAndObject(new Input(inputStream));
             inputStream.reset();
         }
         long endTime = new Date().getTime();
         System.out.println("kyro unserialization cost " + (endTime - startTime) + "ms");
+    }
+
+    private static void testUnserialWithSerial() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ObjectOutputStream out = new DefaultObjectOutputStream();
+        out.write(DataProvider.getUser(), output);
+        output.close();
+
+        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
+
+        long startTime = new Date().getTime();
+        ObjectInputStream in = new DefaultObjectInputStream();
+        boolean flag = true;
+        for (int i = 0; i < 600000; i++) {
+            Object obj =  in.readObject(input);
+            input.reset();
+//           flag = "com.tuling.domain.Role".endsWith("[]");
+            // ReflectUtil.getComplexClass("com.tuling.domain.Role");
+        }
+        long endTime = new Date().getTime();
+        System.out.println("serial unserialization cost " + (endTime - startTime) + "ms" + flag);
     }
 
     private static void testSerialWithSerial() throws Exception {
@@ -192,23 +256,7 @@ public class Application {
     }
 
 
-    private static void testUnserialWithSerial() throws Exception {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ObjectOutputStream out = new DefaultObjectOutputStream();
-        out.write(DataProvider.getUser(), output);
-        output.close();
 
-        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-
-        long startTime = new Date().getTime();
-        ObjectInputStream in = new DefaultObjectInputStream();
-        for (int i = 0; i < 600000; i++) {
-            in.readObject(input);
-            input.reset();
-        }
-        long endTime = new Date().getTime();
-        System.out.println("serial unserialization cost " + (endTime - startTime) + "ms");
-    }
 
     private static void testSerialWithJava() throws Exception {
         User user = DataProvider.getUser();

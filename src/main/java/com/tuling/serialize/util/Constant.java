@@ -53,8 +53,11 @@ public class Constant {
     public static final int CONTINUE_FLAG = 123;
     //代表当前要写入的值是之前已经写入流中的对象的引用
     public static final int REFERENCE_FLAG = 122;
-    //代表当前要写入的值是完整信息，并非之前已经写入流中的对象的引用
-    public static final int NORMAL_FLAG = 121;
+    //代表当前要写入的值是完整信息，并非之前已经写入流中的对象的引用,且需要将值对应类型写入流中
+    public static final int NORMAL_CONTAIN_CLASSNAME_FLAG = 121;
+
+    //代表当前要写入的值是完整信息，并非之前已经写入流中的对象的引用，且无需将值类型写入流中，这种情况对应值类型和值所属属性的类型相同的情形
+    public static final int NORMAL_WITHOUT_CLASSNAME_FLAG = 120;
     //当前序列化格式的版本
     public static final short CURRENT_VERSION = 1;
     //当前序列化实现支持的序列化格式的最小版本

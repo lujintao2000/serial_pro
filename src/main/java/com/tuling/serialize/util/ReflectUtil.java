@@ -1,14 +1,8 @@
 package com.tuling.serialize.util;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.tuling.serialize.BaseTypeEnum;
-import com.tuling.serialize.DefaultObjectInputStream;
 import org.apache.log4j.Logger;
-
-import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -20,6 +14,15 @@ import java.util.stream.Collectors;
  * @date 2017-04-20
  */
 public class ReflectUtil {
+    //应用运行ID
+    public static  final long  APPLICATION_RUN_ID = new Date().getTime();
+    private static final IdGenerator idGenerator = new IdGenerator();
+    //存放需要序列化的类的标识的Map
+    private static final Map<Class,Integer> serialIdMap = new ConcurrentHashMap<>();
+
+    //存放需要反序列化的类的标识的Map
+    private static final Map<Integer,Class> unSerialIdMap = new ConcurrentHashMap<>();
+
     //表示普通类型,即数组、枚举、基本类型之外的类型
     public static final int GENERAL = 0;
     //标识数组类型
@@ -54,6 +57,9 @@ public class ReflectUtil {
     private static final Map<Class,Boolean> classWithoutZeroConstructorMap = new ConcurrentHashMap<>();
     //存储不能够通过程序调用构造方法创建对象的类
     private static final Map<Class,Boolean> cannotCreateObjectMap = new ConcurrentHashMap<>();
+    //该Map存放了枚举类中名称到值的映射
+    private static final  Map<Class,Map<String,Enum>> enumValueMap = new ConcurrentHashMap<>();
+
     //存储每一种类型的默认值
     private static final Map<Class,Object> defaultValueMap = new HashMap<>();
 
@@ -68,6 +74,8 @@ public class ReflectUtil {
         baseTypeMap.put(long.class, long.class);
         baseTypeMap.put(float.class, float.class);
         baseTypeMap.put(double.class, double.class);
+
+
         baseTypeMap.put(Void.class,Void.class);
         classMap.put("boolean", boolean.class);
         classMap.put("byte", byte.class);
@@ -156,7 +164,7 @@ public class ReflectUtil {
     /**
      * 获得指定类的所有字段，将这些字段放入一个栈中。先压入该类自己定义的字段，然后依次压入上一级父类定义的字段
      *
-     * @param target
+     * @param targetClass  要获取字段的目标类
      * @return 包含所有字段的栈
      */
     public static Stack<Field> getAllFields(Class targetClass) {
@@ -172,7 +180,7 @@ public class ReflectUtil {
     /**
      * 将param 指定类定义的所有实例字段(不包括父类的字段)压入栈中
      *
-     * @param param
+     * @param targetClass
      * @param stack
      */
     private static void putField(Class targetClass, Stack stack) {
@@ -241,6 +249,7 @@ public class ReflectUtil {
         List<Field> fields = Arrays.asList(type.getDeclaredFields())
                 .stream()
                 .filter(x -> !Modifier.isStatic(x.getModifiers()))
+                .filter(x -> !Modifier.isTransient(x.getModifiers()))
                 .map(x -> {
                     x.setAccessible(true);
                     return x;
@@ -279,7 +288,7 @@ public class ReflectUtil {
     /**
      * 判断目标类是否是基本类型（基本类型包括原始类型的包装类和String）
      *
-     * @param target
+     * @param targetClass  需要判断是否是基本类型的类
      * @return 如果指定目标类是基本类型，返回true;否则，返回false
      */
     public static boolean isBaseType(Class targetClass) {
@@ -377,7 +386,7 @@ public class ReflectUtil {
 
     /**
      * 获得一个集合，这个集合中装有这个类自己和它的所有父类,自己放在第一个元素位置，最近的父类放在第二个元素位置，越近的父类放的位置越靠前
-     * @param target
+     * @param targetClass  需要获取父类的目标类
      * @return
      */
     public static List<Class> getSelfAndSuperClass(Class targetClass){
@@ -437,6 +446,28 @@ public class ReflectUtil {
     }
 
     /**
+     * 从指定枚举类型中，获取特定名称对应的枚举值
+     * @param enumType  枚举类型
+     * @param name      枚举值对应的名称
+     * @return
+     */
+    public static <T extends Enum> T getEnum(Class<T> enumType,String name){
+        if(!enumValueMap.containsKey(enumType)){
+            synchronized (enumType){
+                if(!enumValueMap.containsKey(enumType)){
+                    Map<String,Enum> map = new HashMap<>();
+                    Object[] values = enumType.getEnumConstants();
+                    for(Object item : values){
+                        map.put(((Enum)item).name(),(Enum) item);
+                    }
+                    enumValueMap.put(enumType,map);
+                }
+            }
+        }
+        return (T)enumValueMap.get(enumType).get(name);
+    }
+
+    /**
      * 判断指定类是否包含无参公共构造方法
      * @param type
      * @return
@@ -487,6 +518,57 @@ public class ReflectUtil {
             cannotCreateObjectMap.put(objectClass,true);
         }
         return  result;
+    }
+
+    /**
+     * 获得为指定类分配的ID标识
+     * @param target  需要获取标识的类
+     */
+    public static Integer getIdForClass(Class target){
+        Integer id = serialIdMap.get(target);
+        if(id == null){
+            synchronized (target){
+                if(!serialIdMap.containsKey(target)){
+                    id = idGenerator.getId();
+                    serialIdMap.put(target,id);
+                }else{
+                    id = serialIdMap.get(target);
+                }
+            }
+        }
+        return id;
+    }
+
+    /**
+     * 根据类标识获取与之对应的类
+     * @param id  类标识
+     * @throws NullPointerException  如果指定id为空
+     */
+    public static Class getClassById(Integer id){
+        return unSerialIdMap.get(id);
+    }
+
+    /**
+     * 是否包含与指定标识ID对应的反序列化类
+     * @param id  标识
+     * @return    包含，返回true;否则，返回false
+     * @throws NullPointerException  如果指定id为空
+     */
+    public static boolean contain(Integer id){
+        return unSerialIdMap.containsKey(id);
+    }
+
+    /**
+     * 将指定类与标识id绑定
+     * @param target 需要与标识绑定的类
+     * @param id     类的标识
+     * @throws NullPointerException  如果指定id为空
+     */
+    public static void add(Class target,Integer id){
+        Assert.notNull(target);
+        if(!unSerialIdMap.containsKey(id)){
+            unSerialIdMap.put(id,target);
+        }
     }
 
     /**
@@ -545,7 +627,14 @@ public class ReflectUtil {
             }
         }else if(type.isArray()){
             return Array.newInstance(type.getComponentType(),0);
-        }else{
+        }else if(List.class.isAssignableFrom(type)){
+            return new ArrayList<>();
+        }else if(Set.class.isAssignableFrom(type)){
+            return new HashSet<>();
+        }else if(Map.class.isAssignableFrom(type)){
+            return new HashMap<>();
+        }
+        else{
             return createObjectWithSimple(type);
         }
     }

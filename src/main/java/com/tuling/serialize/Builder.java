@@ -8,11 +8,17 @@ import java.util.Map;
  * @author  lujintao
  * @date    2020-06-16
  */
-public interface Builder<T> {
+public interface Builder {
     /**
      * 创建一个特定类的对象
      * @return
      */
-    public T newInstance();
+    public Object newInstance();
+
+    /**
+     * 返回该builder要创建对象的类型
+     * @return
+     */
+    public Class getType();
 
 }

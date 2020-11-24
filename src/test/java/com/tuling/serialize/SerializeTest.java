@@ -28,18 +28,18 @@ public class SerializeTest extends BaseTest{
     protected void test(Object originalValue) throws Exception {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         ObjectOutputStream out = new DefaultObjectOutputStream( );
-        out.write(originalValue,false,output);
+        out.write(originalValue,true,output);
         output.close();
 
         ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
         ObjectInputStream in = new DefaultObjectInputStream();
         Object obj = null;
         try {
-            if(originalValue == null){
+//            if(originalValue == null){
                 obj = in.readObject(input);
-            }else{
-                obj = in.readObject(originalValue.getClass(),input);
-            }
+//            }else{
+//                obj = in.readObject(originalValue.getClass(),input);
+//            }
             System.out.println(obj);
         } catch (Exception e) {
             e.printStackTrace();
@@ -95,7 +95,31 @@ public class SerializeTest extends BaseTest{
 
     @Test
     public void testArray() throws Exception{
-        int[] array = new int[]{1,2,3};
+        Object[] array = new Object[]{"aa",1,2L,true};
         test(array);
+    }
+
+    @Test
+    public void testList()  throws Exception{
+//        List<Integer> list = new ArrayList<>();
+//        list.add(1);
+//        list.add(3);
+//        list.add(5);
+//        list.add(null);
+//        list.add(4);
+//        test(list);
+
+//        list = new LinkedList<>();
+//        list.add(1);
+//        list.add(3);
+//        list.add(5);
+//        list.add(null);
+//        list.add(4);
+//        test(list);
+//        test(Arrays.asList(1,2,3,null,5));
+          List<String> list = new ArrayList<>();
+          list.add("women");
+          list.add("man");
+          test(list);
     }
 }

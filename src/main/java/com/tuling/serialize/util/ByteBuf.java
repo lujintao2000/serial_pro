@@ -4,6 +4,7 @@ import com.tuling.serialize.ObjectOutputStream;
 import org.apache.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 
 /**
@@ -60,7 +61,7 @@ public class ByteBuf {
     /**
      * 写入byte数据
      *
-     * @param content
+     * @param value
      */
     public void writeByte(byte value) {
         ensureCapacity(1);
@@ -71,7 +72,7 @@ public class ByteBuf {
     /**
      * 写入byte数据
      *
-     * @param content
+     * @param value  需要写入的值
      */
     public void writeByte(int value) {
         ensureCapacity(1);
@@ -81,8 +82,6 @@ public class ByteBuf {
 
     /**
      * 写入布尔类型数值
-     *
-     * @param c
      */
     public void writeBoolean(boolean value) {
         writeByte(value ? 1 : 0);
@@ -90,8 +89,6 @@ public class ByteBuf {
 
     /**
      * 写入字符数据
-     *
-     * @param a
      */
     public void writeChar(char value) {
         writeShort(value);
@@ -99,8 +96,6 @@ public class ByteBuf {
 
     /**
      * 写入字符数据
-     *
-     * @param a
      */
     public void writeChar(int value) {
         writeShort((int) value);
@@ -597,8 +592,6 @@ public class ByteBuf {
 
     /**
      * 读取字符串，字符串对应的字节的长度为length
-     *
-     * @param length
      * @return
      */
     public String readString() {
@@ -618,8 +611,6 @@ public class ByteBuf {
 
     /**
      * 读取字符串，字符串对应的字节的长度为length
-     *
-     * @param length
      * @param isAsciiDecoding 是否用ascii将字节数组解码成字符串
      * @return
      */
@@ -635,8 +626,17 @@ public class ByteBuf {
         for(int i = 0;i < content.length; i++){
             content[i] = (char) array[readerIndex + i];
         }
+
         readerIndex += length;
-        return  new String(content);
+        return new String(content);
+    }
+
+    /**
+     * 跳过要读取的一个字符串,让下次读取从该字符串后面第一字节开始
+     */
+    public void skipNextString(){
+        int length = this.readScalableInt();
+        readerIndex += length;
     }
 
     /**
@@ -685,7 +685,7 @@ public class ByteBuf {
     /**
      * 保证数组的大小不小于capacity
      *
-     * @param capacity
+     * @param increaseCapacity  要增加的容量
      */
     private void ensureCapacity(int increaseCapacity) {
         if (increaseCapacity + writerIndex > array.length) {

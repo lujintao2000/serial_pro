@@ -92,11 +92,11 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			arrayObj = (Object[]) obj;
 			isCommon = true;
 		}
+		Class currentType = type;
 		for(int i = 0;i < length;i++){
-			Class currentType = Object.class;
+
 			if(hasWriteClassName(in)){
-				String className = readClassName(in,context);
-				currentType = ReflectUtil.getComplexClass(className);
+				currentType = readClass(in,context);
 			}else{
 				in.decreaseReaderIndex(1);
 			}
@@ -153,70 +153,11 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		map = (Map)readValue(obj,objectClass,context,in);
 		Builder builder = BuilderUtil.get(objectClass);
 		obj = builder.newInstance();
-//		if(!builder.isFinish()){
-//			if(obj instanceof Collection){
-//				finishCollection((Collection) obj,map);
-//			}else if(obj instanceof Map){
-//				finishMap((Map)obj,map);
-//			}else{
-//				finishObject(obj,map);
-//			}
-//		}
 		return obj;
 	}
 
-	/**
-	 * 完成对象属性的赋值
-	 * @param obj 要赋值的对象
-	 * @param valueMap  存储值的Map
-	 */
-//	protected Object finishObject(Object obj,Map<String,Object> valueMap) throws IllegalAccessException{
-//		Map<String,Object> currentMap = valueMap;
-//		List<Class> superAndSelfClassList = ReflectUtil.getSelfAndSuperClass(obj.getClass());
-//		for(Class currentType : superAndSelfClassList){
-//			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
-//			//循环读取属性
-//			for(int i = 0; i < fields.length; i++){
-//				if(!fields[i].isAccessible()){
-//					fields[i].setAccessible(true);
-//				}
-//				fields[i].set(obj, currentMap.get(fields[i].getName()) );
-//			}
-////			currentMap = (Map)currentMap.get(Builder.NEXT);
-//		}
-//		return obj;
-//	}
 
-	/**
-	 * 完成集合元素的装载
-	 * @param obj 要设值的集合对象
-	 * @param valueMap  存储值的Map
-	 */
-//	protected void finishCollection(Collection obj,Map<String,Object> valueMap) throws IllegalAccessException{
-//		if (valueMap != null && valueMap.size() > 0) {
-//			List list = (List) valueMap.get(Builder.LIST);
-//			if (list != null) {
-//				if(obj.size() > 0){
-//					obj.clear();
-//				}
-//				obj.addAll(list);
-//			}
-//		}
-//	}
 
-	/**
-	 * 完成集合元素的装载
-	 * @param obj 要设值的集合对象
-	 * @param valueMap  存储值的Map
-	 */
-//	protected void finishMap(Map obj,Map<String,Object> valueMap) throws IllegalAccessException{
-//		if (valueMap != null && valueMap.size() > 0) {
-//			List<Entry> list = (List) valueMap.get(Builder.LIST);
-//			if (list != null) {
-//				list.stream().forEach(x -> obj.put(x.getKey(), x.getValue()));
-//			}
-//		}
-//	}
 
 	/**
 	 * 读取值，将值存入指定的对象中,如果obj为空,则将读取的值存入Map
@@ -416,49 +357,59 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @throws IOException
 	 * @throws ClassNotFoundException 当类名对应的类不存在时，抛出此异常
 	 */
-	protected String readClassName(ByteBuf in,Context context) throws IOException, ClassNotFoundException {
+	protected Class readClass(ByteBuf in,Context context) throws IOException, ClassNotFoundException {
+		Class result = null;
 		//1. 读入类名字节长度,该次读取读到的并不一定是真实的字符串长度
-		byte preLength = this.readByte(in);
+		byte preLength = in.readByte();
 		if(preLength > 0) {
-			in.readerIndex(in.readerIndex() - 1);
-			//2. 读入类名
-			String fullClassName = ReflectUtil.getFullName(in.readString(true));
-			context.addClassName(fullClassName);
-			return fullClassName;
+			in.decreaseReaderIndex(1);
+			//根据类标识获取与之对应的类；如果存在对应的类，就跳过类名数据读取；否则，读取类名数据，然后读取的类与标识绑定
+			//读取类标识
+			int classId = in.readScalableInt();
+			result = ReflectUtil.getClassById(classId);
+			if(result != null){
+				//跳过类名数据   对于基本类型，要跳过的字节长度不一样
+				in.skipNextString();
+			}else{
+				//2. 读入类名
+				String fullClassName = in.readString(true);
+				if(fullClassName.endsWith("[]")){
+					Class arrayType  = ReflectUtil.get(fullClassName.substring(0,fullClassName.length() - 2));
+					result = Array.newInstance(arrayType, 0).getClass();
+				}else{
+					result = ReflectUtil.getComplexClass(fullClassName);
+				}
+				ReflectUtil.add(result,classId);
+			}
+
 		}else if(preLength == Constant.CLASSNAME_SAME_WITH_FIELD){
 			//字段值的类型和字段类型相同
-			String className = context.getCurrentField().getType().getTypeName();
-			context.addClassName(className);
-			return className;
+			Class type = context.getCurrentField().getType();
+			return type;
 		}else if(preLength > (byte)0xbf){
 			//类型是基本类型
 			switch (preLength){
 				case Constant.BOOLEAN:
-					return BOOLEAN_NAME;
+					return Boolean.class;
 				case Constant.BYTE:
-					return BYTE_NAME;
+					return Byte.class;
 				case Constant.CHARACTER:
-					return CHARACTER_NAME;
+					return Character.class;
 				case Constant.SHORT:
-					return SHORT_NAME;
+					return Short.class;
 				case Constant.INTEGER:
-					return INTEGER_NAME;
+					return Integer.class;
 				case Constant.LONG:
-					return LONG_NAME;
+					return Long.class;
 				case Constant.FLOAT:
-					return FLOAT_NAME;
+					return Float.class;
 				case Constant.DOUBLE:
-					return DOUBLE_NAME;
+					return Double.class;
 				default:
-					return STRING_NAME;
+					return String.class;
 			}
-		}else{
-			//类名引用了先前已经缓存的类名
-			//读取引用序号
-			short index = this.readReferenceIndex(in,preLength);
-			return context.getClassName(index);
-
 		}
+		return result;
 	}
 
 	/**
@@ -518,6 +469,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		return in.readByte() == (byte) Constant.REFERENCE_FLAG;
 	}
 
+
 	/**
 	 * 从流中当前位置读取指定类型的值
 	 * @param type  要读取数据的类型
@@ -526,7 +478,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	 * @return
 	 */
 	protected Object readValue(Class type,ByteBuf in,Context context) throws IOException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,ClassNotSameException,BuilderNotFoundException{
-//		byte firstByte = this.readByte(in);
 		if(isNull(in)){
 			return null;
 		}else{
@@ -541,11 +492,12 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			int length = this.readByte(in);
 			value = objectRead.read(in,type,length);
 		}else{
-			if(isReference(in)){
+			byte currentByte = in.readByte();
+			if(currentByte == Constant.REFERENCE_FLAG){
 				int index = in.readScalableInt();
 				value = context.get(index);
 			}else{
-				value = this.readObject(null,in,context);
+				value = this.readObject(currentByte == Constant.NORMAL_CONTAIN_CLASSNAME_FLAG ? null : type ,in,context);
 			}
 		}
 		return value;
@@ -593,7 +545,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	}
 
 	/**
-	 * @param type 需要反序列化对象的类型
+	 * @param objectClass 需要反序列化对象的类型
 	 * @param in 包含序列化数据的输入流
 	 * @return 反序列化出的对象
 	 * @throws IOException
@@ -637,7 +589,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 	}
 
 		/**
-         * @param type 需要反序列化对象的类型
+         * @param objectClass 需要反序列化对象的类型
          * @param in 包含序列化数据的输入流
 		 * @param context 序列化上下文
          * @return 反序列化出的对象
@@ -651,26 +603,14 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		Object obj = null;
 		if(!this.isNull(in)){
 			in.readerIndex(in.readerIndex() - 1);
-			Class arrayType = null;
 			if(objectClass == null){
-				//1.读取序列化对象所对应的类名
-				String className = this.readClassName(in,context);
-				//2.判断是否是数组类型
-				if(className.endsWith("[]")){
-					 arrayType = ReflectUtil.get(className.substring(0,className.length() - 2));
-				}else
-				{
-					objectClass =  ReflectUtil.getComplexClass(className);
-				}
-			}else{
-				if(objectClass.isArray()){
-					arrayType = objectClass.getComponentType();
-				}
+				//读取类信息
+				objectClass = this.readClass(in,context);
 			}
 
-			//2.判断是否是数组类型
-			if(arrayType != null){
-				obj = readArray(context,arrayType,in);
+			//判断是否是数组类型
+			if(objectClass.isArray()){
+				obj = readArray(context,objectClass.getComponentType(),in);
 			}else
 			{
 				obj = readObjectWithOutArray(context,objectClass,in);
@@ -712,8 +652,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			}else if(typeFlag == ReflectUtil.ENUM){
 				String name = in.readString(true);
 				try {
-					Method method = objectClass.getMethod("valueOf",String.class);
-					obj = method.invoke(null,name);
+					obj = ReflectUtil.getEnum(objectClass,name);
 				} catch (Exception e) {
 					LOGGER.error("Can't find enum element with name " + name + "",e);
 				}
@@ -728,7 +667,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 							throw new BuilderNotFoundException(objectClass);
 						}
 					}
-					if(obj != null){
 						//将当前对象放入上下文中
 						context.put(obj);
 						//是否执行普通方式读取
@@ -741,14 +679,11 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 								Class currentType = Object.class;
 								for(int i = 0;i < size; i++){
 									if(hasWriteClassName(in)){
-										String className = readClassName(in,context);
-										currentType = ReflectUtil.getComplexClass(className);
+										currentType = readClass(in,context);
 									}else{
 										in.decreaseReaderIndex(1);
 									}
-
 									((Collection)obj).add(readValue(currentType,in,context));
-
 								}
 							}catch (UnsupportedOperationException ex){
 								isExecuteCommon = true;
@@ -757,6 +692,11 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 							try{
 								//先试探集合，看集合是否支持put()方法
 								Map tempMap = (Map) ReflectUtil.createObject(objectClass);
+								if(tempMap == null){
+									if(BuilderUtil.isSpecifyBuilder(objectClass)){
+										tempMap =  (Map)BuilderUtil.get(objectClass).newInstance();
+									}
+								}
 								tempMap.put("",1);
 								int size = readLengthOrIndex(in);
 								Class keyType = Object.class;
@@ -765,16 +705,14 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 								Object value = null;
 								for(int i = 0;i < size; i++){
 									if(hasWriteClassName(in)){
-										String className = readClassName(in,context);
-										keyType = ReflectUtil.getComplexClass(className);
+										keyType = readClass(in,context);
 									}else{
 										in.decreaseReaderIndex(1);
 									}
 									key = readValue(keyType,in,context);
 
 									if(hasWriteClassName(in)){
-										String className = readClassName(in,context);
-										valueType = ReflectUtil.getComplexClass(className);
+										valueType = readClass(in,context);
 									}else{
 										in.decreaseReaderIndex(1);
 									}
@@ -790,8 +728,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 						if(isExecuteCommon){
 							readValue(obj,objectClass,context,in);
 						}
-
-					}
 				}catch (Exception e) {
 					LOGGER.error(e.getCause(), e);
 					throw new InvalidDataFormatException(e.getMessage(), e);

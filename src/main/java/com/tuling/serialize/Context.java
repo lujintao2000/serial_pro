@@ -35,6 +35,8 @@ public class Context {
     private Integer  id;
     //当前要读取的值类型是否是枚举类型
     private boolean isEnum;
+    //应用程序ID
+    private Long applicationId;
 
     public Context(){
         id = idGenerator.getId();
@@ -44,8 +46,9 @@ public class Context {
      * 创建一个新的context对象
      * @return
      */
-    public static Context create(){
+    public static Context create(Long applicationId){
         Context context = new Context();
+        context.applicationId = applicationId;
         contextMap.put(context.getId(), context);
         return context;
     }
@@ -187,5 +190,13 @@ public class Context {
 
     public int getId() {
         return id;
+    }
+
+    public Long getApplicationId() {
+        return applicationId;
+    }
+
+    public void setApplicationId(Long applicationId) {
+        this.applicationId = applicationId;
     }
 }

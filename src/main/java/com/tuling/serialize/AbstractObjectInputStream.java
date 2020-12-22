@@ -26,15 +26,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 
 	private static final Logger LOGGER = Logger.getLogger(AbstractObjectInputStream.class);
 	private static final Map<Class,ObjectRead> readMap = new HashMap<>();
-	private static final String BOOLEAN_NAME = Boolean.class.getTypeName();
-	private static final String BYTE_NAME = Byte.class.getTypeName();
-	private static final String CHARACTER_NAME = Character.class.getTypeName();
-	private static final String SHORT_NAME = Short.class.getTypeName();
-	private static final String INTEGER_NAME = Integer.class.getTypeName();
-	private static final String LONG_NAME = Long.class.getTypeName();
-	private static final String FLOAT_NAME = Float.class.getTypeName();
-	private static final String DOUBLE_NAME = Double.class.getTypeName();
-	private static final String STRING_NAME = String.class.getTypeName();
+
 
 	static{
 		readMap.put(boolean.class,new BooleanRead());
@@ -366,7 +358,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 			//根据类标识获取与之对应的类；如果存在对应的类，就跳过类名数据读取；否则，读取类名数据，然后读取的类与标识绑定
 			//读取类标识
 			int classId = in.readScalableInt();
-			result = ReflectUtil.getClassById(classId);
+			result = ReflectUtil.getClassById(context.getApplicationId(),classId);
 			if(result != null){
 				//跳过类名数据   对于基本类型，要跳过的字节长度不一样
 				in.skipNextString();
@@ -379,7 +371,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 				}else{
 					result = ReflectUtil.getComplexClass(fullClassName);
 				}
-				ReflectUtil.add(result,classId);
+				ReflectUtil.add(context.getApplicationId(),result,classId);
 			}
 
 		}else if(preLength == Constant.CLASSNAME_SAME_WITH_FIELD){
@@ -560,7 +552,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 		if (version < Constant.MIN_VERSION || version > Constant.MAX_VERSION) {
 			throw new VersionNotSupportException("Current version of serialization is not supported.Current version is " + version + ",but " + (version < Constant.MIN_VERSION ? "the mininum supported version is " + Constant.MIN_VERSION : "the maximum supported version is " + Constant.MAX_VERSION));
 		}
-		Context context = Context.create();
+
 
 		//读取对象长度
 		int length = readLengthOfObject(in);
@@ -569,6 +561,26 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream{
 
 		//先将对象数据读到缓冲
 		ByteBuf buf = new ByteBuf(objectData);
+
+		//先判断是否是应用发送的第一次序列化数据
+		boolean isFirst = false;
+		if(buf.readByte() == Constant.FIRST_FLAG){
+			isFirst = true;
+		}else{
+			buf.decreaseReaderIndex(1);
+		}
+		//读取应用ID
+		Long applicationId = buf.readLong();
+		if(isFirst){
+			if(ReflectUtil.exist(applicationId)){
+				throw new ApplicationIdConflictException();
+			}else{
+				ReflectUtil.addApplicationId(applicationId);
+			}
+
+		}
+		Context context = Context.create(applicationId);
+
 		Object result = readObject(objectClass,buf,context);
 		buf.release();
 		context.destory();

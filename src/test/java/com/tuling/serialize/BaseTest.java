@@ -42,9 +42,12 @@ public abstract class BaseTest {
 
     @Test
     public void testArrayBase() throws Exception{
-        int[] array = new int[]{1,2,3,4,5};
+        int[][] array = new int[2][2];
+        array[0][0] = 1;
+        array[0][1] = 2;
+        array[1][0] = 3;
+        array[1][1] = 4;
         test(array);
-
     }
 
 

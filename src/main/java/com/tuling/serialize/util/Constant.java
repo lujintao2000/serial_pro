@@ -21,6 +21,9 @@ public class Constant {
     //char,short,int,long,boolean
     //在writeValue的时候，数据表示为 0x01 000 00 0,其中第1位0表示非空，紧接着的4位表示数据类型，再后3节表示数据长度
 
+    //表示当前序列化操作是应用的第一次序列化
+    public static final byte FIRST_FLAG = -128;  // 0x0 0001 000
+
     //在writeValue写入的第一字节中，标识boolean类型数据的字节表示(后2位为0)
     public static final byte BOOLEAN_FLAG = 0x08;  // 0x0 0001 000
     //在writeValue写入的第一字节中，标识char类型数据的字节表示(后2位为0)

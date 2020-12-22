@@ -5,13 +5,14 @@ import org.apache.log4j.Logger;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 
 /**
  * 定义了与反射相关的一些工具方法
  *
  * @author lujintao
- * @date 2017-04-20
+ * @date 2020-04-20
  */
 public class ReflectUtil {
     //应用运行ID
@@ -21,7 +22,10 @@ public class ReflectUtil {
     private static final Map<Class,Integer> serialIdMap = new ConcurrentHashMap<>();
 
     //存放需要反序列化的类的标识的Map
-    private static final Map<Integer,Class> unSerialIdMap = new ConcurrentHashMap<>();
+    //其中key为应用Id,value结构为 类标识->类
+    private static final Map<Object,Map<Integer,Class>> unSerialIdMap = new ConcurrentHashMap<>();
+    //存放应用ID
+    private static final Vector appIdVector = new Vector();
 
     //表示普通类型,即数组、枚举、基本类型之外的类型
     public static final int GENERAL = 0;
@@ -62,6 +66,8 @@ public class ReflectUtil {
 
     //存储每一种类型的默认值
     private static final Map<Class,Object> defaultValueMap = new HashMap<>();
+
+
 
     static {
         Arrays.stream(BaseTypeEnum.values()).forEach(x -> baseTypeNameMap.put(x.getValue(), x.getType()));
@@ -541,33 +547,54 @@ public class ReflectUtil {
 
     /**
      * 根据类标识获取与之对应的类
+     * @param applicationId  应用Id
      * @param id  类标识
      * @throws NullPointerException  如果指定id为空
      */
-    public static Class getClassById(Integer id){
-        return unSerialIdMap.get(id);
+    public static Class getClassById(Object applicationId,Integer id){
+          Map<Integer,Class> applicationMap = unSerialIdMap.get(applicationId);
+          if(applicationMap != null){
+              return applicationMap.get(id);
+          }else{
+              return null;
+          }
     }
 
     /**
-     * 是否包含与指定标识ID对应的反序列化类
-     * @param id  标识
-     * @return    包含，返回true;否则，返回false
-     * @throws NullPointerException  如果指定id为空
+     * 添加应用ID
+     * @param applicationId
      */
-    public static boolean contain(Integer id){
-        return unSerialIdMap.containsKey(id);
+    public static void addApplicationId(Object applicationId){
+        appIdVector.add(applicationId);
     }
 
     /**
-     * 将指定类与标识id绑定
+     * 判断应用ID是否已存在，如果存在，则表示出现了应用ID生成重复问题
+     * @param applicationId
+     */
+    public static boolean exist(Object applicationId){
+        return appIdVector.contains(applicationId);
+    }
+
+    /**
+     * 反序列化的时候，将指定类与标识id绑定
+     * @param applicationId 应用程序ID，程序的每一次运行都会生成不同的ID
      * @param target 需要与标识绑定的类
      * @param id     类的标识
      * @throws NullPointerException  如果指定id为空
      */
-    public static void add(Class target,Integer id){
+    public static void add(Object applicationId,Class target,Integer id){
         Assert.notNull(target);
-        if(!unSerialIdMap.containsKey(id)){
-            unSerialIdMap.put(id,target);
+        Map applicationMap = unSerialIdMap.get(applicationId);
+
+        if(applicationMap != null){
+            if(!applicationMap.containsKey(id)){
+                applicationMap.put(id,target);
+            }
+        }else{
+                Map<Integer,Class> map = new ConcurrentHashMap<>();
+                map.put(id,target);
+                unSerialIdMap.put(applicationId,map);
         }
     }
 

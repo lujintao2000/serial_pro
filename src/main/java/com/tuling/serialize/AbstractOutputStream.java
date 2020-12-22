@@ -26,6 +26,8 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
     private static final Map<Class, ObjectWrite> writerMap = new HashMap<>();
 
     private static final StringWrite stringWriter = new StringWrite();
+    //标识是否是第一次进行序列化
+    private static volatile Boolean isFirst = true;
 
     static {
         writerMap.put(boolean.class, new BooleanWrite());
@@ -71,9 +73,23 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
     public void write(Object obj, boolean isWriteClassName, OutputStream out) throws IOException {
         //写入当前序列化格式版本 上移动
         out.write(Constant.CURRENT_VERSION);
-        Context context = Context.create();
+
+        Context context = Context.create(ApplicationIdGenerator.getId());
         //先将对象数据写入缓冲,这样可以提高写入速度
         ByteBuf buf = new ByteBuf(256);
+
+        if(isFirst){
+            synchronized (isFirst){
+                if(isFirst){
+                    buf.writeByte(Constant.FIRST_FLAG);
+                    isFirst = false;
+                }
+            }
+        }
+
+        //写入应用ID
+        buf.writeLong(context.getApplicationId());
+
 
         write(obj, isWriteClassName, buf, context, true);
         //写入对象长度。对象长度占用的字节随着长度的变化而变化，尽量用更少的字节存储

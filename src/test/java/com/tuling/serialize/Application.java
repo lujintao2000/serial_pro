@@ -9,9 +9,13 @@ import org.msgpack.MessagePack;
 
 import javax.xml.crypto.Data;
 import java.io.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.*;
 
 /**
@@ -21,72 +25,105 @@ public class Application {
 
 
     public static void main(String[] args) throws Exception {
-
-            String[] a = new String[]{};
-            String[] b = new String[]{"aa"};
-            System.out.println(Collections.unmodifiableMap(new HashMap<>()).getClass());
-//            Class t =  Class.forName("java.util.Collections$UnmodifiableMap");
-//
-//            testMap();
+//            SubClass[] array = new SubClass[]{};
+//            System.out.println(SubClass.VERSION);
+//            String name2 = new String("xiaowang");
+//            String name = name2.intern();
+//            boolean isEqual = name2 == "xiaowang";
+//            String[] a = new String[]{"aa"};
+//            String[] b = new String[]{"aa"};
+//            System.out.println(a.equals(b));
+////            Class t =  Class.forName("java.util.Collections$UnmodifiableMap");
+////
+////            testMap();
             testUnSerialWithKyro();
             testUnserialWithSerial();
+//            getProcessID();
+//            Thread.sleep(100000);
+
+//              System.out.println(System.nanoTime());
+
+
+//        InetAddress ip;
+//        ip = InetAddress.getLocalHost();
+//        System.out.println("Current IP address : " + ip.getHostAddress());
+//
+//        NetworkInterface network = NetworkInterface.getByInetAddress(ip);
+//
+//        byte[] mac = network.getHardwareAddress();
+//
+//        System.out.print("Current MAC address : ");
+//
+//        StringBuilder sb = new StringBuilder();
+//        for (int i = 0; i < mac.length; i++) {
+//            sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
+//        }
+//        System.out.println(sb.toString());
+
 
     }
 
-    private static void testMap() throws Exception{
-        Map<Integer,String> map = new HashMap();
-        map.put(1,"ss");
-        map.put(2,"bb");
-        List<String> list = new ArrayList();
-        list.add("aa");
-        list.add("bb");
-        ReflectUtil.add(Role.class,2);
-        ByteBuf buf = new ByteBuf();
-//        buf.writeByte(Constant.CLASSNAME_SAME_WITH_FIELD);
-        buf.writeScalableInt(3);
-        buf.writeString("com.tuling.domain.Role",true);
-        String content = "";
-        Class result = null;
-        Class arrayType = null;
-        Class objectClass = null;
-        Context context = new Context();
-        context.setCurrentField(Employee.class.getDeclaredField("role"));
-        String className = "com.tuling.domain.Role";
-        int index = 0;
-        boolean flag = true;
-        long startTime = new Date().getTime();
-        for (int i = 0; i < 6000000; i++) {
-            byte preLength = buf.readByte();
-            if(preLength > 0) {
-                buf.decreaseReaderIndex(1);
-                //根据类标识获取与之对应的类；如果存在对应的类，就跳过类名数据读取；否则，读取类名数据，然后读取的类与标识绑定
-                //读取类标识
-                int classId = buf.readScalableInt();
-                result = ReflectUtil.getClassById(classId);
-                if(result != null){
-                    //跳过类名数据   对于基本类型，要跳过的字节长度不一样
-                    buf.skipNextString();
-                }
-                else{
-                    //2. 读入类名
-                    String fullClassName = buf.readString(true);
-                    if(fullClassName.endsWith("[]")){
-                         arrayType  = ReflectUtil.get(fullClassName.substring(0,fullClassName.length() - 2));
-                        result = Array.newInstance(arrayType, 0).getClass();
-                    }else{
-                        result = ReflectUtil.getComplexClass(fullClassName);
-                    }
-                    ReflectUtil.add(result,classId);
-                }
-            }else if(preLength == Constant.CLASSNAME_SAME_WITH_FIELD){
-                //字段值的类型和字段类型相同
-                result = context.getCurrentField().getType();
-            }
-            buf.readerIndex(0);
+    public static final int getProcessID() {
+        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+        System.out.println(runtimeMXBean.getName());
+        return Integer.valueOf(runtimeMXBean.getName().split("@")[0])
+                .intValue();
+    }
 
-        }
-        long endTime = new Date().getTime();
-        System.out.println(" cost " + (endTime - startTime) + "ms" + className + index);
+    private static void testMap() throws Exception{
+//        Map<Integer,String> map = new HashMap();
+//        map.put(1,"ss");
+//        map.put(2,"bb");
+//        List<String> list = new ArrayList();
+//        list.add("aa");
+//        list.add("bb");
+////        ReflectUtil.add(Role.class,2);
+//        ByteBuf buf = new ByteBuf();
+////        buf.writeByte(Constant.CLASSNAME_SAME_WITH_FIELD);
+//        buf.writeScalableInt(3);
+//        buf.writeString("com.tuling.domain.Role",true);
+//        String content = "";
+//        Class result = null;
+//        Class arrayType = null;
+//        Class objectClass = null;
+//        Context context = new Context();
+//        context.setCurrentField(Employee.class.getDeclaredField("role"));
+//        String className = "com.tuling.domain.Role";
+//        int index = 0;
+//        boolean flag = true;
+//        long startTime = new Date().getTime();
+//        for (int i = 0; i < 6000000; i++) {
+//            byte preLength = buf.readByte();
+//            if(preLength > 0) {
+//                buf.decreaseReaderIndex(1);
+//                //根据类标识获取与之对应的类；如果存在对应的类，就跳过类名数据读取；否则，读取类名数据，然后读取的类与标识绑定
+//                //读取类标识
+//                int classId = buf.readScalableInt();
+//                result = ReflectUtil.getClassById(classId);
+//                if(result != null){
+//                    //跳过类名数据   对于基本类型，要跳过的字节长度不一样
+//                    buf.skipNextString();
+//                }
+//                else{
+//                    //2. 读入类名
+//                    String fullClassName = buf.readString(true);
+//                    if(fullClassName.endsWith("[]")){
+//                         arrayType  = ReflectUtil.get(fullClassName.substring(0,fullClassName.length() - 2));
+//                        result = Array.newInstance(arrayType, 0).getClass();
+//                    }else{
+//                        result = ReflectUtil.getComplexClass(fullClassName);
+//                    }
+//                    ReflectUtil.add(result,classId);
+//                }
+//            }else if(preLength == Constant.CLASSNAME_SAME_WITH_FIELD){
+//                //字段值的类型和字段类型相同
+//                result = context.getCurrentField().getType();
+//            }
+//            buf.readerIndex(0);
+//
+//        }
+//        long endTime = new Date().getTime();
+//        System.out.println(" cost " + (endTime - startTime) + "ms" + className + index);
 
     }
 
@@ -219,18 +256,26 @@ public class Application {
 
         ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
 
+
+        ByteArrayOutputStream output2 = new ByteArrayOutputStream();
+        ObjectOutputStream out2 = new DefaultObjectOutputStream();
+        out2.write(DataProvider.getUser(), output2);
+        output2.close();
+
+        ByteArrayInputStream input2 = new ByteArrayInputStream(output2.toByteArray());
+        ByteArrayInputStream[] inputArray = new ByteArrayInputStream[]{input,input2};
         long startTime = new Date().getTime();
         ObjectInputStream in = new DefaultObjectInputStream();
         boolean flag = true;
         for (int i = 0; i < 600000; i++) {
-            Object obj =  in.readObject(input);
-            input.reset();
-//           flag = "com.tuling.domain.Role".endsWith("[]");
-            // ReflectUtil.getComplexClass("com.tuling.domain.Role");
+            Object obj =  in.readObject(input2);
+            input2.reset();
         }
         long endTime = new Date().getTime();
         System.out.println("serial unserialization cost " + (endTime - startTime) + "ms" + flag);
     }
+
+
 
     private static void testSerialWithSerial() throws Exception {
         User user = DataProvider.getUser();

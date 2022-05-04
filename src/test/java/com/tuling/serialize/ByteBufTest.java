@@ -586,7 +586,7 @@ public class ByteBufTest {
     public  void testWriteIntWithLengthBase(int value,int expectedLength){
         ByteBuf buf = new ByteBuf();
         int length = NumberUtil.getLength(value);
-        buf.writeInt(value,length);
+        buf.writeAnotherInt(value);
         Assert.assertTrue(expectedLength == length);
         int readValue = buf.readInt(length);
         Assert.assertTrue(readValue == value);
@@ -619,7 +619,109 @@ public class ByteBufTest {
         Assert.assertTrue(readValue == value);
     }
 
+    public void testWriteIntWithScalaBase(int value){
+        ByteBuf buf = new ByteBuf();
+        buf.writeIntWithScala(value);
+        int readValue = buf.readIntWithScala();
+        Assert.assertTrue(value == readValue);
+    }
 
+    @Test
+    public void testWriteIntWithScala(){
+        testWriteIntWithScalaBase(-3);
+        testWriteIntWithScalaBase(-3 << 8);
+        testWriteIntWithScalaBase(-3 << 16);
+        testWriteIntWithScalaBase(-3 << 24);
+        testWriteIntWithScalaBase(-9);
+        testWriteIntWithScalaBase(-1);
+        testWriteIntWithScalaBase(-2);
+        testWriteIntWithScalaBase(-1 << 8);
+        testWriteIntWithScalaBase(-1 << 16);
+        testWriteIntWithScalaBase(-1 << 24);
+        testWriteIntWithScalaBase(-2 << 8);
+        testWriteIntWithScalaBase(-2 << 16);
+        testWriteIntWithScalaBase(-2 << 24);
+        testWriteIntWithScalaBase(Integer.MIN_VALUE);
+        testWriteIntWithScalaBase(Integer.MIN_VALUE + 1);
+
+        testWriteIntWithScalaBase(0);
+        testWriteIntWithScalaBase(1);
+        testWriteIntWithScalaBase(1 << 8);
+        testWriteIntWithScalaBase(1 << 16);
+        testWriteIntWithScalaBase(1 << 24);
+        testWriteIntWithScalaBase(2);
+        testWriteIntWithScalaBase(2 << 8);
+        testWriteIntWithScalaBase(2 << 16);
+        testWriteIntWithScalaBase(2 << 24);
+        testWriteIntWithScalaBase(3);
+        testWriteIntWithScalaBase(3 << 8);
+        testWriteIntWithScalaBase(3 << 16);
+        testWriteIntWithScalaBase(3 << 24);
+        testWriteIntWithScalaBase(13);
+        testWriteIntWithScalaBase(13 << 8);
+        testWriteIntWithScalaBase(13 << 16);
+        testWriteIntWithScalaBase(13 << 24);
+
+
+        testWriteIntWithScalaBase(Integer.MAX_VALUE - 2);
+        testWriteIntWithScalaBase(Integer.MAX_VALUE);
+    }
+
+    public void testWriteLongWithScalaBase(long value){
+        ByteBuf buf = new ByteBuf();
+        buf.writeLongWithScala(value);
+        long readValue = buf.readLongWithScala();
+        Assert.assertTrue(value == readValue);
+    }
+
+    @Test
+    public void testWriteLongWithScala(){
+        testWriteLongWithScalaBase(0);
+        testWriteLongWithScalaBase(1);
+        testWriteLongWithScalaBase(1L << 8);
+        testWriteLongWithScalaBase(1L << 16);
+        testWriteLongWithScalaBase(1L << 24);
+        testWriteLongWithScalaBase(1L << 32);
+        testWriteLongWithScalaBase(1L << 40);
+        testWriteLongWithScalaBase(1L << 48);
+        testWriteLongWithScalaBase(1L << 56);
+
+        testWriteLongWithScalaBase(2);
+        testWriteLongWithScalaBase(2L << 8);
+        testWriteLongWithScalaBase(2L << 16);
+        testWriteLongWithScalaBase(2L << 24);
+        testWriteLongWithScalaBase(2L << 32);
+        testWriteLongWithScalaBase(2L << 40);
+        testWriteLongWithScalaBase(2L << 48);
+        testWriteLongWithScalaBase(2L << 56);
+
+        testWriteLongWithScalaBase(Long.MAX_VALUE);
+        testWriteLongWithScalaBase(Long.MAX_VALUE - 1);
+
+        testWriteLongWithScalaBase(-1);
+        testWriteLongWithScalaBase(-1L << 8);
+        testWriteLongWithScalaBase(-1L << 16);
+        testWriteLongWithScalaBase(-1L << 24);
+        testWriteLongWithScalaBase(-1L << 32);
+        testWriteLongWithScalaBase(-1L << 40);
+        testWriteLongWithScalaBase(-1L << 48);
+
+        testWriteLongWithScalaBase(-1L << 56);
+
+        testWriteLongWithScalaBase(-2L);
+        testWriteLongWithScalaBase(-2L << 8);
+        testWriteLongWithScalaBase(-2L << 16);
+        testWriteLongWithScalaBase(-2L << 24);
+        testWriteLongWithScalaBase(-2L << 32);
+        testWriteLongWithScalaBase(-2L << 40);
+        testWriteLongWithScalaBase(-2L << 48);
+
+        testWriteLongWithScalaBase(-2L << 56);
+
+        testWriteLongWithScalaBase(Long.MIN_VALUE);
+
+        testWriteLongWithScalaBase(Long.MIN_VALUE + 1);
+    }
 
     public boolean isReadLengthEqualWriteLength(int length){
         ByteBuf buf  =  new ByteBuf();

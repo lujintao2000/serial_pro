@@ -4,18 +4,18 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.tuling.domain.*;
-import com.tuling.serialize.util.*;
-import org.msgpack.MessagePack;
+import com.tuling.serialize.util.ByteBuf;
+import com.tuling.serialize.util.ContextMap;
+import com.tuling.serialize.util.ReflectUtil;
 
 import javax.xml.crypto.Data;
 import java.io.*;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
+import java.sql.Ref;
 import java.util.*;
 
 /**
@@ -25,156 +25,55 @@ public class Application {
 
 
     public static void main(String[] args) throws Exception {
-//            SubClass[] array = new SubClass[]{};
-//            System.out.println(SubClass.VERSION);
-//            String name2 = new String("xiaowang");
-//            String name = name2.intern();
-//            boolean isEqual = name2 == "xiaowang";
-//            String[] a = new String[]{"aa"};
-//            String[] b = new String[]{"aa"};
-//            System.out.println(a.equals(b));
-////            Class t =  Class.forName("java.util.Collections$UnmodifiableMap");
-////
-////            testMap();
-            testUnSerialWithKyro();
-            testUnserialWithSerial();
-//            getProcessID();
-//            Thread.sleep(100000);
-
-//              System.out.println(System.nanoTime());
 
 
-//        InetAddress ip;
-//        ip = InetAddress.getLocalHost();
-//        System.out.println("Current IP address : " + ip.getHostAddress());
+        testSerialWithSerial(1,DataProvider.getRole());
+
+
+
 //
-//        NetworkInterface network = NetworkInterface.getByInetAddress(ip);
+//        testSerialWithSerial(1,DataProvider.getArray(20000));
+//        testSerialWithKyro(1,DataProvider.getArray(20000));
+
+
+
+
+//        testUnSerialWithKyro(1,DataProvider.getArray(20000));
+//        testUnserialWithSerial(1,DataProvider.getArray(20000));
+//        testSerialWithKyro(200000,DataProvider.getRole());
+
+//        testSerialWithSerial(1,DataProvider.getRole());
+
+
+
+
+//        testSerialWithSerial(1,DataProvider.getList(20000));
+//        testSerialWithKyro(1,DataProvider.getList(20000));
+//        testSerialWithSerial(400000, DataProvider.getRole());
+
+//        testUnserialWithSerial(400000, DataProvider.getRole());
+//        Object[] array = DataProvider.getArray(1000);
+
+
+
+        testSerial(1,DataProvider.getUser());
+        testKyro(1, DataProvider.getUser());
+//        testSerialWithSerial(10000,DataProvider.getRole());
+//        testSerialWithKyro(10000,DataProvider.getRole());
+//        Class t = Role.class;
+//        boolean flag = false;
 //
-//        byte[] mac = network.getHardwareAddress();
 //
-//        System.out.print("Current MAC address : ");
-//
-//        StringBuilder sb = new StringBuilder();
-//        for (int i = 0; i < mac.length; i++) {
-//            sb.append(String.format("%02X%s", mac[i], (i < mac.length - 1) ? "-" : ""));
-//        }
-//        System.out.println(sb.toString());
-
-
-    }
-
-    public static final int getProcessID() {
-        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
-        System.out.println(runtimeMXBean.getName());
-        return Integer.valueOf(runtimeMXBean.getName().split("@")[0])
-                .intValue();
-    }
-
-    private static void testMap() throws Exception{
-//        Map<Integer,String> map = new HashMap();
-//        map.put(1,"ss");
-//        map.put(2,"bb");
-//        List<String> list = new ArrayList();
-//        list.add("aa");
-//        list.add("bb");
-////        ReflectUtil.add(Role.class,2);
-//        ByteBuf buf = new ByteBuf();
-////        buf.writeByte(Constant.CLASSNAME_SAME_WITH_FIELD);
-//        buf.writeScalableInt(3);
-//        buf.writeString("com.tuling.domain.Role",true);
-//        String content = "";
-//        Class result = null;
-//        Class arrayType = null;
-//        Class objectClass = null;
-//        Context context = new Context();
-//        context.setCurrentField(Employee.class.getDeclaredField("role"));
-//        String className = "com.tuling.domain.Role";
-//        int index = 0;
-//        boolean flag = true;
 //        long startTime = new Date().getTime();
-//        for (int i = 0; i < 6000000; i++) {
-//            byte preLength = buf.readByte();
-//            if(preLength > 0) {
-//                buf.decreaseReaderIndex(1);
-//                //根据类标识获取与之对应的类；如果存在对应的类，就跳过类名数据读取；否则，读取类名数据，然后读取的类与标识绑定
-//                //读取类标识
-//                int classId = buf.readScalableInt();
-//                result = ReflectUtil.getClassById(classId);
-//                if(result != null){
-//                    //跳过类名数据   对于基本类型，要跳过的字节长度不一样
-//                    buf.skipNextString();
-//                }
-//                else{
-//                    //2. 读入类名
-//                    String fullClassName = buf.readString(true);
-//                    if(fullClassName.endsWith("[]")){
-//                         arrayType  = ReflectUtil.get(fullClassName.substring(0,fullClassName.length() - 2));
-//                        result = Array.newInstance(arrayType, 0).getClass();
-//                    }else{
-//                        result = ReflectUtil.getComplexClass(fullClassName);
-//                    }
-//                    ReflectUtil.add(result,classId);
-//                }
-//            }else if(preLength == Constant.CLASSNAME_SAME_WITH_FIELD){
-//                //字段值的类型和字段类型相同
-//                result = context.getCurrentField().getType();
-//            }
-//            buf.readerIndex(0);
-//
+//        for(int i = 0; i < 6000000; i++){
+//              t = "".getClass();
 //        }
+//
 //        long endTime = new Date().getTime();
-//        System.out.println(" cost " + (endTime - startTime) + "ms" + className + index);
+//        System.out.println((endTime - startTime) + "ms");
 
     }
 
-
-    private static void testIsBasicType() throws Exception {
-        boolean flag = Object.class.isAssignableFrom(int.class);
-        Class temp = int.class.getSuperclass();
-
-        int hashCode = 0;
-        int a = 4;
-        String[] content = new String[]{};
-        Object[] array = DataProvider.getList().toArray();
-        array = content;
-        Object t = 5;
-        long result = 0L;
-        User user = new User();
-        Method method = User.class.getDeclaredMethod("getAge",null);
-        long startTime = new Date().getTime();
-
-        for(int j = 0;j < 80000000; j++){
-//            user.getAge();
-//            flag = t instanceof String;
-//            ByteBuf buf = new ByteBuf(256);
-//            for(int i = 0; i < 10000; i++){
-////                buf.writeLong(800,2);
-//                buf.writeByte(127);
-//            }
-            method.invoke(user,null);
-        }
-
-        long endTime = new Date().getTime();
-
-        System.out.println("isBasicType invoke  cost " + (endTime - startTime) + "ms" + result);
-    }
-
-    /**
-     * 判断该字符串是否可以采用ascii编码
-     *
-     * @param target
-     * @return
-     */
-    public static boolean isAscii(String target) {
-        boolean flag = true;
-        for (char item : target.toCharArray()) {
-            if (item > 127) {
-                flag = false;
-                break;
-            }
-        }
-        return flag;
-    }
 
     private static Object[] baseArray = new Object[]{Byte.class, Character.class, Boolean.class, Short.class, Integer.class, Long.class, Float.class, Double.class, String.class};
 
@@ -200,104 +99,123 @@ public class Application {
         System.out.println("serial serialization cost " + (endTime - startTime) + "ms" + length);
     }
 
-    private static void testSerialWithKyro() throws Exception {
-        User user = DataProvider.getUser();
-        List<User> users = DataProvider.getUsers();
-        Object obj = DataProvider.getList();
-        Set set = DataProvider.getSet();
-        Object[] array = DataProvider.getArray();
-        Map map = DataProvider.getMap();
-        Role role = new Role("项目经理");
-        long startTime = new Date().getTime();
+    private static void testSerialWithKyro(int count,Object obj) throws Exception {
         Kryo kryo = new Kryo();
-        kryo.register(User.class);
-//        kryo.register(Map.class);
-        for (int i = 0; i < 1; i++) {
+        kryo.register(obj.getClass());
+        long startTime = System.nanoTime();
 
-//            kryo.register(User.class);
+
+        int a = 5;
+
+        for (int i = 0; i < count; i++) {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             Output output = new Output(outputStream);
-            kryo.writeObject(output, users);
+            kryo.writeObject(output, obj);
             output.close();
-//            System.out.println("");
-
+            a = i;
         }
-        long endTime = new Date().getTime();
-
-        System.out.println("kyro serialization cost " + (endTime - startTime) + "ms");
-
+        long endTime = System.nanoTime();
+        System.out.println("kyro serialization cost " + (endTime - startTime)/10000 + "ns" );
     }
 
-    private static void testUnSerialWithKyro() throws Exception {
+    private static void testUnSerialWithKyro(int count,Object target) throws Exception {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Kryo kryo2 = new Kryo();
         Output output = new Output(outputStream);
-        kryo2.writeClassAndObject(output, DataProvider.getUser());
+        kryo2.writeClassAndObject(output, target);
+//        kryo2.writeObject(output,target);
         output.close();
 
 
         ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
-
-        long startTime = new Date().getTime();
         Kryo kryo = new Kryo();
-        for (int i = 0; i < 600000; i++) {
+        kryo.register(target.getClass());
+        long startTime = System.nanoTime();
+
+        for (int i = 0; i < count; i++) {
             Object t = kryo.readClassAndObject(new Input(inputStream));
             inputStream.reset();
         }
-        long endTime = new Date().getTime();
-        System.out.println("kyro unserialization cost " + (endTime - startTime) + "ms");
+        long endTime = System.nanoTime();
+        System.out.println("kyro unserialization cost " + (endTime - startTime)/1000000 + "ms");
     }
 
-    private static void testUnserialWithSerial() throws Exception {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        ObjectOutputStream out = new DefaultObjectOutputStream();
-        out.write(DataProvider.getUser(), output);
-        output.close();
-
-        ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-
+    private static void testUnserialWithSerial(int count,Object target) throws Exception {
 
         ByteArrayOutputStream output2 = new ByteArrayOutputStream();
         ObjectOutputStream out2 = new DefaultObjectOutputStream();
-        out2.write(DataProvider.getUser(), output2);
+        out2.write(target, output2);
+//        out2.write(target,false,output2);
         output2.close();
 
         ByteArrayInputStream input2 = new ByteArrayInputStream(output2.toByteArray());
-        ByteArrayInputStream[] inputArray = new ByteArrayInputStream[]{input,input2};
-        long startTime = new Date().getTime();
+        ReflectUtil.register(target.getClass());
         ObjectInputStream in = new DefaultObjectInputStream();
+        long startTime = System.nanoTime();
+
         boolean flag = true;
-        for (int i = 0; i < 600000; i++) {
+        for (int i = 0; i < count; i++) {
             Object obj =  in.readObject(input2);
             input2.reset();
         }
-        long endTime = new Date().getTime();
-        System.out.println("serial unserialization cost " + (endTime - startTime) + "ms" + flag);
+        long endTime = System.nanoTime();
+        System.out.println("serial unserialization cost " + (endTime - startTime)/1000000 + "ms" + flag);
     }
 
+    private static void testKyro(int count,Object value) throws Exception{
 
-
-    private static void testSerialWithSerial() throws Exception {
-        User user = DataProvider.getUser();
-        List<User> users = DataProvider.getUsers();
-        Object obj = DataProvider.getList();
-        Set set = DataProvider.getSet();
-        Object[] array = DataProvider.getArray();
-        Map map = DataProvider.getMap();
-
+        Kryo kyro = new Kryo();
         long startTime = new Date().getTime();
-        DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
-        for (int i = 0; i < 1; i++) {
-
-            OutputStream outputStream = new ByteArrayOutputStream();
-//            Serial.write(DataProvider.getUser(),outputStream,false);
-            objectOutputStream.write(users, false, outputStream);
-
-            outputStream.close();
+        for (int i = 0; i < count; i++) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            Output output = new Output(outputStream);
+            kyro.writeClassAndObject(output, value);
+            output.close();
+            ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+            Object t = kyro.readClassAndObject(new Input(inputStream));
+            inputStream.close();
         }
         long endTime = new Date().getTime();
+        System.out.println("The total cost of kyro serialization and unserialization is  " + (endTime - startTime) + "ms");
 
-        System.out.println("serial serialization cost " + (endTime - startTime) + "ms");
+    }
+
+    private static void testSerial(int count,Object value) throws Exception{
+//        ByteArrayOutputStream output = new ByteArrayOutputStream();
+//        ObjectOutputStream out = new DefaultObjectOutputStream();
+//        out.write(value, output);
+//        output.close();
+
+        ObjectInputStream in = new DefaultObjectInputStream();
+        boolean flag = true;
+        ReflectUtil.register(value.getClass());
+        long startTime = new Date().getTime();
+        for (int i = 0; i < count; i++) {
+            ByteArrayOutputStream output2 = new ByteArrayOutputStream();
+            ObjectOutputStream out2 = new DefaultObjectOutputStream();
+            out2.write(value, output2);
+            output2.close();
+
+            ByteArrayInputStream input2 = new ByteArrayInputStream(output2.toByteArray());
+
+            Object obj =  in.readObject(input2);
+            input2.close();
+        }
+        long endTime = new Date().getTime();
+        System.out.println("The total cost of serial unserialization and serialization is " + (endTime - startTime) + "ms" + flag);
+    }
+
+    private static void testSerialWithSerial(int count,Object value) throws Exception {
+        ReflectUtil.register(value.getClass());
+        DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
+        long startTime = System.nanoTime();
+        for (int i = 0; i < count; i++) {
+            OutputStream outputStream = new ByteArrayOutputStream();
+            objectOutputStream.write(value, false, outputStream);
+            outputStream.close();
+        }
+        long endTime = System.nanoTime();
+        System.out.println("seri serialization cost " + (endTime - startTime)/10000 + "ns");
     }
 
 
@@ -339,34 +257,35 @@ public class Application {
 
     private static List<User> getUsers() {
         List<User> users = new ArrayList<>();
-        User firstUser = new User("wangfei", 20, 180.f, 76.0f);
-        firstUser.setCompany(new Company("优识云创"));
-        User secondUser = new User("zhiguo", null, null, 72.03f);
-        secondUser.setCompany(new Company("奇米科技"));
-        User thirdUser = new User("huabing", 30, 172.f, 74.0f);
-        thirdUser.setCompany(new Company("微尘大业"));
-        Role role = new Role("项目经理");
-        Department department = new AboardDepartment("技术部", new Country("中国"));
-        Profession profession = new Profession("java工程师");
-        firstUser.setRole(role);
-        firstUser.setDepartment(department);
-        firstUser.setProfession(profession);
-        secondUser.setRole(role);
-        secondUser.setDepartment(department);
-        secondUser.setProfession(profession);
-        thirdUser.setRole(role);
-        thirdUser.setDepartment(department);
-        thirdUser.setProfession(profession);
-
-
-        users.add(firstUser);
-        users.add(secondUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-        users.add(thirdUser);
-
-        return Arrays.asList(firstUser, secondUser, thirdUser, thirdUser, thirdUser, thirdUser);
+//        User firstUser = new User("wangfei", 20, 180.f, 76.0f);
+//        firstUser.setCompany(new Company("优识云创"));
+//        User secondUser = new User("zhiguo", null, null, 72.03f);
+//        secondUser.setCompany(new Company("奇米科技"));
+//        User thirdUser = new User("huabing", 30, 172.f, 74.0f);
+//        thirdUser.setCompany(new Company("微尘大业"));
+//        Role role = new Role("项目经理");
+//        Department department = new AboardDepartment("技术部", new Country("中国"));
+//        Profession profession = new Profession("java工程师");
+//        firstUser.setRole(role);
+//        firstUser.setDepartment(department);
+//        firstUser.setProfession(profession);
+//        secondUser.setRole(role);
+//        secondUser.setDepartment(department);
+//        secondUser.setProfession(profession);
+//        thirdUser.setRole(role);
+//        thirdUser.setDepartment(department);
+//        thirdUser.setProfession(profession);
+//
+//
+//        users.add(firstUser);
+//        users.add(secondUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//        users.add(thirdUser);
+//
+//        return Arrays.asList(firstUser, secondUser, thirdUser, thirdUser, thirdUser, thirdUser);
+        return users;
     }
 
 

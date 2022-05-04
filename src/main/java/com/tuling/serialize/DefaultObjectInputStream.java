@@ -13,10 +13,7 @@ import com.tuling.serialize.exception.BuilderNotFoundException;
 import com.tuling.serialize.exception.ClassNotSameException;
 import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.exception.InvalidDataFormatException;
-import com.tuling.serialize.util.ByteBuf;
-import com.tuling.serialize.util.Constant;
-import com.tuling.serialize.util.NumberUtil;
-import com.tuling.serialize.util.ReflectUtil;
+import com.tuling.serialize.util.*;
 import org.apache.log4j.Logger;
 
 /**
@@ -88,29 +85,81 @@ public class DefaultObjectInputStream extends AbstractObjectInputStream{
 	/**
 	 * 读取值，将值存入指定的对象中,如果obj为空,则将读取的值存入Map
 	 * @param obj    需要读入值的对象
-	 * @param objectClass  要读取对象的类型
+	 * @param fields  要读取对象所对应类的所有属性
 	 * @param context 序列化上下文
 	 * @param in  包含序列化数据的输入流
 	 * @return  存储了读取值的对象
 	 */
 	@Override
-	protected Object readValue(Object obj,Class objectClass,Context context,ByteBuf in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException{
-		List<Class> selfAndSuperList = ReflectUtil.getSelfAndSuperClass(objectClass);
-		int count = 0;
-		for(Class currentType : selfAndSuperList){
-			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
-			short fieldCount = this.readLengthOrIndex(in);
-			if(fieldCount != fields.length){
-				throw new ClassNotSameException("属性个数不一致");
+	protected Object readValue(Object obj,List<Field> fields,Context context,ByteBuf in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException{
+//		List<Class> selfAndSuperList = ReflectUtil.getSelfAndSuperClass(objectClass);
+//		int count = 0;
+//		for(Class currentType : selfAndSuperList){
+//			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
+//		    Field[] fields = context.getCurrentFields();
+//			short fieldCount = this.readLengthOrIndex(in);
+//			if(fieldCount != fields.length){
+//				throw new ClassNotSameException("属性个数不一致");
+//			}
+			for(Field field : fields){
+				context.setCurrentField(field);
+//				this.readField(obj,objectClass,fields[i],in,context);
+				try {
+					field.set(obj,this.readValue(field.getType(),in,context, SituationEnum.POSSIBLE_BE) );
+
+				} catch (IllegalArgumentException e) {
+					LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
+					throw new InvalidAccessException(e.getCause() + "|field:" + field.getName(), e);
+				} catch (IllegalAccessException e) {
+					LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
+					throw new InvalidAccessException(e.getCause() + "|field:" + field.getName(), e);
+				}
 			}
-			for(int i = 0; i < fieldCount; i++){
-				context.setCurrentField(fields[i]);
-				this.readField(obj,objectClass,fields[i],in,context);
-			}
-		}
+//		}
 		context.setCurrentField(null);
 		return obj;
 
 	}
+
+	/**
+	 * 读取值，将值存入指定的对象中,如果obj为空,则将读取的值存入Map
+	 * @param obj    需要读入值的对象
+	 * @param objectClass  要读取对象的类型
+	 * @param context 序列化上下文
+	 * @param in  包含序列化数据的输入流
+	 * @return  存储了读取值的对象
+	 */
+//	protected  List<PreObject> readValue(List<PreObject> list,Class objectClass,Context context,ByteBuf in) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException{
+////		List<Class> selfAndSuperList = ReflectUtil.getSelfAndSuperClass(objectClass);
+////		int count = 0;
+////		for(Class currentType : selfAndSuperList){
+////			Field[] fields = ReflectUtil.getAllInstanceField(currentType,isCacheField);
+////			short fieldCount = this.readLengthOrIndex(in);
+////			if(fieldCount != fields.length){
+////				throw new ClassNotSameException("属性个数不一致");
+////			}
+//		    Field[] fields = context.getCurrentFields();
+//			for(int i = 0; i < fields.length; i++){
+//				context.setCurrentField(fields[i]);
+////				this.readField(obj,objectClass,fields[i],in,context);
+//				try {
+//
+//					Class fieldType = fields[i].getType();
+//					for(PreObject item : list){
+//						fields[i].set(item.getObj(),this.readValue(fieldType,item.getBuf(),context,SituationEnum.POSSIBLE_BE) );
+//					}
+//
+//				} catch (IllegalArgumentException e) {
+//					LOGGER.error(e.getCause() + "|field:" + fields[i].getName(), e);
+//					throw new InvalidAccessException(e.getCause() + "|field:" + fields[i].getName(), e);
+//				} catch (IllegalAccessException e) {
+//					LOGGER.error(e.getCause() + "|field:" + fields[i].getName(), e);
+//					throw new InvalidAccessException(e.getCause() + "|field:" + fields[i].getName(), e);
+//				}
+//			}
+////		}
+//		context.setCurrentField(null);
+//		return list;
+//	}
 
 }

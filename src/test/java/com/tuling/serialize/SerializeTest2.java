@@ -1,15 +1,8 @@
 package com.tuling.serialize;
 
-import com.tuling.domain.*;
-import com.tuling.serialize.exception.InvalidDataFormatException;
-import com.tuling.serialize.util.BuilderUtil;
 import org.junit.Assert;
 import org.junit.Test;
-
 import java.io.*;
-import java.lang.reflect.Array;
-import java.math.BigInteger;
-import java.util.*;
 
 /**
  * @author lujintao
@@ -20,19 +13,13 @@ public class SerializeTest2 extends  BaseTest{
     @Override
     protected void test(Object originalValue) throws Exception {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-//        OutputStream output = new FileOutputStream("e:\\list.obj");
-
-        ObjectOutputStream out = new DefaultObjectOutputStream( );
-        out.write(originalValue,output);
+        Serial.write(originalValue,output);
         output.close();
-
         ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
-
-//        InputStream input = new FileInputStream("e:\\list.obj");
         ObjectInputStream in = new DefaultObjectInputStream();
         Object obj = null;
         try {
-            obj = in.readObject(input);
+            obj = Serial.read(input);
             System.out.println(obj);
         } catch (Exception e) {
             e.printStackTrace();

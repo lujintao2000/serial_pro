@@ -4,7 +4,6 @@ package com.tuling.serialize.util;
  * Created by Administrator on 2020-06-12.
  */
 public class Constant {
-
     //代表写对象开始
     public static final int BEGIN_FLAG = 127;
     //代表写对象结束

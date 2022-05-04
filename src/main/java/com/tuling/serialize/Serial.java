@@ -34,6 +34,18 @@ public class Serial {
     }
 
     /**
+     * 以非兼容模式序列化指定对象到指定输出流中,序列化的时候会写入当前写入对象obj所属类的类名
+     * @param obj   要序列化的对象
+     * @param out  序列化数据需要写出的流
+     * @param buffer_size  指定存储对象数据的缓冲数组的初始容量
+     * @throws IOException   遇到IO错误，抛出此异常
+     * @throws SerializationException  序列化的时候出错，抛出此异常
+     */
+    public static void write(Object obj, OutputStream out,int buffer_size) throws IOException,SerializationException{
+        defaultOutput.write(obj,out,buffer_size);
+    }
+
+    /**
      * 以非兼容模式序列化指定对象到指定输出流中
      * @param obj   要序列化的对象
      * @param isWriteClassName  序列化的时候，是否写入对象obj所属类的类名;如果不写入类名，在反序列化的时候，需要提供反序列化对象的类型信息
@@ -45,20 +57,54 @@ public class Serial {
         defaultOutput.write(obj,isWriteClassName,out);
     }
 
+    /**
+     * 以非兼容模式序列化指定对象到指定输出流中
+     * @param obj   要序列化的对象
+     * @param isWriteClassName  序列化的时候，是否写入对象obj所属类的类名;如果不写入类名，在反序列化的时候，需要提供反序列化对象的类型信息
+     * @param out  序列化数据需要写出的流
+     * @param buffer_size  指定存储对象数据的缓冲数组的初始容量
+     * @throws IOException  遇到IO错误，抛出此异常
+     * @throws SerializationException  序列化的时候出错，抛出此异常
+     */
+    public static void write(Object obj,  OutputStream out,boolean isWriteClassName,int buffer_size) throws IOException,SerializationException{
+        defaultOutput.write(obj,isWriteClassName,out,buffer_size);
+    }
+
 
     /**
      * 序列化指定对象到指定输出流中
      * @param obj   要序列化的对象
-     * @param isCompatible 序列化的时候，是否开启兼容模式
-     * @param isWriteClassName  序列化的时候，是否写入对象obj所属类的类名;如果不写入类名，在反序列化的时候，需要提供反序列化对象的类型信息
      * @param out  序列化数据需要写出的流
+     * @param isWriteClassName  序列化的时候，是否写入对象obj所属类的类名;如果不写入类名，在反序列化的时候，需要提供反序列化对象的类型信息
+     * @param isCompatible 序列化的时候，是否开启兼容模式
      * @throws IOException
      * @throws SerializationException
      */
     public static void write(Object obj,  OutputStream out,boolean isWriteClassName,boolean isCompatible) throws IOException,SerializationException{
+        ObjectOutputStream output = isCompatible ? compatibleOutput : defaultOutput;
+        try {
+            output.write(obj,isWriteClassName, out);
+        }catch (IOException ex){
+            throw  ex;
+        }catch (Exception ex){
+            throw  new SerializationException(ex);
+        }
+    }
+
+    /**
+     * 序列化指定对象到指定输出流中
+     * @param obj   要序列化的对象
+     * @param out  序列化数据需要写出的流
+     * @param isWriteClassName  序列化的时候，是否写入对象obj所属类的类名;如果不写入类名，在反序列化的时候，需要提供反序列化对象的类型信息
+     * @param isCompatible 序列化的时候，是否开启兼容模式
+     * @param buffer_size  指定存储对象数据的缓冲数组的初始容量
+     * @throws IOException
+     * @throws SerializationException
+     */
+    public static void write(Object obj,  OutputStream out,boolean isWriteClassName,boolean isCompatible,int buffer_size) throws IOException,SerializationException{
        ObjectOutputStream output = isCompatible ? compatibleOutput : defaultOutput;
        try {
-           output.write(obj,isWriteClassName, out);
+           output.write(obj,isWriteClassName, out,buffer_size);
        }catch (IOException ex){
            throw  ex;
        }catch (Exception ex){
@@ -74,7 +120,7 @@ public class Serial {
      * @throws SerializationException
      */
     public static Object read(InputStream in) throws IOException,SerializationException{
-       return read(in,IS_Compatible,null);
+       return read(in,null,IS_Compatible);
     }
 
     /**
@@ -85,7 +131,7 @@ public class Serial {
      * @throws SerializationException
      */
     public static Object read(InputStream in, Class type) throws IOException,SerializationException{
-        return read(in, IS_Compatible ,type);
+        return read(in ,type,IS_Compatible);
     }
 
     /**
@@ -96,7 +142,7 @@ public class Serial {
      * @throws SerializationException
      */
     public static Object read(InputStream in, boolean isCompatible) throws IOException,SerializationException{
-        return read(in,isCompatible,null);
+        return read(in,null,isCompatible);
     }
 
     /**
@@ -107,7 +153,7 @@ public class Serial {
      * @throws IOException
      * @throws SerializationException
      */
-    public static Object read(InputStream in, boolean isCompatible,Class type) throws IOException,SerializationException{
+    public static Object read(InputStream in, Class type,boolean isCompatible) throws IOException,SerializationException{
         ObjectInputStream objectInput = isCompatible ? compatibleInput : defaultInput;
         try {
             if(type == null){

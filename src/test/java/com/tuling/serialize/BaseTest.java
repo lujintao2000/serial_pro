@@ -26,13 +26,12 @@ public abstract class BaseTest {
         test(1f);
         test(1d);
         test("world");
-//        test(new BigInteger("200000"));
-//        test(new AtomicInteger(20));
     }
 
     @Test
     public void testDomain() throws Exception{
-        test(DataProvider.getRole());
+        test( DataProvider.getRole() );
+        test(Calendar.getInstance(TimeZone.getDefault()));
     }
 
     @Test
@@ -48,6 +47,25 @@ public abstract class BaseTest {
         array[1][0] = 3;
         array[1][1] = 4;
         test(array);
+        Object[] array2 = new Object[4];
+        array2[0] = DataProvider.getUser();
+        array2[1] = DataProvider.getUser();
+        array2[2] = 5;
+        array2[3] = DataProvider.getRole();
+        test(array2);
+        Object[] array3 = new Object[]{DataProvider.getUser(),null,DataProvider.getUser(),Role.getInstance(),null,Role.getInstance("manager")};
+
+        test(array3);
+        test(new Integer[]{1,2,3,4,5,null,6});
+        test(new User[]{DataProvider.getUser(),null,DataProvider.getUser(),new User("wanghong",20,170.0f,72.0f)});
+        test(new int[]{1,2,3});
+        test(new short[]{1,2,3});
+        test(new long[]{1,2,3});
+        test(new byte[]{1,2,3});
+        test(new char[]{'a','b','c'});
+        test(new boolean[]{true,false,true,false});
+        test(new float[]{1.23f,2.42f,3.22f});
+        test(new double[]{1.25d,3.22d,4.22d});
     }
 
 
@@ -59,7 +77,7 @@ public abstract class BaseTest {
 
     @Test
     public void testArrayObject() throws Exception{
-        test(DataProvider.getUsers().toArray(new User[0]));
+        test(DataProvider.getRoles().toArray(new Role[0]));
     }
 
     @Test
@@ -79,7 +97,7 @@ public abstract class BaseTest {
         list.add(null);
         list.add(4);
         test(list);
-        test(Arrays.asList(1,2,3,null,5));
+        test(Arrays.asList(1));
     }
 
     @Test
@@ -125,19 +143,21 @@ public abstract class BaseTest {
         Map map = new HashMap();
         map.put("name","xiaowang");
 
-//        map.put(null, null);
-//        map.put("company",new Company(""));
-//        map.put("user", new User("wangfei", null, null, 76.0f));
-//        map.put(new Company(""),"");
-//        map.put(5,6);
-//        map.put(new User("wangfei", null, null, 76.0f),5);
+        map.put(null, null);
+        map.put("company",new Company(""));
+        map.put("user", new User("wangfei", null, null, 76.0f));
+        map.put(new Company(""),"");
+        map.put(5,6);
+        map.put(new User("wangfei", null, null, 76.0f),5);
         test(Collections.unmodifiableMap(map));
-//        map = new TreeMap<>();
-//        map.put("name","xiaohua");
-//        map.put("age",20);
-//        map.put("sex","female");
-//        map.put("user", new User("wangfei", null, null, 76.0f));
-//        test(map);
+        test(map);
+        map = new TreeMap<>();
+
+        map.put("name","xiaohua");
+        map.put("age",20);
+        map.put("sex","female");
+        map.put("user", new User("wangfei", null, null, 76.0f));
+        test(map);
     }
 
 

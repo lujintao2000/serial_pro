@@ -47,14 +47,12 @@ public class SerialTest {
             outputStream = new FileOutputStream("e:\\list.obj");
             Serial.write(originalObj,outputStream,isWriteClassName,isCompatible);
             outputStream.close();
-//            inputStream = new ByteArrayInputStream(outputStream.toByteArray());
             inputStream = new FileInputStream("e:\\list.obj");
             if(!isWriteClassName){
-                obj = Serial.read(inputStream,isCompatible,(originalObj != null) ? originalObj.getClass() : null );
+                obj = Serial.read(inputStream,(originalObj != null) ? originalObj.getClass() : null,isCompatible );
             }else{
                 obj = Serial.read(inputStream,isCompatible);
             }
-
         }catch (Exception ex){
             ex.printStackTrace();
         }finally {
@@ -65,8 +63,6 @@ public class SerialTest {
                     e.printStackTrace();
                 }
             }
-
-
         }
         Assert.assertEquals(TestUtil.isEqual(originalObj,obj),true);
     }
@@ -74,8 +70,6 @@ public class SerialTest {
     @Test
     public void testSerialWithDefault() throws Exception{
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//        OutputStream outputStream = new FileOutputStream("e:\\list.obj");
-
         Object originalObj = DataProvider.getUser();
         Object obj = null;
         try{

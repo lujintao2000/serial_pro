@@ -13,6 +13,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class TestUtil {
 
+
+
     /**
      * 判断两个引用变量是否相等
      * @param originalValue
@@ -27,7 +29,19 @@ public class TestUtil {
                 int length = Array.getLength(originalValue);
                 if(obj != null && obj.getClass().isArray() && length == Array.getLength(obj)){
                     for(int i = 0; i < length; i++){
-                        if(!Array.get(originalValue,i).equals(Array.get(obj,i))){
+                        if(Array.get(originalValue,i) != null){
+                            if(Array.get(originalValue,i).getClass().isArray()){
+                                if(!isEqual(Array.get(originalValue,i), Array.get(obj,i))){
+                                    flag = false;
+                                    break;
+                                }
+                            }else{
+                                if(!Array.get(originalValue,i).equals(Array.get(obj,i))){
+                                    flag = false;
+                                    break;
+                                }
+                            }
+                        }else if(Array.get(obj,i) != null){
                             flag = false;
                             break;
                         }

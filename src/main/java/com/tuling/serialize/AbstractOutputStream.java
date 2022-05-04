@@ -1,14 +1,11 @@
 package com.tuling.serialize;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-import com.sun.xml.internal.ws.developer.Serialization;
 import com.tuling.serialize.util.*;
 import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.nio.charset.Charset;
 import java.util.*;
 
 /**
@@ -17,6 +14,9 @@ import java.util.*;
 public abstract class AbstractOutputStream implements ObjectOutputStream {
 
     private static final Logger LOGGER = Logger.getLogger(ObjectOutputStream.class);
+
+    //存储对象写入数据的ByteBuf的默认初始容量
+    private static final int DEFAULT_CAPACITY = 256;
 
     protected static final ThreadLocal<Context> threadLocal = new ThreadLocal();
 
@@ -59,7 +59,12 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
 
     @Override
     public void write(Object obj, OutputStream out) throws IOException {
-        write(obj, true, out);
+        this.write(obj,out,DEFAULT_CAPACITY);
+    }
+
+    @Override
+    public void write(Object obj,OutputStream out,int size) throws IOException{
+        write(obj, true, out,size);
     }
 
     /**
@@ -71,26 +76,26 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
      */
     @Override
     public void write(Object obj, boolean isWriteClassName, OutputStream out) throws IOException {
+        this.write(obj,isWriteClassName,out,DEFAULT_CAPACITY);
+    }
+
+    /**
+     * 序列化某个对象
+     *
+     * @param obj              要序列化的对象
+     * @param isWriteClassName 序列化时是否写入对象所属类的类名
+     * @param out 写出序列化对象的输出流
+     * @param size  指定存储对象数据的缓冲数组的初始容量
+     * @throws IOException
+     */
+    @Override
+    public void write(Object obj, boolean isWriteClassName, OutputStream out,int size) throws IOException{
         //写入当前序列化格式版本 上移动
         out.write(Constant.CURRENT_VERSION);
 
-        Context context = Context.create(ApplicationIdGenerator.getId());
+        Context context = new Context();
         //先将对象数据写入缓冲,这样可以提高写入速度
-        ByteBuf buf = new ByteBuf(256);
-
-        if(isFirst){
-            synchronized (isFirst){
-                if(isFirst){
-                    buf.writeByte(Constant.FIRST_FLAG);
-                    isFirst = false;
-                }
-            }
-        }
-
-        //写入应用ID
-        buf.writeLong(context.getApplicationId());
-
-
+        ByteBuf buf = new ByteBuf(size);
         write(obj, isWriteClassName, buf, context, true);
         //写入对象长度。对象长度占用的字节随着长度的变化而变化，尽量用更少的字节存储
         writeLengthOfObject(buf.readableBytes(), out);
@@ -156,6 +161,7 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
 
     }
 
+
     /**
      * @param obj              要写入对象
      * @param isWriteClassName 是否写入对象所属类的类名
@@ -168,13 +174,14 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
         if (obj == null) {
             this.writeNull(out);
         } else {
-            context.put(obj);
+            this.writeNotNull(out);
+            context.put(obj,true);
             Class targetClass = obj.getClass();
             int type = ReflectUtil.getTypeOfClass(targetClass, obj);
             boolean isBaseType = possibleBaseType && type == ReflectUtil.BASETYPE;
-            //1. 写入对象类型
+            //写入对象类型
             if (isWriteClassName) {
-                this.writeClassName(obj, targetClass, out, context, isBaseType);
+                this.writeClassName(targetClass, out, context, isBaseType);
             }
             //判断是否是数组类型或集合类型
             if (type == ReflectUtil.ARRAY) {
@@ -183,27 +190,37 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
                 out.writeScalableInt(length);
                 boolean isCommon = false;
                 Object[] arrayObj = null;
-                if (Object.class.isAssignableFrom(targetClass.getComponentType())) {
+                Class arrayType = targetClass.getComponentType();
+                if (Object.class.isAssignableFrom(arrayType)) {
                     arrayObj = (Object[]) obj;
                     isCommon = true;
                 }
-                Class currentType = targetClass.getComponentType();
-                //3. 循环写入数组中的元素
-                for (int i = 0; i < length; i++) {
-                    Object value = isCommon ? arrayObj[i] : Array.get(obj, i);
-                    if (value != null && value.getClass() != currentType) {
-                        currentType = value.getClass();
-                        writeType(value,currentType,out,context);
+                if(isCommon){
+                    Class itemType = arrayType;
+                    //标识数组中元素类型是否是基本类型
+                    boolean isItemBaseType = ReflectUtil.isBaseType(itemType);
+                    //3. 循环写入数组中的元素
+                    for (int i = 0; i < length; i++) {
+                        Object value = arrayObj[i];
+
+                        if (value != null && value.getClass() != itemType) {
+                            itemType = value.getClass();
+                            isItemBaseType = ReflectUtil.isBaseType(itemType);
+                            writeType(itemType,out,context,isItemBaseType);
+                        }
+                        this.writeValue(value, itemType, out, context,isItemBaseType ? SituationEnum.MUST_BE : SituationEnum.MUST_NOT);
                     }
-                    this.writeValue(value, currentType, out, context);
+                }else{
+                    this.dealArrayWithBaseType(arrayType,out,obj,length);
+
                 }
             } else {
                 //标识序列化时是否走最普通逻辑
-                boolean isExecuteCommon = false;
+               boolean isExecuteCommon = false;
                 //先写入该类类名及该类自定义的属性，然后写入父类名及父类定义的属性
                 //判断是否是基本数据类型对应的包装类型
                 if (isBaseType) {
-                    this.writeValue(obj, targetClass, out, context);
+                    this.writeValue(obj, targetClass, out, context,SituationEnum.MUST_BE);
                 } else if (type == ReflectUtil.ENUM) {
                     out.writeString(obj.toString(), true);
                 } else if (obj instanceof Collection) {
@@ -212,15 +229,19 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
                         //先试探集合，看集合是否支持add()方法
                         Collection collection = (Collection) ReflectUtil.createObject(targetClass);
                         collection.add(1);
+
                         //写入集合元素个数
                         this.writeLengthOrIndex(((Collection) obj).size(), out);
                         Class currentType = Object.class;
+                        //标识集合中的元素类型是否是基本类型
+                        boolean isItemBaseType = false;
                         for (Object item : (Collection) obj) {
                             if (item != null && item.getClass() != currentType) {
                                 currentType = item.getClass();
-                                this.writeType(item,currentType,out,context);
+                                isItemBaseType = ReflectUtil.isBaseType(currentType);
+                                this.writeType(currentType,out,context,isItemBaseType);
                             }
-                            this.writeValue(item, currentType, out, context);
+                            this.writeValue(item, currentType, out, context,isItemBaseType ? SituationEnum.MUST_BE : SituationEnum.MUST_NOT);
                         }
                     } catch (Exception ex) {
                         isExecuteCommon = true;
@@ -229,31 +250,37 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
                     try {
                         //先试探集合，看集合是否支持put()方法
                         Map tempMap = (Map) ReflectUtil.createObject(targetClass);
-                        if(tempMap == null){
-                            if(BuilderUtil.isSpecifyBuilder(targetClass)){
-                                tempMap =  (Map)BuilderUtil.get(targetClass).newInstance();
-                            }
-                        }
+//                        if(tempMap == null){
+//                            if(BuilderUtil.isSpecifyBuilder(targetClass)){
+//                                tempMap =  (Map)BuilderUtil.get(targetClass).newInstance();
+//                            }
+//                        }
                         tempMap.put("",1);
                         //写入集合元素个数
                         this.writeLengthOrIndex(((Map) obj).size(), out);
                         Class keyType = Object.class;
                         Class valueType = Object.class;
+                        //标识当前要写入的key的类型是否是基本类型
+                        boolean isKeyBaseType = false;
+                        //标识当前要写入的value的类型是否是基本类型
+                        boolean isValueBaseType = false;
                         for(Object item2 : ((Map)obj).entrySet()){
                             Map.Entry entry = (Map.Entry)item2;
                             Object key = entry.getKey();
                             if (key != null && key.getClass() != keyType) {
                                 keyType = key.getClass();
-                                writeType(key,keyType,out,context);
+                                isKeyBaseType = ReflectUtil.isBaseType(keyType);
+                                writeType(keyType,out,context,isKeyBaseType);
                             }
-                            this.writeValue(key, keyType, out, context);
+                            this.writeValue(key, keyType, out, context, isKeyBaseType ? SituationEnum.MUST_BE : SituationEnum.MUST_NOT);
 
                             Object value = entry.getValue();
                             if (value != null && value.getClass() != valueType) {
                                 valueType = value.getClass();
-                                writeType(value,valueType,out,context);
+                                isValueBaseType = ReflectUtil.isBaseType(valueType);
+                                writeType(valueType,out,context,isValueBaseType);
                             }
-                            this.writeValue(value, valueType, out, context);
+                            this.writeValue(value, valueType, out, context,isValueBaseType ? SituationEnum.MUST_BE : SituationEnum.MUST_NOT);
                         }
 
                     } catch (Exception ex) {
@@ -263,33 +290,102 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
                     isExecuteCommon = true;
                 }
                 if (isExecuteCommon) {
-                    //获得包含该类以及该类的所有父类的集合
-                    List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(targetClass);
-                    for (Class item : superClassAndSelfList) {
-                        Field[] fields = ReflectUtil.getAllInstanceField(item, isCacheField);
-                        //2. 写入属性个数  2字节
-                        writeLengthOrIndex(fields.length, out);
-
-                        //3. 循环写入属性
-                        for (Field field : fields) {
-                            context.setCurrentField(field);
-                            this.writeField(field, obj, out, context);
-                        }
-                        context.setCurrentField(null);
-                    }
+                    writeAllFields(obj,targetClass,context,out);
                 }
             }
         }
     }
 
     /**
-     * 写入指定值value的类型信息
-     * @param value  要写入对象
-     * @param type   值所属类型
+     * 写入java基本类型的数组
+     * @param type  数组类型
+     * @param out   数组要写入到的缓冲
+     * @param obj   需要写入的数组
+     * @param length  数组长度
      */
-    private void writeType(Object value,Class type,ByteBuf out, Context context){
+    private void dealArrayWithBaseType(Class type,ByteBuf out,Object obj,int length){
+        if(type == int.class){
+            out.writeIntWithScala((int[])obj);
+        }else if(type == long.class){
+            out.writeLongWithScala((long[])obj);
+        }else if(type == boolean.class){
+            out.writeBoolean((boolean[])obj);
+        }else if(type == byte.class){
+            out.writeByte((byte[])obj);
+        }else if(type == short.class){
+           out.writeShort((short[])obj);
+        }else if(type == char.class){
+          out.writeChar((char[])obj);
+        }else if(type == float.class){
+           out.writeFloat((float[])obj);
+        }else if(type == double.class){
+            out.writeDouble((double[])obj);
+        }
+    }
+
+    /**
+     * 获得数组中对象类型的分布信息
+     * @param array
+     * @return
+     */
+//    private List<CountedType> getCountedType(Object[] array){
+//        List<CountedType> list = new ArrayList<>();
+//        CountedType currentCountedType = null;
+//        Class currentClass = array[0] != null ? array[0].getClass() : null;
+//        if(currentClass != null){
+//            currentCountedType = new CountedType(currentClass,0);
+//            list.add(currentCountedType);
+//        }
+//
+//        for(Object item : array){
+//            if(item != null){
+//                if(item.getClass() != currentClass){
+//                    currentClass = item.getClass();
+//                    currentCountedType = new CountedType(item.getClass());
+//                    list.add(currentCountedType);
+//                }else{
+//                    currentCountedType.increaseCount();
+//                }
+//            }
+//
+//        }
+//
+//        return list;
+//    }
+
+    /**
+     * 写入对象所有属性的值
+     * @param obj
+     * @param type
+     * @param context
+     * @param out
+     */
+    protected void writeAllFields(Object obj,Class type,Context context,ByteBuf out){
+        //获得包含该类以及该类的所有父类的集合
+//        List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(type);
+//        for (Class item : superClassAndSelfList) {
+//            Field[] fields = ReflectUtil.getAllInstanceField(type);
+            //2. 写入属性个数  2字节
+//            writeLengthOrIndex(fields.length, out);
+
+            //3. 循环写入属性
+            for (Field field : ReflectUtil.getAllFields(type)) {
+                context.setCurrentField(field);
+                this.writeField(field, obj, out, context);
+            }
+            context.setCurrentField(null);
+    }
+
+    /**
+     * 写入指定值value的类型信息
+     * @param type  要写入的类型
+     * @param out   输出buf
+     * @param  context   序列化上下文
+     * @param isBaseType 是否是基本类型
+     */
+    private void writeType(Class type,ByteBuf out, Context context,boolean isBaseType){
         startWriteClassName(out);
-        writeClassName(value, type, out, context, ReflectUtil.isBaseType(type));
+        writeClassName(type, out, context, isBaseType);
     }
 
     /**
@@ -341,18 +437,17 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
      * @param out  输出流
      * @throws IOException
      */
-    protected void writeClassName(Object obj, Class type, ByteBuf out, Context context, boolean isBaseType) {
+    protected void writeClassName(Class type, ByteBuf out, Context context, boolean isBaseType) {
         if (type == null) {
             throw new IllegalArgumentException("type can't be null");
         }
         if (isBaseType) {
-            writeBaseType(obj, out, type);
+            writeBaseType(out, type);
         } else {
                 if (context.getCurrentField() != null && context.getCurrentField().getType() == type) {  //当值的实际类型和字段类型相同时，不需要写入类名，写入标识字符即可
                     out.writeByte(Constant.CLASSNAME_SAME_WITH_FIELD);
                 } else {
-                    //将类名写入缓冲
-                    this.writeClass(out, type);
+                    this.writeClass(out, type,context);
                 }
         }
 
@@ -385,38 +480,45 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
     protected abstract void writeField(Field field, Object obj, ByteBuf out, Context context);
 
     /**
-     * 将类相关信息(类名以及类标识)写出到缓冲
+     * 将类相关信息(类名以及类标识)写出到缓冲,只有第一次写入需要写入类名，之后只需要写入类标识
      *
      * @param out     输出流
      * @param type  类型
+     * @param context  序列化上下文
      */
-    protected void writeClass(ByteBuf out, Class type) {
+    protected void writeClass(ByteBuf out, Class type,Context context) {
+        boolean isFirst = false;
+        if(!context.contains(type)){
+            isFirst = true;
+            context.addClass(type);
+        }
         //1. 写入类标识
         out.writeScalableInt(ReflectUtil.getIdForClass(type));
-        //2. 写入类名
-        out.writeString(type.getName(), true);
+        if(isFirst){
+            //2. 写入类名
+            out.writeString(type.getName(), true);
+        }
     }
 
-    public static void writeBaseType(Object obj, ByteBuf out, Class type) {
+    public static void writeBaseType(ByteBuf out, Class type) {
         int baseType = Constant.STRING;
-        if (obj instanceof Boolean) {
+        if (type == boolean.class || type == Boolean.class) {
             baseType = Constant.BOOLEAN;
-        } else if (obj instanceof Byte) {
+        } else if (type  == byte.class || type == Byte.class) {
             baseType = Constant.BYTE;
-        } else if (obj instanceof Character) {
+        } else if (type == char.class || type == Character.class) {
             baseType = Constant.CHARACTER;
-        } else if (obj instanceof Short) {
+        } else if (type == short.class || type == Short.class) {
             baseType = Constant.SHORT;
-        } else if (obj instanceof Integer) {
+        } else if (type == int.class || type == Integer.class) {
             baseType = Constant.INTEGER;
-        } else if (obj instanceof Long) {
+        } else if (type == long.class || type == Long.class) {
             baseType = Constant.LONG;
-        } else if (obj instanceof Float) {
+        } else if (type == float.class || type == Float.class) {
             baseType = Constant.FLOAT;
-        } else if (obj instanceof Double) {
+        } else if (type == double.class || type == Double.class) {
             baseType = Constant.DOUBLE;
         }
-        //1100 0000
         out.writeByte(baseType);
     }
 
@@ -501,28 +603,24 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
      *
      * @param value 要写入的值
      * @param out   输出流
+     * @param isSureBaseType  表示是否能肯定是基本数据类型
      * @throws IOException
      */
-    public void writeValue(Object value, Class type, ByteBuf out, Context context) {
+    public void writeValue(Object value, Class type, ByteBuf out, Context context,SituationEnum situationEnum) {
         if (value == null) {
             this.writeNull(out);
             return;
         }
-        if (type == null) {
-            type = value.getClass();
-        }
-        ObjectWrite objectWrite = writerMap.get(type);
-        if (objectWrite != null) {
-            int length = this.getLength(value);
-            out.writeByte(length);
-            objectWrite.write(out, value, length);
+        if(situationEnum == SituationEnum.MUST_BE | (situationEnum == SituationEnum.POSSIBLE_BE && ReflectUtil.isBaseType(type))){
+            ObjectWrite objectWrite = writerMap.get(type);
+            objectWrite.write(out, value,0);
         }else {
-            //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
-            int index = context.getIndex(value);
-            if (index >= 0) {
+            if(context.contains(value)){
+                //如果要写入的对象已经在当前序列化上下文中，则只需要写入其引用标识
+                int index = context.getIndex(value);
                 this.writeReference(out);
                 out.writeScalableInt(index);
-            } else {
+            }else{
                 boolean isDifferent = value.getClass() != type;
                 this.writeNormal(out, isDifferent);
                 this.write(value, isDifferent, out, context, isDifferent);
@@ -576,13 +674,13 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
 
     private static class IntegerWrite implements ObjectWrite<Integer> {
         public void write(ByteBuf out, Integer value, int length) {
-            out.writeInt(value, length);
+            out.writeIntWithScala(value);
         }
     }
 
     private static class LongWrite implements ObjectWrite<Long> {
         public void write(ByteBuf out, Long value, int length) {
-            out.writeLong(value, length);
+            out.writeLongWithScala(value);
         }
     }
 

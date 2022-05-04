@@ -1,11 +1,6 @@
 package com.tuling.serialize.util;
 
-import com.tuling.serialize.ObjectOutputStream;
 import org.apache.log4j.Logger;
-
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.UnsupportedCharsetException;
 
 /**
  * @author lujintao
@@ -38,12 +33,20 @@ public class ByteBuf {
         this.writerIndex = array.length;
     }
 
+    public static ByteBuf newInstance(){
+        return new ByteBuf(256);
+    }
+
     public void readerIndex(int index) {
         this.readerIndex = index;
     }
 
     public void decreaseReaderIndex(int decrease){
         this.readerIndex -= decrease;
+    }
+
+    public void increaseWriterIndex(int increase){
+        this.writerIndex += increase;
     }
 
     public int readerIndex() {
@@ -72,6 +75,19 @@ public class ByteBuf {
     /**
      * 写入byte数据
      *
+     * @param value
+     */
+    public void writeByte(byte[] value) {
+        ensureCapacity(value.length);
+        for(int i = 0; i < value.length; i++){
+            array[writerIndex + i] = value[i];
+        }
+        writerIndex += value.length;
+    }
+
+    /**
+     * 写入byte数据
+     *
      * @param value  需要写入的值
      */
     public void writeByte(int value) {
@@ -88,10 +104,30 @@ public class ByteBuf {
     }
 
     /**
+     * 写入布尔类型数值
+     */
+    public void writeBoolean(boolean[] value) {
+        ensureCapacity(value.length);
+        for(int i = 0; i < value.length; i++){
+            array[writerIndex + i] = (byte)(value[i] ? 1 : 0);
+        }
+        writerIndex += value.length;
+    }
+
+    /**
      * 写入字符数据
      */
     public void writeChar(char value) {
         writeShort(value);
+    }
+
+    /**
+     * 写入字符数组
+     */
+    public void writeChar(char[] value) {
+        for(int i = 0;i < value.length; i++){
+            writeShort(value[i]);
+        }
     }
 
     /**
@@ -116,6 +152,17 @@ public class ByteBuf {
         array[writerIndex] = (byte) (value >> 8);
         array[writerIndex + 1] = (byte) value;
         writerIndex += 2;
+    }
+
+    public void writeShort(short[] value) {
+        ensureCapacity(2 * value.length);
+
+        for(int i = 0; i < value.length;i++){
+            array[writerIndex + 2 * i] = (byte) (value[i] >> 8);
+            array[writerIndex + 2 * i + 1] = (byte) value[i];
+        }
+
+        writerIndex += 2 * value.length;
     }
 
     /**
@@ -144,13 +191,29 @@ public class ByteBuf {
     }
 
     /**
+     * 从指定位置写入整型值
+     * @param value
+     * @param position
+     */
+    public void writeInt(int value,int position) {
+        array[position] = (byte) (value >> 24);
+        array[position + 1] = (byte) (value >> 16);
+        array[position + 2] = (byte) (value >> 8);
+        array[position + 3] = (byte) value;
+    }
+
+    /**
      *
      * 采用变长方式写入int型数据
      * @param value   要写入的值
      * @param length  要写入的字节数
      */
-    public void writeInt(int value,int length) {
-        ensureCapacity(length);
+    public void writeAnotherInt(int value) {
+//        ensureCapacity(length);
+        int length = NumberUtil.getLength(value);
+        ensureCapacity(length + 1);
+        array[writerIndex] = (byte) length;
+        writerIndex++;
         if(length == 1){
             array[writerIndex] = (byte) value;
         }else if(length == 2){
@@ -168,6 +231,88 @@ public class ByteBuf {
         }
         writerIndex += length;
 
+    }
+
+    /**
+     * 弹性写入整型值，前三位标识要占用的字节数,标识分别为000,001,010,011,100,第四位为符号位，表示正负数；
+     * @param value
+     */
+    public void writeIntWithScala(int value){
+        if(value >= 0){
+                if(value >> 4 == 0){
+                    ensureCapacity(1);
+                    array[writerIndex] = (byte)value;
+                    writerIndex++;
+                }else if(value >> 12 == 0){
+                    ensureCapacity(2);
+                    array[writerIndex] = (byte)(0x20 | (value >> 8));
+                    array[writerIndex + 1] = (byte)value;
+                    writerIndex += 2;
+                }else if(value >> 20 == 0){
+                    ensureCapacity(3);
+                    array[writerIndex] = (byte)(0x40 | (value >> 16));
+                    array[writerIndex + 1] = (byte)(value >> 8);
+                    array[writerIndex + 2] = (byte)value;
+                    writerIndex += 3;
+                }else if(value >> 28 == 0) {
+                    ensureCapacity(4);
+                    array[writerIndex] = (byte)(0x60 | (value >> 24));
+                    array[writerIndex + 1] = (byte)(value >> 16);
+                    array[writerIndex + 2] = (byte)(value >> 8);
+                    array[writerIndex + 3] = (byte)value;
+                    writerIndex += 4;
+                }else{
+                    ensureCapacity(5);
+                    array[writerIndex] = (byte)0x80;  //  0111 1111  1111 1111 1111 1111 11111101
+                    array[writerIndex + 1] = (byte)(value >> 24);
+                    array[writerIndex + 2] = (byte)(value >> 16);
+                    array[writerIndex + 3] = (byte)(value >> 8);
+                    array[writerIndex + 4] = (byte)value;
+                    writerIndex += 5;
+                }
+        }else{
+            if(value >> 4 == -1){
+                ensureCapacity(1);
+                array[writerIndex] = (byte)(0x1f & value);
+                writerIndex++;
+            }else if(value >> 12 == -1){
+                ensureCapacity(2);
+                array[writerIndex] = (byte)(0x3f & (value >> 8));
+                array[writerIndex + 1] = (byte)value;
+                writerIndex += 2;
+            }else if(value >> 20 == -1){
+                ensureCapacity(3);
+                array[writerIndex] = (byte)(0x5f & (value >> 16));
+                array[writerIndex + 1] = (byte)(value >> 8);
+                array[writerIndex + 2] = (byte)value;
+                writerIndex += 3;
+            }else if(value >> 28 == -1){
+                ensureCapacity(4);
+                array[writerIndex] = (byte)(0x7f & (value >> 24));
+                array[writerIndex + 1] = (byte)(value >> 16);
+                array[writerIndex + 2] = (byte)(value >> 8);
+                array[writerIndex + 3] = (byte)value;
+                writerIndex += 4;
+            }else{
+                ensureCapacity(5);
+                array[writerIndex] = (byte)0x9f;
+                array[writerIndex + 1] = (byte)(value >> 24);
+                array[writerIndex + 2] = (byte)(value >> 16);
+                array[writerIndex + 3] = (byte)(value >> 8);
+                array[writerIndex + 4] = (byte)value;
+                writerIndex += 5;
+            }
+        }
+    }
+
+    /**
+     * 弹性写入整型数组，前三位标识要占用的字节数,标识分别为000,001,010,011,100,第四位为符号位，表示正负数；
+     * @param value
+     */
+    public void writeIntWithScala(int[] values){
+        for(int value : values){
+            writeIntWithScala(value);
+        }
     }
 
     public void writeLong(long value) {
@@ -242,12 +387,232 @@ public class ByteBuf {
 
     }
 
+    /**
+     * 弹性写入长整型数组
+     */
+    public void writeLongWithScala(long[] values){
+        for(long value : values){
+            writeLongWithScala(value);
+        }
+    }
+
+    /**
+     * 弹性写入长整型值。第一字节中的前四位表示值所占字节数，第五位为符号位，其中1到9字节分别由0000,0001,0010,0011,0100,0101,0110,0111,1000表示
+     */
+    public void writeLongWithScala(long value){
+
+        if(value >= 0){
+            if(value >> 3 == 0){
+                ensureCapacity(1);
+                array[writerIndex] = (byte)value;
+                writerIndex++;
+            }else if(value >> 11 == 0){
+                ensureCapacity(2);
+                array[writerIndex] = (byte)(0x10 | (value >> 8));
+                array[writerIndex + 1] = (byte)value;
+                writerIndex += 2;
+            }else if(value >> 19 == 0){
+                ensureCapacity(3);
+                array[writerIndex] = (byte)(0x20 | (value >> 16));
+                array[writerIndex + 1] = (byte)(value >> 8);
+                array[writerIndex + 2] = (byte)value;
+                writerIndex += 3;
+            }else if(value >> 27 == 0) {
+                ensureCapacity(4);
+                array[writerIndex] = (byte)(0x30 | (value >> 24));
+                array[writerIndex + 1] = (byte)(value >> 16);
+                array[writerIndex + 2] = (byte)(value >> 8);
+                array[writerIndex + 3] = (byte)value;
+                writerIndex += 4;
+            }else if(value >> 35 == 0){
+                ensureCapacity(5);
+                array[writerIndex] = (byte)(0x40 | (value >> 32));
+                array[writerIndex + 1] = (byte)(value >> 24);
+                array[writerIndex + 2] = (byte)(value >> 16);
+                array[writerIndex + 3] = (byte)(value >> 8);
+                array[writerIndex + 4] = (byte)value;
+                writerIndex += 5;
+            }else if(value >> 43 == 0){
+                ensureCapacity(6);  //1010
+                array[writerIndex] = (byte)(0x50 | (value >> 40));
+                array[writerIndex + 1] = (byte)(value >> 32);
+                array[writerIndex + 2] = (byte)(value >> 24);
+                array[writerIndex + 3] = (byte)(value >> 16);
+                array[writerIndex + 4] = (byte)(value >> 8);
+                array[writerIndex + 5] = (byte)value;
+                writerIndex += 6;
+            }else if(value >> 51 == 0){
+                ensureCapacity(7);  //1100
+                array[writerIndex] = (byte)(0x60 | (value >> 48));
+                array[writerIndex + 1] = (byte)(value >> 40);
+                array[writerIndex + 2] = (byte)(value >> 32);
+                array[writerIndex + 3] = (byte)(value >> 24);
+                array[writerIndex + 4] = (byte)(value >> 16);
+                array[writerIndex + 5] = (byte)(value >> 8);
+                array[writerIndex + 6] = (byte)value;
+                writerIndex += 7;
+            }else if(value >> 59 == 0){
+                ensureCapacity(8);
+                array[writerIndex] = (byte)(0x70 | (value >> 56));
+                array[writerIndex + 1] = (byte)(value >> 48);
+                array[writerIndex + 2] = (byte)(value >> 40);
+                array[writerIndex + 3] = (byte)(value >> 32);
+                array[writerIndex + 4] = (byte)(value >> 24);
+                array[writerIndex + 5] = (byte)(value >> 16);
+                array[writerIndex + 6] = (byte)(value >> 8);
+                array[writerIndex + 7] = (byte)value;
+                writerIndex += 8;
+            }else{
+                ensureCapacity(9);
+                array[writerIndex] = (byte)0x80;
+                array[writerIndex + 1] = (byte)(value >> 56);
+                array[writerIndex + 2] = (byte)(value >> 48);
+                array[writerIndex + 3] = (byte)(value >> 40);
+                array[writerIndex + 4] = (byte)(value >> 32);
+                array[writerIndex + 5] = (byte)(value >> 24);
+                array[writerIndex + 6] = (byte)(value >> 16);
+                array[writerIndex + 7] = (byte)(value >> 8);
+                array[writerIndex + 8] = (byte)value;
+                writerIndex += 9;
+            }
+        }else{
+            if(value >> 3 == -1){
+                ensureCapacity(1);  //0000 1 111
+                array[writerIndex] = (byte)(0x0f & value);
+                writerIndex++;
+            }else if(value >> 11 == -1){
+                ensureCapacity(2); //0001 1 111
+                array[writerIndex] = (byte)(0x1f & (value >> 8));
+                array[writerIndex + 1] = (byte)value;
+                writerIndex += 2;
+            }else if(value >> 19 == -1){
+                ensureCapacity(3);
+                array[writerIndex] = (byte)(0x2f & (value >> 16));
+                array[writerIndex + 1] = (byte)(value >> 8);
+                array[writerIndex + 2] = (byte)value;
+                writerIndex += 3;
+            }else if(value >> 27 == -1){
+                ensureCapacity(4);
+                array[writerIndex] = (byte)(0x3f & (value >> 24));
+                array[writerIndex + 1] = (byte)(value >> 16);
+                array[writerIndex + 2] = (byte)(value >> 8);
+                array[writerIndex + 3] = (byte)value;
+                writerIndex += 4;
+            }else if(value >> 35 == -1){
+                ensureCapacity(5);
+                array[writerIndex] = (byte)(0x4f & (value >> 32));
+                array[writerIndex + 1] = (byte)(value >> 24);
+                array[writerIndex + 2] = (byte)(value >> 16);
+                array[writerIndex + 3] = (byte)(value >> 8);
+                array[writerIndex + 4] = (byte)value;
+                writerIndex += 5;
+            }else if(value >> 43 == -1){
+                ensureCapacity(6);
+                array[writerIndex] = (byte)(0x5f & (value >> 40));
+                array[writerIndex + 1] = (byte)(value >> 32);
+                array[writerIndex + 2] = (byte)(value >> 24);
+                array[writerIndex + 3] = (byte)(value >> 16);
+                array[writerIndex + 4] = (byte)(value >> 8);
+                array[writerIndex + 5] = (byte)value;
+                writerIndex += 6;
+            }else if(value >> 51 == -1){
+                ensureCapacity(7);
+                array[writerIndex] = (byte)(0x6f & (value >> 48));
+                array[writerIndex + 1] = (byte)(value >> 40);
+                array[writerIndex + 2] = (byte)(value >> 32);
+                array[writerIndex + 3] = (byte)(value >> 24);
+                array[writerIndex + 4] = (byte)(value >> 16);
+                array[writerIndex + 5] = (byte)(value >> 8);
+                array[writerIndex + 6] = (byte)value;
+                writerIndex += 7;
+            }else if(value >> 59 == -1){
+                ensureCapacity(8);
+                array[writerIndex] = (byte)(0x7f & (value >> 56));
+                array[writerIndex + 1] = (byte)(value >> 48);
+                array[writerIndex + 2] = (byte)(value >> 40);
+                array[writerIndex + 3] = (byte)(value >> 32);
+                array[writerIndex + 4] = (byte)(value >> 24);
+                array[writerIndex + 5] = (byte)(value >> 16);
+                array[writerIndex + 6] = (byte)(value >> 8);
+                array[writerIndex + 7] = (byte)value;
+                writerIndex += 8;
+            }else{
+                ensureCapacity(9); //1000 1111
+                array[writerIndex] = (byte) 0x8f;
+                array[writerIndex + 1] = (byte)(value >> 56);
+                array[writerIndex + 2] = (byte)(value >> 48);
+                array[writerIndex + 3] = (byte)(value >> 40);
+                array[writerIndex + 4] = (byte)(value >> 32);
+                array[writerIndex + 5] = (byte)(value >> 24);
+                array[writerIndex + 6] = (byte)(value >> 16);
+                array[writerIndex + 7] = (byte)(value >> 8);
+                array[writerIndex + 8] = (byte)value;
+                writerIndex += 9;
+            }
+        }
+
+    }
+
+
+
+    /**
+     * 该方法提供int型部分字节的写入赋值
+     * @param value  要写入的值
+     * @param size  写入的字节数
+     */
+    private void writeIntBase(int value,int size){
+        for(int i = 1;i <= size - 1;i++){
+            array[writerIndex + i] = (byte)(value >> (size - 1 - i) * 8);
+        }
+        writerIndex += size;
+    }
+
+    /**
+     * 该方法提供long型部分字节的写入赋值
+     * @param value  要写入的值
+     * @param size  写入的字节数
+     *
+     */
+    private void writeLongBase(long value,int size){
+        for(int i = 1;i <= size - 1;i++){
+            array[writerIndex + i] = (byte)(value >> (size - 1 - i) * 8);
+        }
+        writerIndex += size;
+
+
+
+
+
+
+    }
+
+    /**
+     * 写入浮点数
+     * @param value
+     */
     public void writeFloat(float value) {
         writeInt(Float.floatToIntBits(value));
     }
 
+    /**
+     * 写入浮点数组
+     * @param array
+     */
+    public void writeFloat(float[] array) {
+        for(float value : array){
+            writeInt(Float.floatToIntBits(value));
+        }
+
+    }
+
     public void writeDouble(double value) {
         writeLong(Double.doubleToLongBits(value));
+    }
+
+    public void writeDouble(double[] values) {
+        for(double value : values){
+            writeLong(Double.doubleToLongBits(value));
+        }
     }
 
     /**
@@ -267,16 +632,16 @@ public class ByteBuf {
     }
 
     /**
-     * 写入字符串或对象的长度。写入内容根据length 的大小占用的字节会不同，从1字节到4字节，首字节的前2位表示该长度共用几字节表示，
+     * 写入字符串或对象的长度。写入内容根据value 的大小占用的字节会不同，从1字节到4字节，首字节的前2位表示该长度共用几字节表示，
      * 00表示1字节，01表示2字节，10表示3字节，11表示4字节
-     * @param length 要写入的长度值
+     * @param value 要写入的值
      */
     public void writeScalableInt(int length){
         ensureCapacity(4);
-        if(length <= 0x3f){  //第一字节首位 00
+        if(length <= 0x3f){  //第一字节首位 0011 1111   0001 1111
             array[writerIndex] = (byte)length;
             writerIndex += 1;
-        }else if(length <= 0x3fff){ //第一字节首位 0100 0000  0011 1111
+        }else if(length <= 0x3fff){ //第一字节首位 0100 0000  0011 1111   0011 1111 1111 1111
             array[writerIndex] = (byte)((length >> 8) | 0x40);
             array[writerIndex + 1] = (byte)length;
             writerIndex += 2;
@@ -292,7 +657,7 @@ public class ByteBuf {
             array[writerIndex + 3] = (byte)length;
             writerIndex += 4;
         }else{
-            throw new IllegalArgumentException("Length is too long.The max length which is allowed is " + 0x3fffffff);
+            throw new IllegalArgumentException("value is too long.The max length which is allowed is " + 0x3fffffff);
         }
 
     }
@@ -476,6 +841,8 @@ public class ByteBuf {
         return result;
     }
 
+
+
     /**
      * 从缓冲中读取一个整数
      *
@@ -512,6 +879,135 @@ public class ByteBuf {
 
         readerIndex += length;
         return result;
+    }
+
+    /**
+     * 弹性读取整型值。前三位标识要占用的字节数,标识分别为000,001,010,011,100,第四位为符号位，表示正负数；
+     * @return
+     */
+    public int readIntWithScala(){
+        int result = 0;
+        byte first = readByte();
+        int flag = first >>> 5;   // 000 0 1101    000 1 0000  //1000 0000
+        if((first & 0x10) > 0){
+            if(flag == 0){
+                // 000 1 1101   111 1 1001
+                result = (first | 0xf0) | 0xffffff00;  //00000000 00000000 00000000 1111 1001  => 00000000 00000000 1111 1001 00000000
+            }else if(flag == 1){ // 001 1 1001 1100 1101  => //1111  1001 1100     00000000 00000000 0000 0000 00101001
+                result = ((first | 0xf0) << 8 | ((array[readerIndex] & 0xff))) | 0xffff0000;
+                readerIndex++;
+            }else if(flag == 2){
+                result = (first | 0xf0) << 16 | (array[readerIndex] & 0xff) << 8 | (array[readerIndex + 1] & 0xff) | 0xff000000;
+                readerIndex += 2;
+            }else if(flag == 3){
+                result = (first | 0xf0) << 24 | (array[readerIndex] & 0xff) << 16 | (array[readerIndex + 1] & 0xff) << 8 | (array[readerIndex + 2] & 0xff);
+                readerIndex += 3;
+            }else{
+                result = (array[readerIndex] & 0xff) << 24 | (array[readerIndex + 1] & 0xff) << 16 | (array[readerIndex + 2] & 0xff) << 8 | (array[readerIndex + 3] & 0xff);
+                readerIndex += 4;
+            }
+        }else{
+            if(flag == 0){
+                // 000 0 1101   000 1 1001
+                result = first;
+            }else if(flag == 1){
+                //001 0 0011  =>  000 0 0011
+                result = ((first & 0x0f) << 8) | (array[readerIndex] & 0xff);
+                readerIndex++;
+            }else if(flag == 2){
+                //010 0 0011  => 000 0 0011
+                result =((first & 0x0f) << 16) | (array[readerIndex] & 0xff) << 8 | (array[readerIndex + 1] & 0xff);
+                readerIndex += 2;
+            }else if(flag == 3){
+                result =((first & 0x0f) << 24) | (array[readerIndex] & 0xff) << 16 | (array[readerIndex + 1] & 0xff) << 8 | (array[readerIndex + 2] & 0xff);
+                readerIndex += 3;
+            }else{
+                result = (array[readerIndex] & 0xff) << 24 | (array[readerIndex + 1] & 0xff) << 16 | (array[readerIndex + 2] & 0xff) << 8 | (array[readerIndex + 3] & 0xff);
+                readerIndex += 4;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 弹性读取长整型值。第一字节中高四位标识要占用的字节数,标识分别为0000,0001,0010,0011,0100,0101,0110,0111,1000,高位中第五位为符号位，表示正负；
+     * @return
+     */
+    public long readLongWithScala(){
+
+        long result = 0;
+        byte first = readByte();  //1000 1000
+        int flag = first >> 4;   // 0001 0 100       0001 1 111   0000 1000
+        //当值为负数时
+        if((first & 0x08) > 0){
+            if(flag == 0){
+                // 000 1 1101   111 1 1001
+                result = (first | 0xf8L) | 0xffffffffffffff00L;  //00000000 00000000 00000000 1111 1001  => 00000000 00000000 1111 1001 00000000
+            }else if(flag == 1){ // 001 1 1001 1100 1101  => //1111  1001 1100     00000000 00000000 0000 0000 00101001
+                result = ((first | 0xf8L) << 8 | ((array[readerIndex] & 0xffL))) | 0xffffffffffff0000L;
+                readerIndex++;
+            }else if(flag == 2){
+                result = (first | 0xf8L) << 16 | (array[readerIndex] & 0xffL) << 8 | (array[readerIndex + 1] & 0xffL) | 0xffffffffff000000L;
+                readerIndex += 2;
+            }else if(flag == 3){
+                result = (first | 0xf8L) << 24 | (array[readerIndex] & 0xffL) << 16 | (array[readerIndex + 1] & 0xffL) << 8 | (array[readerIndex + 2] & 0xffL) | 0xffffffff00000000L;
+                readerIndex += 3;
+            }else if(flag == 4){
+                result = (first | 0xf8L) << 32 | (array[readerIndex] & 0xffL) << 24 | (array[readerIndex + 1] & 0xffL) << 16 | (array[readerIndex + 2] & 0xffL) << 8 | (array[readerIndex + 3] & 0xffL) | 0xffffff0000000000L;
+                readerIndex += 4;
+            }else if(flag == 5){
+                result = (first | 0xf8L) << 40 | (array[readerIndex] & 0xffL) << 32 | (array[readerIndex + 1] & 0xffL) << 24 |
+                (array[readerIndex + 2] & 0xffL) << 16 | (array[readerIndex + 3] & 0xffL) << 8 | (array[readerIndex + 4] & 0xffL) | 0xffff000000000000L;
+                readerIndex += 5;
+            }else if(flag == 6){
+                result = (first | 0xf8L) << 48 |  (array[readerIndex] & 0xffL) << 40 | (array[readerIndex + 1] & 0xffL) << 32 |
+                        (array[readerIndex + 2] & 0xffL) << 24 | (array[readerIndex + 3] & 0xffL) << 16 | (array[readerIndex + 4] & 0xffL) << 8 |
+                        (array[readerIndex + 5] & 0xffL) | 0xff00000000000000L;
+                readerIndex += 6;
+            }else if(flag == 7){
+                result = (first | 0xf8L) << 56 | (array[readerIndex] & 0xffL) << 48 | (array[readerIndex + 1] & 0xffL) << 40 | (array[readerIndex + 2] & 0xffL) << 32 |
+                        (array[readerIndex + 3] & 0xffL) << 24 | (array[readerIndex + 4] & 0xffL) << 16 | (array[readerIndex + 5] & 0xffL) << 8 |
+                        (array[readerIndex + 6] & 0xffL);
+                readerIndex += 7;
+            }else{
+                result = (array[readerIndex] & 0xffL) << 56 | (array[readerIndex + 1] & 0xffL) << 48 | (array[readerIndex + 2] & 0xffL) << 40 | (array[readerIndex + 3] & 0xffL) << 32 |
+                        (array[readerIndex + 4] & 0xffL) << 24 | (array[readerIndex + 5] & 0xffL) << 16 | (array[readerIndex + 6] & 0xffL) << 8 | (array[readerIndex + 7] & 0xffL);
+                readerIndex += 8;
+            }
+        }else{
+            if(flag == 0){
+                // 000 0 1101   000 1 1001
+                result = first;
+            }else if(flag == 1){
+                //0001 0011  =>  0000 0011
+                result = ((first & 0x0fL) << 8) | (array[readerIndex] & 0xffL);
+                readerIndex++;
+            }else if(flag == 2){
+                //010 0 0011  => 000 0 0011
+                result =((first & 0x0fL) << 16) | (array[readerIndex] & 0xffL) << 8 | (array[readerIndex + 1] & 0xffL);
+                readerIndex += 2;
+            }else if(flag == 3){
+                result =((first & 0x0fL) << 24) | (array[readerIndex] & 0xffL) << 16 | (array[readerIndex + 1] & 0xffL) << 8 | (array[readerIndex + 2] & 0xffL);
+                readerIndex += 3;
+            }else if(flag == 4){
+                result =((first & 0x0fL) << 32) | (array[readerIndex] & 0xffL) << 24 | (array[readerIndex + 1] & 0xffL) << 16 | (array[readerIndex + 2] & 0xffL) << 8 | (array[readerIndex + 3] & 0xffL);
+                readerIndex += 4;
+            }else if(flag == 5){
+                result =((first & 0x0fL) << 40) | (array[readerIndex] & 0xffL) << 32 | (array[readerIndex + 1] & 0xffL) << 24 | (array[readerIndex + 2] & 0xffL) << 16 | (array[readerIndex + 3] & 0xffL) << 8 | (array[readerIndex + 4] & 0xffL);
+                readerIndex += 5;
+            }else if(flag == 6){
+                result =((first & 0x0fL) << 48) | (array[readerIndex] & 0xffL) << 40 | (array[readerIndex + 1] & 0xffL) << 32 | (array[readerIndex + 2] & 0xffL) << 24 | (array[readerIndex + 3] & 0xffL) << 16 | (array[readerIndex + 4] & 0xffL) << 8 | (array[readerIndex + 5] & 0xffL);
+                readerIndex += 6;
+            }else if(flag == 7){
+                result =((first & 0x0fL) << 56) | (array[readerIndex] & 0xffL) << 48 | (array[readerIndex + 1] & 0xffL) << 40 | (array[readerIndex + 2] & 0xffL) << 32 | (array[readerIndex + 3] & 0xffL) << 24 | (array[readerIndex + 4] & 0xffL) << 16 | (array[readerIndex + 5] & 0xffL) << 8 | (array[readerIndex + 6] & 0xffL);
+                readerIndex += 7;
+            }else{
+                result = (array[readerIndex] & 0xffL) << 56 | (array[readerIndex + 1] & 0xffL) << 48 | (array[readerIndex + 2] & 0xffL) << 40 | (array[readerIndex + 3] & 0xffL) << 32 | (array[readerIndex + 4] & 0xffL) << 24 | (array[readerIndex + 5] & 0xffL) << 16 | (array[readerIndex + 6] & 0xffL) << 8 | (array[readerIndex + 7] & 0xffL);
+                readerIndex += 8;  //01111111  11111111
+            }
+        }
+        return result;
+
     }
 
     /**
@@ -632,6 +1128,19 @@ public class ByteBuf {
     }
 
     /**
+     * 从当前位置处读取指定长度的数据，存放到一个新的ByteBuf中
+     * @param length  需要读取长度
+     * @return
+     */
+    public ByteBuf readBuf(int length){
+        ByteBuf result = new ByteBuf(this.array);
+        result.readerIndex(this.readerIndex());
+        result.writerIndex(this.readerIndex() + length);
+        readerIndex += length;
+        return result;
+    }
+
+    /**
      * 跳过要读取的一个字符串,让下次读取从该字符串后面第一字节开始
      */
     public void skipNextString(){
@@ -683,13 +1192,13 @@ public class ByteBuf {
     }
 
     /**
-     * 保证数组的大小不小于capacity
+     * 保证数组的大小能够满足存储要求
      *
      * @param increaseCapacity  要增加的容量
      */
     private void ensureCapacity(int increaseCapacity) {
         if (increaseCapacity + writerIndex > array.length) {
-            grow(increaseCapacity);
+            grow(array.length > increaseCapacity ? array.length : increaseCapacity * 2);
         }
     }
 
@@ -706,13 +1215,13 @@ public class ByteBuf {
     /**
      * 当array长度不够时，对数组array进行扩容
      */
-    private void grow(int increaseCapacity) {
+    public void grow(int increaseCapacity) {
         byte[] newArray = new byte[getNewCapacity(increaseCapacity)];
         System.arraycopy(array, 0, newArray, 0, writerIndex);
         array = newArray;
     }
 
     private int getNewCapacity(int increaseCapacity) {
-        return (array.length + increaseCapacity) * 2;
+        return increaseCapacity < array.length ? array.length * 2 : (array.length + increaseCapacity);
     }
 }

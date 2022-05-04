@@ -3,6 +3,7 @@ package com.tuling.serialize;
 import com.tuling.domain.*;
 import com.tuling.serialize.util.IdGenerator;
 
+import javax.xml.crypto.Data;
 import java.util.*;
 
 /**
@@ -10,44 +11,60 @@ import java.util.*;
  */
 public class DataProvider {
 
-    public static List getList(){
+    public static List getList(int size){
         List<Object> list = new ArrayList<>();
-        for(int i = 0; i < 1;i++){
-            for(int j = 0;j < 10000;j++){
-                list.add((long)j);
-            }
-
+        for(int i = 0; i < size;i++){
+            Role role = DataProvider.getRole();
+            role.setName("xiaowang" + i);
+            list.add(role);
         }
         return list;
     }
 
-    public static Set getSet(){
-        Set<Integer> set = new TreeSet<>();
-        for(int i = 0; i < 10000;i++){
-            set.add(i);
+    public static Set getSet(int size){
+        Set<User> set = new TreeSet<>();
+        for(int i = 0; i < size;i++){
+            User user = DataProvider.getUser();
+            user.setAge(i);
+            set.add(user);
         }
         return set;
     }
 
-    public static Object[] getArray(){
-        Object[] result = new Object[10000];
-        for(int i = 0; i < 10000;i++){
-            result[i] = i;
+    public static Object[] getArray(int size){
+        Object[] result = new Object[size];
+        for(int i = 0; i < size;i++){
+              Role role = Role.getInstance();
+              role.setAge(i);
+              role.setName("xiaohei" + i);
+              role.setSex(true);
+              result[i] = role;
         }
         return result;
     }
 
-    public static Map getMap(){
+    public static Map getMap(int count){
         Map map = new TreeMap();
-        for(int i = 0; i < 10000;i++){
+        for(int i = 0; i < count;i++){
            map.put("hello" + i,i);
         }
         return map;
     }
 
+    public static Map getObjectMap(int count){
+        Map map = new TreeMap();
+        for(int i = 0; i < count;i++){
+            User key = DataProvider.getUser();
+            key.setAge(i);
+            map.put(key,DataProvider.getUser());
+        }
+        return map;
+    }
+
     public static Role getRole(){
-       Role role = new Role();
+       Role role = Role.getInstance();
        role.setName("manager");
+       role.setAge(20);
        return role;
     }
 
@@ -58,27 +75,49 @@ public class DataProvider {
 
     public static Employee getEmployee(){
         Employee employee = new Employee();
-        Object T;
-        employee.setRole(new Role("architecture"));
-//        employee.setCompany(new Company("优识云创信息技术有限公司"));
-        employee.setName("小花");
+
+        employee.setCompany(new Company("优识云创信息技术有限公司"));
+        employee.setRole(Role.getInstance("architecture"));
+
+
+        employee.setDepartment(new AboardDepartment("技术部",new Country("china")));
+        employee.setProfession(new Profession("java工程师"));
+
+        employee.setNation(Nation.HANZU);
+
         employee.addLabel("dog");
         employee.addLabel("cat");
+
+        employee.setAge(20);
+        employee.setName("小花");
+
+        employee.setWeight(70.4f);
+        employee.setHeight(170.10f);
+        employee.setSex(true);
         return employee;
     }
 
     public static User getUser(){
         User user = new User("wangfei", 20, 170.0f, 76.0f);
         user.setCompany(new Company("优识云创"));
-        user.setRole(new Role("项目经理"));
+        user.setRole(Role.getInstance("项目经理"));
         user.setDepartment(new AboardDepartment("技术部",new Country("china")));
         user.setProfession(new Profession("java工程师"));
         user.setNation(Nation.HANZU);
-//        user.setAnother(null);
+        user.setAnother(null);
         user.addLabel("死不了");
         user.addLabel("游戏主播");
-//        user.setId(IdGenerator.getId());
         return user;
+    }
+
+    public static User2 getUser2(){
+        User2 user2 = new User2("xiaohei",true,173.0f,72.2f);
+
+        return user2;
+    }
+
+    public static List<Role> getRoles(){
+        return Arrays.asList(Role.getInstance("xiaobai"),Role.getInstance("xiaohei"));
     }
 
     public static List<User> getUsers(){
@@ -89,7 +128,7 @@ public class DataProvider {
         secondUser.setCompany(new Company("奇米科技"));
         User thirdUser = new User("huabing", 30, 172.f, 74.0f);
         thirdUser.setCompany(new Company("微尘大业"));
-        Role role = new Role("项目经理");
+        Role role = Role.getInstance("项目经理");
         Department department = new AboardDepartment("技术部",new Country("中国"));
         Profession profession = new Profession("java工程师");
         firstUser.setRole(role);
@@ -101,16 +140,12 @@ public class DataProvider {
         thirdUser.setRole(role);
         thirdUser.setDepartment(department);
         thirdUser.setProfession(profession);
-
         users.add(firstUser);
-        for(int i = 0; i < 1000;i++){
-            users.add(firstUser);
-        }
-//        users.add(secondUser);
-//        users.add(firstUser);
-//
-//        users.add(thirdUser);
-//        users.add(secondUser);
+        users.add(secondUser);
+        users.add(firstUser);
+
+        users.add(thirdUser);
+        users.add(secondUser);
         return users;
     }
 }

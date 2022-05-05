@@ -250,11 +250,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
                     try {
                         //先试探集合，看集合是否支持put()方法
                         Map tempMap = (Map) ReflectUtil.createObject(targetClass);
-//                        if(tempMap == null){
-//                            if(BuilderUtil.isSpecifyBuilder(targetClass)){
-//                                tempMap =  (Map)BuilderUtil.get(targetClass).newInstance();
-//                            }
-//                        }
                         tempMap.put("",1);
                         //写入集合元素个数
                         this.writeLengthOrIndex(((Map) obj).size(), out);
@@ -324,36 +319,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
     }
 
     /**
-     * 获得数组中对象类型的分布信息
-     * @param array
-     * @return
-     */
-//    private List<CountedType> getCountedType(Object[] array){
-//        List<CountedType> list = new ArrayList<>();
-//        CountedType currentCountedType = null;
-//        Class currentClass = array[0] != null ? array[0].getClass() : null;
-//        if(currentClass != null){
-//            currentCountedType = new CountedType(currentClass,0);
-//            list.add(currentCountedType);
-//        }
-//
-//        for(Object item : array){
-//            if(item != null){
-//                if(item.getClass() != currentClass){
-//                    currentClass = item.getClass();
-//                    currentCountedType = new CountedType(item.getClass());
-//                    list.add(currentCountedType);
-//                }else{
-//                    currentCountedType.increaseCount();
-//                }
-//            }
-//
-//        }
-//
-//        return list;
-//    }
-
-    /**
      * 写入对象所有属性的值
      * @param obj
      * @param type
@@ -361,13 +326,6 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
      * @param out
      */
     protected void writeAllFields(Object obj,Class type,Context context,ByteBuf out){
-        //获得包含该类以及该类的所有父类的集合
-//        List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(type);
-//        for (Class item : superClassAndSelfList) {
-//            Field[] fields = ReflectUtil.getAllInstanceField(type);
-            //2. 写入属性个数  2字节
-//            writeLengthOrIndex(fields.length, out);
-
             //3. 循环写入属性
             for (Field field : ReflectUtil.getAllFields(type)) {
                 context.setCurrentField(field);

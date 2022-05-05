@@ -28,8 +28,9 @@ public class Application {
 
 
         testSerialWithSerial(1,DataProvider.getRole());
-
-
+        Role role1 = Role.getInstance("manager");
+        Role role2 = Role.getInstance("manager");
+        System.out.print(role1.equals(role2));
 
 //
 //        testSerialWithSerial(1,DataProvider.getArray(20000));
@@ -56,8 +57,11 @@ public class Application {
 
 
 
-        testSerial(1,DataProvider.getUser());
-        testKyro(1, DataProvider.getUser());
+
+
+
+        testKyro(1, DataProvider.getArray(10000));
+        testSerial(1,DataProvider.getArray(10000));
 //        testSerialWithSerial(10000,DataProvider.getRole());
 //        testSerialWithKyro(10000,DataProvider.getRole());
 //        Class t = Role.class;

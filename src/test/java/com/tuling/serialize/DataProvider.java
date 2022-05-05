@@ -36,7 +36,7 @@ public class DataProvider {
         for(int i = 0; i < size;i++){
               Role role = Role.getInstance();
               role.setAge(i);
-              role.setName("xiaohei" + i);
+              role.setName("总监级别的人物，你可了解" + i);
               role.setSex(true);
               result[i] = role;
         }
@@ -63,7 +63,7 @@ public class DataProvider {
 
     public static Role getRole(){
        Role role = Role.getInstance();
-       role.setName("manager");
+       role.setName("总监级别的人物，那肯定不一样");
        role.setAge(20);
        return role;
     }

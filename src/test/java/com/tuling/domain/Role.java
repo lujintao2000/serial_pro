@@ -14,13 +14,13 @@ public class Role  implements Serializable {
 //    private Role role = null;
     private String name;
 
-    private Object age;
+    private Integer age;
 
     private boolean sex;
 
-//    private Role(){
-//
-//    }
+    public Role(){
+
+    }
 
     private Role(String name){
         this.name = name;

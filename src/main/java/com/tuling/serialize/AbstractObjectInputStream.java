@@ -551,39 +551,38 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream {
      * @param isSureBaseType 是否确定是基本类型(包括String)
      * @return
      */
-    protected Object[] readValue(Class type, int count, ByteBuf in, Context context, boolean isSureBaseType) throws IOException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, ClassNotSameException, BuilderNotFoundException {
-        List list = new ArrayList();
-        for (int i = 0; i < count; i++) {
-            if (isNull(in)) {
-                list.add(null);
-                count++;
-                continue;
-            } else {
-                in.decreaseReaderIndex(1);
-            }
-
-            Object value = null;
-            ObjectRead objectRead = null;
-            if (isSureBaseType | (objectRead = readMap.get(type)) != null) {
-                if (objectRead == null) {
-                    objectRead = readMap.get(type);
-                }
-                value = objectRead.read(in, type, 0);
-            } else {
-                byte currentByte = in.readByte();
-                if (currentByte == Constant.REFERENCE_FLAG) {
-                    int index = in.readScalableInt();
-                    value = context.get(index);
-                } else {
-                    value = this.readObject(currentByte == Constant.NORMAL_CONTAIN_CLASSNAME_FLAG ? null : type, in, context);
-                    context.put(value,false);
-                }
-            }
-            list.add(value);
-//            context.put(value,false);
-        }
-        return list.toArray();
-    }
+//    protected Object[] readValue(Class type, int count, ByteBuf in, Context context, boolean isSureBaseType) throws IOException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, ClassNotSameException, BuilderNotFoundException {
+//        List list = new ArrayList();
+//        for (int i = 0; i < count; i++) {
+//            if (isNull(in)) {
+//                list.add(null);
+//                count++;
+//                continue;
+//            } else {
+//                in.decreaseReaderIndex(1);
+//            }
+//
+//            Object value = null;
+//            ObjectRead objectRead = null;
+//            if (isSureBaseType | (objectRead = readMap.get(type)) != null) {
+//                if (objectRead == null) {
+//                    objectRead = readMap.get(type);
+//                }
+//                value = objectRead.read(in, type, 0);
+//            } else {
+//                byte currentByte = in.readByte();
+//                if (currentByte == Constant.REFERENCE_FLAG) {
+//                    int index = in.readScalableInt();
+//                    value = context.get(index);
+//                } else {
+//                    value = this.readObject(currentByte == Constant.NORMAL_CONTAIN_CLASSNAME_FLAG ? null : type, in, context);
+//                    context.put(value,false);
+//                }
+//            }
+//            list.add(value);
+//        }
+//        return list.toArray();
+//    }
 
     /**
      * 从流中当前位置读取指定类型的值
@@ -705,8 +704,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream {
         if (version < Constant.MIN_VERSION || version > Constant.MAX_VERSION) {
             throw new VersionNotSupportException("Current version of serialization is not supported.Current version is " + version + ",but " + (version < Constant.MIN_VERSION ? "the mininum supported version is " + Constant.MIN_VERSION : "the maximum supported version is " + Constant.MAX_VERSION));
         }
-
-
         //读取对象长度
         int length = readLengthOfObject(in);
         byte[] objectData = new byte[length];
@@ -835,11 +832,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream {
                         try {
                             //先试探集合，看集合是否支持put()方法
                             Map tempMap = (Map) ReflectUtil.createObject(objectClass);
-//                            if (tempMap == null) {
-//                                if (BuilderUtil.isSpecifyBuilder(objectClass)) {
-//                                    tempMap = (Map) BuilderUtil.get(objectClass).newInstance();
-//                                }
-//                            }
                             tempMap.put("", 1);
                             int size = readLengthOrIndex(in);
                             Class keyType = Object.class;
@@ -889,97 +881,6 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream {
         return obj;
     }
 
-
-    /**
-     * 读取特殊类型对象
-     *
-     * @param type
-     * @param count
-     * @param in
-     * @param context
-     * @param in
-     */
-    private Object[] readSpecial(Class type, int count, ByteBuf in, Context context) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException {
-        Object[] objArray = createObject(type, count);
-        List<PreObject> list = new ArrayList<>();
-
-        List<Field> fields = ReflectUtil.getAllFields(type);
-
-        for (int i = 0; i < count; i++) {
-//			if(isNull(in)){
-//				objArray[i] = null;
-//				count++;
-//				break;
-//			}else{
-//				in.decreaseReaderIndex(1);
-//			}
-//
-//			byte currentByte = in.readByte();
-//			if(currentByte == Constant.REFERENCE_FLAG){
-//				int index = in.readScalableInt();
-//				objArray[i] = context.get(index);
-//			}else{
-//				this.readValue(objArray[i],fields,context,in);
-//			}
-
-        }
-        return objArray;
-
-    }
-
-//		/**
-//         * 读取普通对象
-//         * @param type
-//         * @param count
-//         * @param in
-//         * @param context
-//         * @param in
-//         */
-//	private Object[] readGeneral(Class type,int count,ByteBuf in,Context context) throws IOException,ClassNotSameException,ClassNotFoundException,InvalidDataFormatException,InvalidAccessException,BuilderNotFoundException{
-//
-////		Object[] objArray = createObject(type,count);
-//		List  list = new ArrayList();
-//		List<Field> fields = ReflectUtil.getAllFields(type);
-//
-//		//记录null值的个数
-//		int nullCount = 0;
-//		for(int i = 0;i < count; i++){
-//			if(isNull(in)){
-////				nullCount++;
-//				list.add(null);
-//				count++;
-//				continue;
-//			}else{
-//				in.decreaseReaderIndex(1);
-//			}
-//
-//			byte currentByte = in.readByte();
-//			if(currentByte == Constant.REFERENCE_FLAG){
-//				int index = in.readScalableInt();
-////				objArray[i] = context.get(index);
-//				list.add(context.get(index));
-//			}else{
-//				Object currentObject = createObject(type);
-//				context.put(currentObject);
-//				this.readValue(currentObject,fields,context,in);
-//				list.add(currentObject);
-//			}
-//
-//		}
-////		if(nullCount == 0){
-////			return ;
-////		}else{
-//////			Object[] result = new Object[nullCount + count];
-//////			for(int i = 0; i < nullCount;i++){
-//////				result[i] = null;
-//////			}
-//////			System.arraycopy(objArray,0,result,nullCount,count);
-//////			return result;
-////			return objArray;
-////		}
-//		return list.toArray();
-//	}
-
     /**
      * 创建指定类的对象
      *
@@ -988,38 +889,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream {
      * @throws BuilderNotFoundException
      */
     private Object createObject(Class type) {
-        Object result = ReflectUtil.createObject(type);
-//        if (result == null) {
-//            if (BuilderUtil.isSpecifyBuilder(type)) {
-//                result = BuilderUtil.get(type).newInstance();
-//            } else {
-//                throw new BuilderNotFoundException(type);
-//            }
-//        }
-        return result;
-    }
-
-    /**
-     * 创建指定类指定数量个对象
-     *
-     * @param type  类型
-     * @param count 创建对象的数量
-     * @return 指定类型的对象
-     * @throws BuilderNotFoundException
-     */
-    private Object[] createObject(Class type, int count) {
-        Object[] result = ReflectUtil.createObject(type, count);
-//        if (result == null) {
-//            if (BuilderUtil.isSpecifyBuilder(type)) {
-//                for (int i = 0; i < count; i++) {
-//                    result[i] = BuilderUtil.get(type).newInstance();
-//                }
-//            } else {
-//                throw new BuilderNotFoundException(type);
-//            }
-//        }
-        return result;
-//		return new Role();
+        return ReflectUtil.createObject(type);
     }
 
     /**

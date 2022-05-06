@@ -1,5 +1,6 @@
 package com.tuling.domain;
 
+import io.protostuff.Tag;
 import org.msgpack.annotation.Message;
 
 import java.io.Serializable;
@@ -12,10 +13,11 @@ import java.util.Random;
 @Message
 public class Role  implements Serializable {
 //    private Role role = null;
+    @Tag(1)
     private String name;
-
+    @Tag(2)
     private Integer age;
-
+    @Tag(3)
     private boolean sex;
 
     public Role(){

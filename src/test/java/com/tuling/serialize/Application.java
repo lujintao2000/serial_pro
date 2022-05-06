@@ -7,6 +7,11 @@ import com.tuling.domain.*;
 import com.tuling.serialize.util.ByteBuf;
 import com.tuling.serialize.util.ContextMap;
 import com.tuling.serialize.util.ReflectUtil;
+import io.protostuff.LinkedBuffer;
+import io.protostuff.ProtobufIOUtil;
+import io.protostuff.ProtostuffIOUtil;
+import io.protostuff.Schema;
+import io.protostuff.runtime.RuntimeSchema;
 
 import javax.xml.crypto.Data;
 import java.io.*;
@@ -27,16 +32,24 @@ public class Application {
     public static void main(String[] args) throws Exception {
 
 
-        testSerialWithSerial(1,DataProvider.getRole());
-        Role role1 = Role.getInstance("manager");
-        Role role2 = Role.getInstance("manager");
-        System.out.print(role1.equals(role2));
+        testSerialWithSerial(1, DataProvider.getRole());
 
+//        Field[] fields = User.class.getDeclaredFields();
+//        long result = 0L;
+//        long startTime = System.nanoTime();
+//        for(int i = 0; i < 1000000;i++){
+//            result += 1;
+//        }
+////        for (int i = 0; i < 1000; i++) {
+////            for(int j = 0; j < 1000; j++){
+////                result += 1;
+////            }
+////        }
+//        long endTime = System.nanoTime();
+//        System.out.print((endTime - startTime) / 1000 + " ns");
 //
 //        testSerialWithSerial(1,DataProvider.getArray(20000));
 //        testSerialWithKyro(1,DataProvider.getArray(20000));
-
-
 
 
 //        testUnSerialWithKyro(1,DataProvider.getArray(20000));
@@ -46,8 +59,6 @@ public class Application {
 //        testSerialWithSerial(1,DataProvider.getRole());
 
 
-
-
 //        testSerialWithSerial(1,DataProvider.getList(20000));
 //        testSerialWithKyro(1,DataProvider.getList(20000));
 //        testSerialWithSerial(400000, DataProvider.getRole());
@@ -55,13 +66,12 @@ public class Application {
 //        testUnserialWithSerial(400000, DataProvider.getRole());
 //        Object[] array = DataProvider.getArray(1000);
 
+//        testProtoStuff(1,DataProvider.getList(2000));
 
 
 
-
-
-        testKyro(1, DataProvider.getArray(10000));
-        testSerial(1,DataProvider.getArray(10000));
+        testKyro(1000, DataProvider.getUser());
+        testSerial(1000,DataProvider.getUser());
 //        testSerialWithSerial(10000,DataProvider.getRole());
 //        testSerialWithKyro(10000,DataProvider.getRole());
 //        Class t = Role.class;
@@ -103,7 +113,7 @@ public class Application {
         System.out.println("serial serialization cost " + (endTime - startTime) + "ms" + length);
     }
 
-    private static void testSerialWithKyro(int count,Object obj) throws Exception {
+    private static void testSerialWithKyro(int count, Object obj) throws Exception {
         Kryo kryo = new Kryo();
         kryo.register(obj.getClass());
         long startTime = System.nanoTime();
@@ -119,10 +129,10 @@ public class Application {
             a = i;
         }
         long endTime = System.nanoTime();
-        System.out.println("kyro serialization cost " + (endTime - startTime)/10000 + "ns" );
+        System.out.println("kyro serialization cost " + (endTime - startTime) / 10000 + "ns");
     }
 
-    private static void testUnSerialWithKyro(int count,Object target) throws Exception {
+    private static void testUnSerialWithKyro(int count, Object target) throws Exception {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         Kryo kryo2 = new Kryo();
         Output output = new Output(outputStream);
@@ -141,10 +151,10 @@ public class Application {
             inputStream.reset();
         }
         long endTime = System.nanoTime();
-        System.out.println("kyro unserialization cost " + (endTime - startTime)/1000000 + "ms");
+        System.out.println("kyro unserialization cost " + (endTime - startTime) / 1000000 + "ms");
     }
 
-    private static void testUnserialWithSerial(int count,Object target) throws Exception {
+    private static void testUnserialWithSerial(int count, Object target) throws Exception {
 
         ByteArrayOutputStream output2 = new ByteArrayOutputStream();
         ObjectOutputStream out2 = new DefaultObjectOutputStream();
@@ -159,14 +169,14 @@ public class Application {
 
         boolean flag = true;
         for (int i = 0; i < count; i++) {
-            Object obj =  in.readObject(input2);
+            Object obj = in.readObject(input2);
             input2.reset();
         }
         long endTime = System.nanoTime();
-        System.out.println("serial unserialization cost " + (endTime - startTime)/1000000 + "ms" + flag);
+        System.out.println("serial unserialization cost " + (endTime - startTime) / 1000000 + "ms" + flag);
     }
 
-    private static void testKyro(int count,Object value) throws Exception{
+    private static void testKyro(int count, Object value) throws Exception {
 
         Kryo kyro = new Kryo();
         long startTime = new Date().getTime();
@@ -184,7 +194,7 @@ public class Application {
 
     }
 
-    private static void testSerial(int count,Object value) throws Exception{
+    private static void testSerial(int count, Object value) throws Exception {
 //        ByteArrayOutputStream output = new ByteArrayOutputStream();
 //        ObjectOutputStream out = new DefaultObjectOutputStream();
 //        out.write(value, output);
@@ -196,20 +206,34 @@ public class Application {
         long startTime = new Date().getTime();
         for (int i = 0; i < count; i++) {
             ByteArrayOutputStream output2 = new ByteArrayOutputStream();
-            ObjectOutputStream out2 = new DefaultObjectOutputStream();
-            out2.write(value, output2);
+            Serial.write(value,output2,true,true);
             output2.close();
 
             ByteArrayInputStream input2 = new ByteArrayInputStream(output2.toByteArray());
-
-            Object obj =  in.readObject(input2);
+            Object obj = Serial.read(input2,true);
             input2.close();
         }
         long endTime = new Date().getTime();
         System.out.println("The total cost of serial unserialization and serialization is " + (endTime - startTime) + "ms" + flag);
     }
 
-    private static void testSerialWithSerial(int count,Object value) throws Exception {
+    private static void testProtoStuff(int count, Object value) throws Exception {
+        long startTime = new Date().getTime();
+        //序列化
+        Schema schema = RuntimeSchema.getSchema(value.getClass());
+        for (int i = 0; i < count; i++) {
+
+            byte[] bytes = ProtobufIOUtil.toByteArray(value, schema, LinkedBuffer.allocate());
+
+            Object deSerializerResult = value.getClass().newInstance();
+            ProtostuffIOUtil.mergeFrom(bytes, deSerializerResult, schema);
+        }
+        long endTime = new Date().getTime();
+        System.out.println("The total cost of protustuff unserialization and serialization is " + (endTime - startTime) + "ms");
+    }
+
+
+    private static void testSerialWithSerial(int count, Object value) throws Exception {
         ReflectUtil.register(value.getClass());
         DefaultObjectOutputStream objectOutputStream = new DefaultObjectOutputStream();
         long startTime = System.nanoTime();
@@ -219,24 +243,22 @@ public class Application {
             outputStream.close();
         }
         long endTime = System.nanoTime();
-        System.out.println("seri serialization cost " + (endTime - startTime)/10000 + "ns");
+        System.out.println("seri serialization cost " + (endTime - startTime) / 10000 + "ns");
     }
 
 
-
-
     private static void testSerialWithJava() throws Exception {
-        User user = DataProvider.getUser();
-        long startTime = new Date().getTime();
-        for (int i = 0; i < 600000; i++) {
+        Role role = DataProvider.getRole();
+        long startTime = System.nanoTime();
+        for (int i = 0; i < 60000; i++) {
             OutputStream outputStream = new ByteArrayOutputStream();
             java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(outputStream);
-            out.writeObject(user);
+            out.writeObject(role);
             outputStream.close();
         }
-        long endTime = new Date().getTime();
+        long endTime = System.nanoTime();
 
-        System.out.println("java serialazation cost " + (endTime - startTime) + "ms");
+        System.out.println("java serialazation cost " + (endTime - startTime) / 10000 + "ns");
     }
 
     private static void testUnserialWithJava() throws IOException, ClassNotFoundException {

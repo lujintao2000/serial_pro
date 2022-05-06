@@ -44,8 +44,8 @@ public class ReflectUtil {
     private static final Map<Class, Class> baseTypeMap = new HashMap<>();
     //该集合用于存放类的未排序字段
     private static final Map<Class, Map<String, Field>> fieldMap = new ConcurrentHashMap<>();
-    //该集合用于存放类的已排序字段
-    private static final Map<Class, List<Field>> orderedFieldMap = new ConcurrentHashMap<>();
+    //该集合用于存放类的字段,value的结构为<该类的字段列表，该类的直接父类的字段列表，该类的父类的父类的字段列表...>
+    private static final Map<Class, List<List<Field>>> orderedFieldMap = new ConcurrentHashMap<>();
     //存放类信息，key为类名
     private static final Map<String, Class> classMap = new ConcurrentHashMap<>();
     //存储序列化对象所属类的父类信息
@@ -204,10 +204,10 @@ public class ReflectUtil {
      * @param targetClass
      */
     public static void register(Class targetClass){
-        List<Field> fields = new ArrayList<>();
+        List<List<Field>> fields = new ArrayList<>();
         if (!orderedFieldMap.containsKey(targetClass)) {
             for(Class item : ReflectUtil.getSelfAndSuperClass(targetClass)){
-                fields.addAll(getFields(item));
+                fields.add(getFields(item));
             }
             orderedFieldMap.put(targetClass, fields);
         }
@@ -246,13 +246,13 @@ public class ReflectUtil {
      * @param targetClass
      * @return
      */
-    public static List<Field> getAllFields(Class targetClass) {
-        List<Field> fields = new ArrayList<>();
+    public static List<List<Field>> getAllFields(Class targetClass) {
+        List<List<Field>> fields = new ArrayList<>();
         if (orderedFieldMap.containsKey(targetClass)) {
             fields = orderedFieldMap.get(targetClass);
         } else {
            for(Class item : ReflectUtil.getSelfAndSuperClass(targetClass)){
-               fields.addAll(getFields(item));
+               fields.add(getFields(item));
            }
            orderedFieldMap.put(targetClass, fields);
         }
@@ -269,12 +269,12 @@ public class ReflectUtil {
         List<Field> fields = Arrays.asList(type.getDeclaredFields())
                 .stream()
                 .filter(x -> !Modifier.isStatic(x.getModifiers()))
-//                .filter(x -> !Modifier.isTransient(x.getModifiers()))
+                .filter(x -> !Modifier.isTransient(x.getModifiers()))
                 .map(x -> {
                     x.setAccessible(true);
                     return x;
                 })
-                .sorted((x, y) -> x.getName().compareTo(y.getName()))
+//                .sorted((x, y) -> x.getName().compareTo(y.getName()))
                 .collect(Collectors.toList());
         if (!fieldMap.containsKey(type)) {
             Map<String, Field> map = new HashMap<>();

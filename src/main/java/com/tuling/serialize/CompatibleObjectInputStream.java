@@ -35,26 +35,35 @@ public class CompatibleObjectInputStream extends AbstractObjectInputStream {
         super(isCacheField);
     }
 
+    /**
+     * 读取值，将值存入指定的对象中,如果obj为空,则将读取的值存入Map
+     * @param obj    需要读入值的对象
+     * @param context 序列化上下文
+     * @param in  包含序列化数据的输入流
+     * @return  存储了读取值的对象
+     */
     @Override
-    protected Object readValue(Object obj, List<Field> fields, Context context, ByteBuf in) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException {
-
-        //存放字段的值，key为字段名称
-        List<Class> selfAndSuperList = ReflectUtil.getSelfAndSuperClass(obj.getClass());
-        int count = 0;
-        for (Class currentType : selfAndSuperList) {
+    protected Object readValue(Object obj, Context context, ByteBuf in) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException {
+        List<List<Field>> allFields = ReflectUtil.getAllFields(obj.getClass());
+        for(int i = 0 ; i < allFields.size(); i++){
             short fieldCount = this.readLengthOrIndex(in);
-            //循环读取属性
-            for (int i = 0; i < fieldCount; i++) {
-                String fieldName = this.readString(in);
-                //读取该字段值的长度
-                int length = this.readInt(in);
-                //根据属性名，有可能找不到对应的属性，因为两个类的版本不一样
-                Field field = ReflectUtil.getField(currentType, fieldName);
+            List<Field> fields = allFields.get(i);
+            for(int j = 0; j < fieldCount; j++){
+                Field field = fields.get(j);
                 if (field != null) {
                     context.setCurrentField(field);
-                    this.readField(obj, obj.getClass(), field, in, context);
-                } else {
-                    in.skip(length);
+                    try {
+                        field.set(obj,this.readValue(field.getType(),in,context, SituationEnum.POSSIBLE_BE) );
+
+                    } catch (IllegalArgumentException e) {
+                        LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
+                        throw new InvalidAccessException(e.getCause() + "|field:" + field.getName(), e);
+                    } catch (IllegalAccessException e) {
+                        LOGGER.error(e.getCause() + "|field:" + field.getName(), e);
+                        throw new InvalidAccessException(e.getCause() + "|field:" + field.getName(), e);
+                    }
+                }else{
+                    System.out.println("a");
                 }
             }
 

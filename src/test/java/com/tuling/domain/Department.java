@@ -1,5 +1,6 @@
 package com.tuling.domain;
 
+import io.protostuff.Tag;
 import org.msgpack.annotation.Message;
 
 import java.io.Serializable;
@@ -11,6 +12,8 @@ import java.io.Serializable;
  */
 @Message
 public class Department  implements Serializable {
+    @Tag(1)
+    private String name;
 
     public Department(){
 
@@ -20,7 +23,7 @@ public class Department  implements Serializable {
         this.name = name;
     }
 
-    private String name;
+
 
     public String getName() {
         return name;

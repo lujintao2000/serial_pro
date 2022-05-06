@@ -1,5 +1,6 @@
 package com.tuling.domain;
 
+import io.protostuff.Tag;
 import org.msgpack.annotation.Message;
 
 import java.util.ArrayList;
@@ -8,13 +9,23 @@ import java.util.List;
 
 @Message
 public class User extends Person implements Comparable<User> {
+    @Tag(4)
     private Company company = null;
+    @Tag(5)
     private Role role = null;
+
+    @Tag(6)
     private Profession profession = null;
+    @Tag(7)
     private Department department = null;
+    @Tag(8)
     private Object name;
+    @Tag(9)
     private Object age;
+    @Tag(10)
     private Nation nation;
+    private String nickName;
+
 //    private Integer id;
 //    private Object another;
 //   private final List<String> labels = new ArrayList<>();
@@ -86,7 +97,7 @@ public class User extends Person implements Comparable<User> {
 
                         && (this.nation == another.nation || (this.nation != null && this.nation.equals(another.nation)))
 //                        && (this.labels == another.labels || (this.labels != null && this.labels.equals(another.labels)) )
-
+                        && (this.nickName == another.nickName || (this.nickName != null && this.nickName.equals(another.nickName)))
                         && (this.department == another.getDepartment() || (this.department != null && another.getDepartment() != null && this.department.getName().equals(another.getDepartment().getName())) )
                         && (this.profession == another.getProfession() || (this.profession != null && another.getProfession() != null && this.profession.getName().equals(another.getProfession().getName())) )
                         ){
@@ -120,6 +131,9 @@ public class User extends Person implements Comparable<User> {
         }
         if(nation != null){
             result += nation.hashCode();
+        }
+        if(nickName != null){
+            result += nickName.hashCode();
         }
 //        if(labels != null){
 //            result += labels.hashCode();
@@ -177,6 +191,15 @@ public class User extends Person implements Comparable<User> {
 
     public void setId(Integer id) {
 //        this.id = id;
+    }
+
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setNickName(String nickName) {
+        this.nickName = nickName;
     }
 
     @Override

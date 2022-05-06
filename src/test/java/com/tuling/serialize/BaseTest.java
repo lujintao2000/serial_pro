@@ -142,15 +142,16 @@ public abstract class BaseTest {
     public void testMap() throws Exception{
         Map map = new HashMap();
         map.put("name","xiaowang");
-
+//
         map.put(null, null);
         map.put("company",new Company(""));
-        map.put("user", new User("wangfei", null, null, 76.0f));
+        map.put("user", new User("wangfei", 20, 170.0f, 76.0f));
         map.put(new Company(""),"");
         map.put(5,6);
         map.put(new User("wangfei", null, null, 76.0f),5);
-        test(Collections.unmodifiableMap(map));
+
         test(map);
+        test(Collections.unmodifiableMap(map));
         map = new TreeMap<>();
 
         map.put("name","xiaohua");

@@ -207,12 +207,11 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream {
      * 读取值，将值存入指定的对象中,如果obj为空,则将读取的值存入Map
      *
      * @param obj     需要读入值的对象
-     * @param fields  要读取对象所对应类的所有属性
      * @param context 序列化上下文
      * @param in      包含序列化数据的输入流
      * @return 存储了读取值的对象
      */
-    protected abstract Object readValue(Object obj, List<Field> fields, Context context, ByteBuf in) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException;
+    protected abstract Object readValue(Object obj, Context context, ByteBuf in) throws IOException, ClassNotSameException, ClassNotFoundException, InvalidDataFormatException, InvalidAccessException, BuilderNotFoundException;
 
 
     /**
@@ -867,7 +866,7 @@ public abstract class AbstractObjectInputStream implements ObjectInputStream {
                         isExecuteCommon = true;
                     }
                     if (isExecuteCommon) {
-                        readValue(obj, ReflectUtil.getAllFields(objectClass), context, in);
+                        readValue(obj, context, in);
                     }
                 } catch (Exception e) {
                     LOGGER.error(e.getCause(), e);

@@ -1,13 +1,16 @@
 package com.tuling.domain;
 
+import io.protostuff.Tag;
+
 import java.io.Serializable;
 
 /**
  * Created by Administrator on 2020-06-08.
  */
  public class Animal implements Serializable {
-
+    @Tag(1)
     private Float height;
+    @Tag(2)
     private float weight;
 
     public Animal(){

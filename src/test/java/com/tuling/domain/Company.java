@@ -1,14 +1,15 @@
 package com.tuling.domain;
 
+import io.protostuff.Tag;
 import org.msgpack.annotation.Message;
 
 import java.io.Serializable;
 
 @Message
 public class Company implements Serializable{
-
+	@Tag(1)
 	private String name;
-
+	@Tag(2)
 	private User user;
 
 	public Company(){

@@ -41,9 +41,6 @@ public class DefaultObjectOutputStream extends AbstractOutputStream{
      */
     @Override
     protected  void writeField(Field field, Object obj, ByteBuf out, Context context){
-        if(!field.isAccessible()){
-            field.setAccessible(true);
-        }
         try {
             Object value = field.get(obj);
             //写入属性值

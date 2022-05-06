@@ -1,5 +1,6 @@
 package com.tuling.serialize;
 
+import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.util.*;
 import org.apache.log4j.Logger;
 
@@ -327,11 +328,25 @@ public abstract class AbstractOutputStream implements ObjectOutputStream {
      */
     protected void writeAllFields(Object obj,Class type,Context context,ByteBuf out){
             //3. 循环写入属性
-            for (Field field : ReflectUtil.getAllFields(type)) {
+//            for (List<Field> fields : ReflectUtil.getAllFields(type)) {
+//                for(Field field : fields){
+//                    context.setCurrentField(field);
+//                    this.writeField(field, obj, out, context);
+//                }
+//            }
+
+        List<List<Field>> allFields = ReflectUtil.getAllFields(type);
+        for(int i = 0 ; i < allFields.size(); i++){
+            List<Field> fields = allFields.get(i);
+            for(int j = 0; j < fields.size(); j++){
+                Field field = fields.get(j);
                 context.setCurrentField(field);
                 this.writeField(field, obj, out, context);
             }
-            context.setCurrentField(null);
+
+        }
+
+        context.setCurrentField(null);
     }
 
     /**

@@ -1,7 +1,12 @@
 package com.tuling.domain;
 
+import io.protostuff.Tag;
+
 public  class Person extends  Animal{
+    @Tag(3)
     private boolean sex;
+
+    private Language language;
 
     public Person(){
 
@@ -78,5 +83,13 @@ public  class Person extends  Animal{
     @Override
     public int hashCode(){
         return super.hashCode();
+    }
+
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 }

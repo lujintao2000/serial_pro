@@ -1,5 +1,6 @@
 package com.tuling.serialize;
 
+import com.tuling.serialize.exception.InvalidAccessException;
 import com.tuling.serialize.util.*;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -24,37 +25,27 @@ public class CompatibleObjectOutputStream extends AbstractOutputStream {
 
     @Override
     protected void writeAllFields(Object obj, Class type, Context context, ByteBuf out) {
-        //获得包含该类以及该类的所有父类的集合
-        List<Class> superClassAndSelfList = ReflectUtil.getSelfAndSuperClass(type);
-        for (Class item : superClassAndSelfList) {
-            List<Field> fields = ReflectUtil.getFields(item);
+        List<List<Field>> allFields = ReflectUtil.getAllFields(obj.getClass());
+        for(int i = 0 ; i < allFields.size(); i++){
+            List<Field> fields = allFields.get(i);
             //写入属性个数  2字节
             writeLengthOrIndex(fields.size(), out);
-
-            //循环写入属性
-            for (Field field : fields) {
+            for(int j = 0; j < fields.size(); j++){
+                Field field = fields.get(j);
                 context.setCurrentField(field);
                 this.writeField(field, obj, out, context);
             }
-            context.setCurrentField(null);
+
         }
+        context.setCurrentField(null);
+
     }
 
         @Override
         protected void writeField (Field field, Object obj, ByteBuf buf, Context context){
-            field.setAccessible(true);
             try {
                 Object value = field.get(obj);
-                //1. 写入属性名
-                writeString(field.getName(), buf);
-                //先将值写入一个临时缓冲
-                ByteBuf tempBuf = new ByteBuf(Constant.DEFAULT_BUFFER_SIZE_OF_FIELD);
-                this.writeValue(value, field.getType(), tempBuf, context, SituationEnum.POSSIBLE_BE);
-                //2. 写入属性值的字节长度
-                buf.writeInt(tempBuf.readableBytes());
-                //3. 写入属性值
-                buf.writeBytes(tempBuf);
-                tempBuf.release();
+                this.writeValue(value, field.getType(), buf, context, SituationEnum.POSSIBLE_BE);
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
             } catch (IllegalAccessException e) {

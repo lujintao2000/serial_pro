@@ -16,6 +16,8 @@ public class ByteBuf {
     private int writerIndex;
     //当数组扩容的时候，每次增加的大小
 //    private int increaseSize;
+    //扩容的次数对应的序号，从0开始。第一次扩容对应的序号为0
+    private int growIndex = 0;
 
     public ByteBuf() {
         this(Constant.DEFAULT_BUFFER_SIZE);
@@ -1198,7 +1200,7 @@ public class ByteBuf {
      */
     private void ensureCapacity(int increaseCapacity) {
         if (increaseCapacity + writerIndex > array.length) {
-            grow(array.length > increaseCapacity ? array.length : increaseCapacity * 2);
+            grow(array.length > increaseCapacity ? array.length : increaseCapacity);
         }
     }
 
@@ -1216,12 +1218,26 @@ public class ByteBuf {
      * 当array长度不够时，对数组array进行扩容
      */
     public void grow(int increaseCapacity) {
-        byte[] newArray = new byte[getNewCapacity(increaseCapacity)];
+        byte[] newArray = new byte[array.length + increaseCapacity + getExtraIncreaseCapacity(growIndex++)];
         System.arraycopy(array, 0, newArray, 0, writerIndex);
         array = newArray;
     }
 
+    /**
+     * 获取需要增加的容量
+     * @param growIndex 当前扩容的次数序号，从0开始
+     * @return
+     */
+    private  int getExtraIncreaseCapacity(int growIndex){
+        int result = growIndex + 1;
+        for(int i = 0;i <= growIndex; i++ ){
+            result *= 2;
+        }
+
+        return result;
+    }
+
     private int getNewCapacity(int increaseCapacity) {
-        return increaseCapacity < array.length ? array.length * 2 : (array.length + increaseCapacity);
+        return array.length + increaseCapacity;
     }
 }

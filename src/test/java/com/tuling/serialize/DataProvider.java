@@ -63,9 +63,27 @@ public class DataProvider {
 
     public static Role getRole(){
        Role role = Role.getInstance();
-       role.setName("总监级别的人物，那肯定不一样");
+       role.setName(getName(100));
+       role.setName2(getName(100));
+        role.setName3(getName(100));
+        role.setName4(getName(100));
+        role.setName5(getName(100));
+        role.setName6(getName(100));
+        role.setName7(getName(100));
+        role.setName8(getName(100));
+        role.setName9(getName(100));
+
        role.setAge(20);
        return role;
+    }
+
+    private static String getName(int size){
+        StringBuilder builder = new StringBuilder();
+        for(int i = 0; i <size ; i++){
+            builder.append("总监级别的人物那肯定");
+        }
+
+        return builder.toString();
     }
 
     public static Department getDepartment(){

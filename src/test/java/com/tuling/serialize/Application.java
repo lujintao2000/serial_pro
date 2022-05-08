@@ -68,10 +68,11 @@ public class Application {
 
 //        testProtoStuff(1,DataProvider.getList(2000));
 
+        System.out.print(Integer.MAX_VALUE);
 
 
-        testKyro(1000, DataProvider.getUser());
-        testSerial(1000,DataProvider.getUser());
+        testSerial(100,DataProvider.getRole());
+        testKyro(100, DataProvider.getRole());
 //        testSerialWithSerial(10000,DataProvider.getRole());
 //        testSerialWithKyro(10000,DataProvider.getRole());
 //        Class t = Role.class;
